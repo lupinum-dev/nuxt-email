@@ -11,15 +11,15 @@ Use one of the supported Node ranges:
 - Node `22.12.0` through the latest Node 22 release.
 - Node `24.11.0` through the latest Node 24 release.
 
-The release fixture uses Nuxt `4.4.8`, Vue `3.5.40`, TypeScript `5.9.3`, Vue TSC `3.3.7`, and the verified `nuxt-email` tarball. The repository itself pins pnpm `11.13.1`.
+The release fixture uses Nuxt `4.4.8`, Vue `3.5.40`, TypeScript `5.9.3`, Vue TSC `3.3.7`, and the exact candidate `nuxt-email` tarball. The repository itself pins pnpm `11.13.1`.
 
 The release CI anchors that Nuxt version on Node `22.12.0` and the current Node `24.x` runner. The declared Nuxt peer range is `^4.4.8`; later Nuxt 4 releases are allowed but are not separate matrix anchors while `4.4.8` is current.
 
-`nuxt-email` is still a working package name whose publication ownership has not been approved. Obtain the verified release-candidate tarball and its SHA-256 from the maintainer. Do not substitute a registry package with the same name.
+`nuxt-email` is still a working package name whose publication ownership has not been approved. Obtain the candidate tarball and SHA-256 from the release record, and check that record's exact-artifact verification status before use. Do not substitute a registry package with the same name.
 
 ## 2. Create the application manifest
 
-Create an empty directory and add this `package.json`, replacing the tarball path with the absolute path to the verified artifact:
+Create an empty directory and add this `package.json`, replacing the tarball path with the absolute path to the recorded candidate artifact:
 
 ```json
 {

@@ -2,7 +2,7 @@
 
 ## 0.1.0 — release candidate
 
-Status: not approved for publication. `nuxt-email` is the working package name; registry ownership and publish access, final candidate identity, manual email-client QA, and external beta evidence remain release blockers.
+Status: not approved for publication. `nuxt-email` is the working package name; registry ownership and publish access, exact-artifact isolated-install verification, manual email-client QA, and external beta evidence remain release blockers.
 
 ### Added
 

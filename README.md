@@ -4,9 +4,9 @@ Nuxt Email is a Nuxt module for authoring transactional emails as ordinary Vue S
 
 ## Release status
 
-`0.1.0` is the current release-candidate version, not an approved public release. `nuxt-email` is the working package name; npm name ownership and publishing access still need confirmation. Until that is resolved, install the exact verified release-candidate tarball supplied by the maintainer rather than assuming the npm name is available.
+`0.1.0` is the current release-candidate version, not an approved public release. `nuxt-email` is the working package name; npm name ownership and publishing access still need confirmation. Until that is resolved, use only the exact candidate tarball and SHA-256 named in the release record rather than assuming the npm name is available.
 
-Final publication is also blocked on freezing the candidate commit and tarball checksum, the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) for the live gate status.
+Final publication is also blocked on a successful exact-artifact isolated-install run, the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) for the live gate status.
 
 ## Supported environment
 
@@ -20,7 +20,7 @@ Node 20, Node 23, Node 25, Nuxt 3, Nuxt 5, edge runtimes, and client-side email 
 
 ## Install and configure
 
-In an existing supported Nuxt application, install the verified local tarball:
+In an existing supported Nuxt application, install the candidate tarball identified in the release record:
 
 ```bash
 pnpm add /absolute/path/to/nuxt-email-0.1.0-rc.tgz
