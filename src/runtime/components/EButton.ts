@@ -14,7 +14,7 @@ const MAX_MSO_SPACE_COUNT = 1000
 
 /**
  * Outlook spacing behavior adapted from React Email's MIT-licensed Button.
- * Copyright (c) 2022 Resend, Inc.; pinned source commit 6eb428924c4c2774228a07cbec1977ad8898f143.
+ * Copyright 2024 Plus Five Five, Inc; pinned source commit 6eb428924c4c2774228a07cbec1977ad8898f143.
  */
 export function computeMsoFontWidthAndSpaceCount(expectedWidth: number): readonly [number, number] {
   if (!Number.isFinite(expectedWidth)) {

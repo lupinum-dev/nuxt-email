@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -8,42 +8,56 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint:
+  verify:
+    name: Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 22.12.0
+          - 24.x
 
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-
-      - run: npm i -g --force corepack@latest && corepack enable
-
-      - name: Install dependencies
-        run: npx nypm@latest i
-
-      - name: Lint
-        run: npm run lint
-
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
-
-      - run: npm i -g --force corepack@latest && corepack enable
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
 
       - name: Install dependencies
-        run: npx nypm@latest i
+        run: pnpm install --frozen-lockfile
 
-      - name: Playground prepare
-        run: npm run dev:prepare
+      - name: Lint and formatting
+        run: pnpm lint
 
-      - name: Test
-        run: npm run test
+      - name: Prepare module and playground types
+        run: pnpm dev:prepare
+
+      - name: Type checks
+        run: pnpm test:types
+
+      - name: Unit, component, module, conformance, and production-bundle tests
+        run: pnpm test
+
+      - name: Conformance report reproducibility
+        run: pnpm conformance:check
+
+      - name: React Email oracle reproducibility
+        run: pnpm oracle:check
+
+      - name: Package build, contents, and fresh-install smoke test
+        run: pnpm release:verify

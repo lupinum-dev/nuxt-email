@@ -4,6 +4,10 @@
   "description": "Typed Vue email authoring and server-side rendering for Nuxt",
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@11.13.1",
+  "engines": {
+    "node": "^22.12.0 || ^24.11.0"
+  },
   "exports": {
     ".": {
       "types": "./dist/types.d.mts",
@@ -19,7 +23,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
     "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./scripts/conformance-reporter.ts",
@@ -31,6 +36,7 @@
     "oracle:check": "node --import tsx scripts/generate-react-oracle.ts --check",
     "oracle:write": "node --import tsx scripts/generate-react-oracle.ts --write",
     "performance:measure": "node --expose-gc --import tsx scripts/measure-renderer.ts",
+    "release:verify": "node --import tsx scripts/verify-release.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
@@ -38,11 +44,13 @@
     "test:types": "nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
+    "nuxt": "^4.4.8",
     "vue": "^3.5.0"
   },
   "dependencies": {
     "@nuxt/kit": "^4.4.8",
     "@vitejs/plugin-vue": "6.0.8",
+    "h3": "1.15.8",
     "html-to-text": "9.0.5"
   },
   "devDependencies": {
@@ -56,7 +64,6 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^10.4.1",
-    "h3": "1.15.8",
     "nuxt": "^4.4.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
