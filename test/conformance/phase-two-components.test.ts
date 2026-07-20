@@ -166,20 +166,23 @@ describe('table layout primitives', () => {
     expect(column).toContain('Column &amp; content')
   })
 
-  it.each([EContainer, ESection, ERow])('keeps presentation-table invariants fixed for %s', async (component) => {
-    const html = await renderComponent(component, {
+  it.each([EContainer, ESection, ERow])('throws instead of overriding presentation-table invariants for %s', async (component) => {
+    const componentName = (component as { name?: string }).name
+
+    await expect(renderComponent(component, { border: 9 }))
+      .rejects.toThrow(`${componentName} does not allow overriding fixed presentation-table attribute: border`)
+    await expect(renderComponent(component, { cellpadding: 9 }))
+      .rejects.toThrow(`${componentName} does not allow overriding fixed presentation-table attribute: cellpadding`)
+    await expect(renderComponent(component, { cellspacing: 9 }))
+      .rejects.toThrow(`${componentName} does not allow overriding fixed presentation-table attribute: cellspacing`)
+    await expect(renderComponent(component, { role: 'grid' }))
+      .rejects.toThrow(`${componentName} does not allow overriding fixed presentation-table attribute: role`)
+    await expect(renderComponent(component, {
       border: 9,
       cellpadding: 9,
       cellspacing: 9,
       role: 'grid',
-    })
-    const table = html.match(/<table[^>]*>/)?.[0]
-
-    expect(table).toContain('border="0"')
-    expect(table).toContain('cellpadding="0"')
-    expect(table).toContain('cellspacing="0"')
-    expect(table).toContain('role="presentation"')
-    expect(table).not.toMatch(/(?:border|cellpadding|cellspacing)="9"|role="grid"/)
+    })).rejects.toThrow(`${componentName} does not allow overriding fixed presentation-table attributes: border, cellpadding, cellspacing, role`)
   })
 })
 

@@ -233,6 +233,12 @@ describe('content primitives', () => {
     tags: ['conformance:link-overrides'],
   }, async () => {
     const defaults = await renderComponent(ELink, { href: 'https://example.com' }, 'Example')
+    const oracleOverrides = await renderComponent(ELink, {
+      id: 'link-test',
+      href: 'https://example.com/?value="quoted"&mode=test',
+      style: { color: 'red' },
+      target: '_self',
+    }, 'Link & content')
     const overrides = await renderComponent(ELink, {
       'aria-label': 'Open & inspect',
       'id': 'link-test',
@@ -242,6 +248,7 @@ describe('content primitives', () => {
       'target': '_self',
     }, 'Link & content')
 
+    expect(normalizeEmailHtml(oracleOverrides)).toBe(normalizeEmailHtml(oracle.cases['link-overrides'].html))
     expect(defaults).toContain('style="color:#067df7;text-decoration-line:none;" target="_blank"')
     expect(overrides).toContain('href="https://example.com/?value=&quot;quoted&quot;&amp;mode=test"')
     expect(overrides).toContain('aria-label="Open &amp; inspect"')
@@ -271,6 +278,7 @@ describe('content primitives', () => {
       width: '300',
     })
 
+    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['image-overrides'].html))
     expect(emptyAlt).toMatch(/<img[^>]*\salt(?:=""|(?=\s|>))/)
     expect(html).toContain('alt="Logo &amp; mark"')
     expect(html).toContain('src="https://example.com/logo.png?mode=light&amp;size=2"')
@@ -319,6 +327,7 @@ describe('complete Phase 1 email', () => {
     const second = await renderEmailComponent(CompleteBasicEmail)
 
     expect(first).toEqual(second)
+    expect(normalizeEmailHtml(first.html)).toBe(normalizeEmailHtml(oracle.cases['complete-basic-email'].html))
     expect(first.text).toBe(oracle.cases['complete-basic-email-text'].text)
     expect(first.html).toContain(oracle.cases['complete-basic-email'].expectedExactFragments[0])
     expect(first.html).toContain('Hello &amp; &lt;Ada&gt; — Grüß dich')

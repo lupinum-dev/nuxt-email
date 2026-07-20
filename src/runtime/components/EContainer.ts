@@ -2,6 +2,7 @@ import type { DefineComponent, TableHTMLAttributes } from 'vue'
 import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
+import { assertFixedPresentationTable } from './ERow'
 import { splitTablePadding } from './table-padding'
 
 export type EContainerProps = Omit<
@@ -15,6 +16,7 @@ export const EContainer = defineComponent({
   setup(_props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('EContainer', attrs)
+      assertFixedPresentationTable('EContainer', attrs)
       const { style, ...attributes } = attrs
       const { tableStyle, cellStyle } = splitTablePadding(style)
 
