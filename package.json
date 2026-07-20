@@ -27,6 +27,10 @@
     ".": {
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
+    },
+    "./testing": {
+      "types": "./dist/runtime/testing/index.d.ts",
+      "import": "./dist/runtime/testing/index.js"
     }
   },
   "main": "./dist/module.mjs",
