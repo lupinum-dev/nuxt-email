@@ -1,6 +1,6 @@
 # Component reference
 
-Nuxt Email v0.1 provides fourteen E-prefixed components. They are auto-registered inside email templates and the isolated server renderer. All composition uses ordinary Vue slots; all attributes use Vue and HTML names rather than React prop aliases.
+Nuxt Email provides nineteen E-prefixed components. They are auto-registered inside email templates and the isolated server renderer. All composition uses ordinary Vue slots; all attributes use Vue and HTML names rather than React prop aliases.
 
 ## Shared rules
 
@@ -68,12 +68,14 @@ Use an explicit `<title>` inside `EHead`; `EPreview` does not generate or hoist 
 
 | Component | Output and important props | Defaults and fixed behavior |
 | --- | --- | --- |
-| `EContainer` | Centered presentation table for bounded content; accepts safe table attributes except the fixed semantics. | `width="100%"`, `max-width: 37.5em`; physical padding moves to the inner cell. `border`, `cellpadding`, `cellspacing`, and `role` are fixed. |
-| `ESection` | Full-width presentation table with one inner cell. | Physical padding moves to the inner cell. Presentation-table attributes are fixed. |
-| `ERow` | Full-width presentation table whose row receives slot content. | Place `EColumn` components directly in the slot. Presentation-table attributes are fixed. |
+| `EContainer` | Centered presentation table for bounded content; accepts safe table attributes except the fixed semantics. | `width="100%"`, `max-width: 37.5em`; physical padding moves to the inner cell. `border`, `cellpadding`, `cellspacing`, and `role` are fixed and cannot be overridden. |
+| `ESection` | Full-width presentation table with one inner cell. | Physical padding moves to the inner cell. Presentation-table attributes are fixed and cannot be overridden. |
+| `ERow` | Full-width presentation table whose row receives slot content. | Place `EColumn` components directly in the slot. Presentation-table attributes are fixed and cannot be overridden. |
 | `EColumn` | A `<td>` cell; accepts safe cell attributes such as `width`, `colspan`, alignment, and style. | No synthetic React marker and no default width. |
 
 For `EContainer` and `ESection`, physical `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, and `paddingLeft` are placed on the inner `<td>` for compatibility. Logical padding properties remain on the table.
+
+`EContainer`, `ESection`, and `ERow` fix `border`, `cellpadding`, `cellspacing`, and `role` to preserve the email-client-safe table layout. Unlike React Email, which silently discards overrides for these attributes, nuxt-email throws a `TypeError` when any of them is supplied (case-insensitive, so `cellPadding` and `cellSpacing` are caught too). Set these presentation properties through `style` if you need to adjust them.
 
 ```vue
 <EContainer :style="{ maxWidth: '600px', padding: '24px' }">
@@ -116,6 +118,113 @@ Button padding accepts finite non-negative numbers or `px`, `em`, `rem`, and `%`
 >
   Activate account
 </EButton>
+```
+
+## Fonts
+
+`EFont` declares an `@font-face` and a document-wide default font. It must be placed inside `EHead`.
+
+| Prop | Contract |
+| --- | --- |
+| `fontFamily` | Required string. The primary font; use `fallbackFontFamily` for alternatives rather than a comma list. |
+| `fallbackFontFamily` | Required. One `FontFallback` or an ordered array (`'Arial'`, `'Helvetica'`, `'Verdana'`, `'Georgia'`, `'Times New Roman'`, `'serif'`, `'sans-serif'`, `'monospace'`, `'cursive'`, `'fantasy'`). |
+| `webFont` | Optional `{ url, format }`, where `format` is `woff`, `woff2`, `truetype`, `opentype`, `embedded-opentype`, or `svg`. Emits the `src` descriptor; not every client honors web fonts. |
+| `fontStyle` | Defaults to `normal`. |
+| `fontWeight` | Defaults to `400`. |
+
+`EFont` emits one `<style>` containing the `@font-face` rule and a global `* { font-family }` rule that lists the primary font followed by every fallback. The Outlook `mso-font-alt` descriptor uses the first fallback.
+
+```vue
+<EHead>
+  <EFont
+    font-family="Roboto"
+    :fallback-font-family="['Verdana', 'sans-serif']"
+    :web-font="{ url: 'https://fonts.example.com/roboto.woff2', format: 'woff2' }"
+    :font-weight="700"
+  />
+</EHead>
+```
+
+## Inline code
+
+`ECodeInline` renders inline code inside a text flow. Place it inside `EText` (or another text element). It accepts safe HTML attributes and forwards them, plus `style`, to both emitted elements.
+
+It renders three siblings: a `<style>` with the Orange.fr webmail compatibility rule, a visible `<code>` element, and a hidden copy `<span>` (`display:none`). Because the content is emitted twice, plain-text conversion contains it twice; this matches React Email exactly.
+
+```vue
+<EText>
+  Run <ECodeInline class="inline-code">pnpm install</ECodeInline> to begin.
+</EText>
+```
+
+## Syntax-highlighted code blocks
+
+`ECodeBlock` renders a syntax-highlighted `<pre>` using PrismJS grammars and a theme object. It is server-only.
+
+| Prop | Contract |
+| --- | --- |
+| `code` | Required source string. |
+| `language` | Required `CodeBlockLanguage` (a PrismJS language id such as `javascript` or `css`). An unknown language throws. |
+| `theme` | Required `CodeBlockTheme`. Themes are named exports of the package (`dracula`, `oneDark`, `nord`, and the rest of the PrismJS theme set). |
+| `lineNumbers` | Optional. Prepends a line-number column. |
+| `fontFamily` | Optional. Applies a font family to every rendered element, mainly to override a global `EFont`. |
+
+Source spaces are encoded as no-break space plus zero-width joiner plus zero-width space, and each line ends with `<br/>`, matching React Email byte-for-byte.
+
+```vue
+<script setup lang="ts">
+import { dracula } from 'nuxt-email'
+</script>
+
+<template>
+  <ECodeBlock
+    language="javascript"
+    :theme="dracula"
+    :line-numbers="true"
+    :code="`const x = 1;\nconsole.log(x);`"
+  />
+</template>
+```
+
+## Markdown
+
+`EMarkdown` renders Markdown to email-safe HTML with inline styles.
+
+| Prop | Contract |
+| --- | --- |
+| `source` | Optional Markdown string. When it is a string it wins; otherwise the text-only default slot is used. |
+| `markdownCustomStyles` | Optional per-element style overrides merged over the defaults (for example `{ h1: { color: 'red' } }`). |
+| `markdownContainerStyles` | Optional style for the container `<div>`. |
+
+The default slot must contain text only; an element child throws a `TypeError` rather than being silently stringified. Links render with `target="_blank"`, tables with `role="presentation"`. Unlike React Email, the container omits the `data-id="react-email-markdown"` marker (the same no-data-id divergence as `EColumn`); see the [conformance report](./conformance/report.md).
+
+```vue
+<EMarkdown source="# Title\n\nA paragraph with a [link](https://example.com)." />
+```
+
+## Tailwind
+
+`ETailwind` is a server-only boundary that inlines Tailwind utility classes used by its subtree. Wrap the whole document so a `<head>` is available inside the boundary.
+
+| Prop | Contract |
+| --- | --- |
+| `config` | Optional Tailwind config (everything except `content`), matching React Email's `TailwindConfig`. |
+| `theme` | Optional raw CSS appended to the `@theme` layer. |
+| `utility` | Optional raw CSS appended to the utilities layer. |
+
+Utility classes on descendant elements are inlined into each element's `style`, with precedence `component defaults < Tailwind utilities < author style`. Rules that cannot be inlined (media queries, pseudo-classes) are collected into a `<style>` in the `<head>`, residual class names are sanitized, and `mso-*` properties survive inlining. If a class needs a `<head>` and none is present inside the boundary, rendering throws with a message naming the offending classes.
+
+```vue
+<ETailwind>
+  <EHtml>
+    <EHead />
+    <EBody class="bg-gray-100">
+      <EContainer class="p-4">
+        <EText class="text-red-500">Styled with Tailwind</EText>
+      </EContainer>
+    </EBody>
+  </EHtml>
+</ETailwind>
 ```
 
 ## Complete-document requirement

@@ -6,11 +6,11 @@ Nuxt Email 0.1.0 is compared against React Email 6.9.0 and @react-email/render 2
 
 | Runnable | Passed | Failed | Unsupported React components |
 | ---: | ---: | ---: | ---: |
-| 30 | 30 | 0 | 5 |
+| 57 | 57 | 0 | 0 |
 
 Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
 Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a99`
+Oracle SHA-256: `9587bcc4b4e91163328ed7e3ab56f9298a91bd6cac03b86b74e3d2fb85c86a49`
 
 ## Classifications
 
@@ -18,9 +18,9 @@ Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a9
 | --- | ---: | ---: | ---: |
 | exact | 10 | 10 | 0 |
 | intentional-divergence | 6 | 6 | 0 |
-| normalized | 9 | 9 | 0 |
+| normalized | 36 | 36 | 0 |
 | semantic | 5 | 5 | 0 |
-| unsupported | 5 | 0 | 0 |
+| unsupported | 0 | 0 | 0 |
 
 ## Supported components and utilities
 
@@ -30,16 +30,21 @@ Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a9
 | CompleteBasicEmail | 1 | 1 | 0 |
 | EBody | 1 | 1 | 0 |
 | EButton | 3 | 3 | 0 |
+| ECodeBlock | 3 | 3 | 0 |
+| ECodeInline | 1 | 1 | 0 |
 | EContainer | 1 | 1 | 0 |
+| EFont | 3 | 3 | 0 |
 | EHead | 1 | 1 | 0 |
 | EHeading | 1 | 1 | 0 |
 | EHr | 1 | 1 | 0 |
 | EHtml | 1 | 1 | 0 |
 | EImg | 1 | 1 | 0 |
 | ELink | 1 | 1 | 0 |
+| EMarkdown | 4 | 4 | 0 |
 | EPreview | 4 | 4 | 0 |
 | ERow and EColumn | 1 | 1 | 0 |
 | ESection | 1 | 1 | 0 |
+| ETailwind | 16 | 16 | 0 |
 | EText | 1 | 1 | 0 |
 | renderPlainText | 9 | 9 | 0 |
 | renderPlainText with EButton | 1 | 1 | 0 |
@@ -59,11 +64,14 @@ Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a9
 
 | React component | Reference | Reason |
 | --- | --- | --- |
-| CodeBlock | packages/react-email/src/components/code-block | Syntax-highlighted code output is outside the focused v0.1 primitive set. |
-| CodeInline | packages/react-email/src/components/code-inline | Inline code styling is outside the focused v0.1 primitive set. |
-| Font | packages/react-email/src/components/font | Font loading behavior requires separate email-client evidence after v0.1. |
-| Markdown | packages/react-email/src/components/markdown | Markdown parsing is not required for ordinary Vue SFC authoring in v0.1. |
-| Tailwind | packages/react-email/src/components/tailwind | Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met. |
+
+
+## Additional behavioral divergences and notes
+
+- **EMarkdown container drops `data-id`.** React Email wraps Markdown output in `<div data-id="react-email-markdown">`; EMarkdown omits the marker, the same no-data-id divergence recorded for EColumn above. Each markdown case strips the marker from the oracle before the normalized full-document comparison.
+- **Presentation tables reject fixed attributes.** ESection, EContainer, and ERow throw a `TypeError` when passed `border`, `cellpadding`, `cellspacing`, or `role`. React Email silently discards these overrides; nuxt-email fails loudly to keep the email-client-safe table layout an invariant.
+- **ECodeInline duplicates content in plain text (matches React).** ECodeInline renders its content twice, a visible `<code>` and a hidden copy span, so `renderPlainText` emits the content twice. This is faithful to React Email and is noted only to prevent surprise; it is not a divergence.
+- **ETailwind moves non-inlinable rules to `<head>`.** Media-query and pseudo-class rules that cannot be inlined are collected into a `<style>` element in the document `<head>` (a `<head>` inside `<Tailwind>` is required, otherwise rendering throws), residual class names are sanitized, and `mso-*` style properties survive inlining. Output tracks the pinned Tailwind version compiled by the engine.
 
 ## Behavior cases
 
@@ -75,15 +83,26 @@ Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a9
 | button-asymmetric-text | renderPlainText with EButton | exact | passed | 1 |
 | button-no-padding | EButton | normalized | passed | 3 |
 | button-padding | EButton | normalized | passed | 3 |
+| code-block-basic | ECodeBlock | normalized | passed | 4 |
+| code-block-css-lang | ECodeBlock | normalized | passed | 2 |
+| code-block-line-numbers | ECodeBlock | normalized | passed | 2 |
+| code-inline-basic | ECodeInline | normalized | passed | 3 |
 | complete-basic-email | CompleteBasicEmail | semantic | passed | 4 |
 | complete-basic-email-text | renderPlainText | exact | passed | 2 |
 | container-padding | EContainer | normalized | passed | 3 |
+| font-defaults | EFont | normalized | passed | 3 |
+| font-multiple-fallbacks | EFont | normalized | passed | 2 |
+| font-webfont | EFont | normalized | passed | 2 |
 | head-content | EHead | normalized | passed | 3 |
 | heading-style | EHeading | normalized | passed | 2 |
 | horizontal-rule-overrides | EHr | semantic | passed | 3 |
 | html-defaults | EHtml | intentional-divergence | passed | 3 |
 | image-overrides | EImg | semantic | passed | 3 |
 | link-overrides | ELink | semantic | passed | 4 |
+| markdown-custom-styles | EMarkdown | normalized | passed | 2 |
+| markdown-document | EMarkdown | normalized | passed | 4 |
+| markdown-links-escaping | EMarkdown | normalized | passed | 2 |
+| markdown-nested-lists | EMarkdown | normalized | passed | 2 |
 | plain-text-blockquote | renderPlainText | exact | passed | 1 |
 | plain-text-breaks | renderPlainText | exact | passed | 2 |
 | plain-text-links | renderPlainText | exact | passed | 3 |
@@ -99,3 +118,19 @@ Oracle SHA-256: `0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a9
 | row-columns | ERow and EColumn | intentional-divergence | passed | 3 |
 | section-padding | ESection | normalized | passed | 3 |
 | text-margins | EText | normalized | passed | 4 |
+| tw-author-style-precedence | ETailwind | normalized | passed | 1 |
+| tw-basic-inlining | ETailwind | normalized | passed | 2 |
+| tw-button-classes | ETailwind | normalized | passed | 2 |
+| tw-column-classes | ETailwind | normalized | passed | 1 |
+| tw-component-style-override | ETailwind | normalized | passed | 1 |
+| tw-custom-theme | ETailwind | normalized | passed | 1 |
+| tw-duplicate-classes | ETailwind | normalized | passed | 1 |
+| tw-heading-classes | ETailwind | normalized | passed | 1 |
+| tw-important | ETailwind | normalized | passed | 1 |
+| tw-media-queries | ETailwind | normalized | passed | 3 |
+| tw-mso-preserved | ETailwind | normalized | passed | 1 |
+| tw-pixel-preset | ETailwind | normalized | passed | 1 |
+| tw-preserves-head-children | ETailwind | normalized | passed | 2 |
+| tw-residual-class-sanitization | ETailwind | normalized | passed | 2 |
+| tw-row-classes | ETailwind | normalized | passed | 1 |
+| tw-section-padding | ETailwind | normalized | passed | 1 |

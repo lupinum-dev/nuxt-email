@@ -70,10 +70,16 @@ export default defineNuxtModule<ModuleOptions>({
       getContents: () => generateEmailTypes(templates, registryTypePaths),
     }, { nitro: true })
 
-    addServerImports({
-      name: 'renderEmail',
-      from: registryId,
-    })
+    addServerImports([
+      {
+        name: 'renderEmail',
+        from: registryId,
+      },
+      {
+        name: 'defineEmail',
+        from: resolver.resolve('./runtime/render/define-email'),
+      },
+    ])
     addComponentsDir({
       path: resolver.resolve('./runtime/components'),
       pattern: ['E*.ts', 'E*.js'],

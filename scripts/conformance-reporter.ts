@@ -137,6 +137,15 @@ function buildReports(results: Map<string, TaggedResult>): { json: string, markd
   const caseRows = cases.map((item) => {
     return `| ${item.id} | ${item.nuxtComponent} | ${item.classification} | ${item.status} | ${item.semanticAssertions.length} |`
   })
+  // Divergences and notes that are not tied to a single case classification and therefore
+  // cannot be derived from the oracle manifest. Kept here so the generated report remains the
+  // single home for the divergence catalogue.
+  const behavioralNotes = [
+    '- **EMarkdown container drops `data-id`.** React Email wraps Markdown output in `<div data-id="react-email-markdown">`; EMarkdown omits the marker, the same no-data-id divergence recorded for EColumn above. Each markdown case strips the marker from the oracle before the normalized full-document comparison.',
+    '- **Presentation tables reject fixed attributes.** ESection, EContainer, and ERow throw a `TypeError` when passed `border`, `cellpadding`, `cellspacing`, or `role`. React Email silently discards these overrides; nuxt-email fails loudly to keep the email-client-safe table layout an invariant.',
+    '- **ECodeInline duplicates content in plain text (matches React).** ECodeInline renders its content twice, a visible `<code>` and a hidden copy span, so `renderPlainText` emits the content twice. This is faithful to React Email and is noted only to prevent surprise; it is not a divergence.',
+    '- **ETailwind moves non-inlinable rules to `<head>`.** Media-query and pseudo-class rules that cannot be inlined are collected into a `<style>` element in the document `<head>` (a `<head>` inside `<Tailwind>` is required, otherwise rendering throws), residual class names are sanitized, and `mso-*` style properties survive inlining. Output tracks the pinned Tailwind version compiled by the engine.',
+  ].join('\n')
   const markdown = `# React Email conformance report
 
 Nuxt Email ${packageManifest.version} is compared against React Email ${manifest.oracle.version} and @react-email/render ${manifest.oracle.rendererVersion}. Compatibility is reported per behavior; no global compatibility percentage is claimed.
@@ -174,6 +183,10 @@ ${divergenceRows.join('\n')}
 | React component | Reference | Reason |
 | --- | --- | --- |
 ${unsupportedRows.join('\n')}
+
+## Additional behavioral divergences and notes
+
+${behavioralNotes}
 
 ## Behavior cases
 

@@ -11,18 +11,18 @@
     "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
-  "oracleSha256": "0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a99",
+  "oracleSha256": "9587bcc4b4e91163328ed7e3ab56f9298a91bd6cac03b86b74e3d2fb85c86a49",
   "summary": {
     "failed": 0,
-    "passed": 30,
-    "runnable": 30,
-    "unsupported": 5
+    "passed": 57,
+    "runnable": 57,
+    "unsupported": 0
   },
   "classificationCounts": {
     "normalized": {
       "failed": 0,
-      "passed": 9,
-      "total": 9
+      "passed": 36,
+      "total": 36
     },
     "semantic": {
       "failed": 0,
@@ -42,7 +42,7 @@
     "unsupported": {
       "failed": 0,
       "passed": 0,
-      "total": 5
+      "total": 0
     }
   },
   "componentCounts": {
@@ -66,6 +66,16 @@
       "passed": 1,
       "total": 1
     },
+    "ECodeBlock": {
+      "failed": 0,
+      "passed": 3,
+      "total": 3
+    },
+    "ECodeInline": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
     "CompleteBasicEmail": {
       "failed": 0,
       "passed": 1,
@@ -80,6 +90,11 @@
       "failed": 0,
       "passed": 1,
       "total": 1
+    },
+    "EFont": {
+      "failed": 0,
+      "passed": 3,
+      "total": 3
     },
     "EHead": {
       "failed": 0,
@@ -111,6 +126,11 @@
       "passed": 1,
       "total": 1
     },
+    "EMarkdown": {
+      "failed": 0,
+      "passed": 4,
+      "total": 4
+    },
     "EPreview": {
       "failed": 0,
       "passed": 4,
@@ -130,6 +150,11 @@
       "failed": 0,
       "passed": 1,
       "total": 1
+    },
+    "ETailwind": {
+      "failed": 0,
+      "passed": 16,
+      "total": 16
     }
   },
   "cases": [
@@ -228,6 +253,69 @@
       }
     },
     {
+      "id": "code-block-basic",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ECodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "semanticAssertions": [
+        "theme base pre styles",
+        "per-token span styles",
+        "nbsp+ZWJ+ZWSP spaces",
+        "line breaks"
+      ],
+      "test": {
+        "file": "test/conformance/code-block.test.ts",
+        "name": "ECodeBlock > matches the dracula JavaScript oracle with exact space substitution"
+      }
+    },
+    {
+      "id": "code-block-css-lang",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ECodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "semanticAssertions": [
+        "css grammar tokenization",
+        "alternate theme token styles"
+      ],
+      "test": {
+        "file": "test/conformance/code-block.test.ts",
+        "name": "ECodeBlock > matches the oneDark CSS oracle with css-grammar tokenization"
+      }
+    },
+    {
+      "id": "code-block-line-numbers",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ECodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "semanticAssertions": [
+        "line-number prefix span",
+        "custom font family applied"
+      ],
+      "test": {
+        "file": "test/conformance/code-block.test.ts",
+        "name": "ECodeBlock > matches the line-numbers oracle including the prefix span and font family"
+      }
+    },
+    {
+      "id": "code-inline-basic",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ECodeInline",
+      "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
+      "semanticAssertions": [
+        "Orange.fr style rule",
+        "cino code copy",
+        "cio span copy always present"
+      ],
+      "test": {
+        "file": "test/conformance/code-inline.test.ts",
+        "name": "ECodeInline > matches the oracle three-sibling structure with user class merged before cino/cio"
+      }
+    },
+    {
       "id": "complete-basic-email",
       "classification": "semantic",
       "status": "passed",
@@ -273,6 +361,52 @@
       "test": {
         "file": "test/conformance/phase-two-components.test.ts",
         "name": "table layout primitives > matches EContainer centering, maximum width, and padding placement"
+      }
+    },
+    {
+      "id": "font-defaults",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EFont",
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "semanticAssertions": [
+        "@font-face defaults",
+        "mso-font-alt uses first fallback",
+        "global font-family rule"
+      ],
+      "test": {
+        "file": "test/conformance/font.test.ts",
+        "name": "EFont > matches font-defaults: @font-face defaults, first fallback, global rule"
+      }
+    },
+    {
+      "id": "font-multiple-fallbacks",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EFont",
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "semanticAssertions": [
+        "mso-font-alt uses first array entry",
+        "fallbacks joined in global rule"
+      ],
+      "test": {
+        "file": "test/conformance/font.test.ts",
+        "name": "EFont > matches font-multiple-fallbacks: first array entry for mso, all joined globally"
+      }
+    },
+    {
+      "id": "font-webfont",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EFont",
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "semanticAssertions": [
+        "src url and format",
+        "custom weight and style"
+      ],
+      "test": {
+        "file": "test/conformance/font.test.ts",
+        "name": "EFont > matches font-webfont: src url/format plus custom weight and style"
       }
     },
     {
@@ -370,6 +504,68 @@
       "test": {
         "file": "test/conformance/phase-one-components.test.ts",
         "name": "content primitives > renders ELink defaults, overrides, forwarding, and escaped content"
+      }
+    },
+    {
+      "id": "markdown-custom-styles",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EMarkdown",
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "semanticAssertions": [
+        "custom styles merged over defaults",
+        "container style override"
+      ],
+      "test": {
+        "file": "test/conformance/markdown.test.ts",
+        "name": "EMarkdown > merges custom element styles over defaults and applies container styles"
+      }
+    },
+    {
+      "id": "markdown-document",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EMarkdown",
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "semanticAssertions": [
+        "default per-element inline styles",
+        "container div with data-id",
+        "links target _blank",
+        "tables role presentation"
+      ],
+      "test": {
+        "file": "test/conformance/markdown.test.ts",
+        "name": "EMarkdown > matches the full-document React oracle from a source prop"
+      }
+    },
+    {
+      "id": "markdown-links-escaping",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EMarkdown",
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "semanticAssertions": [
+        "double quotes escaped in attributes",
+        "target _blank on link"
+      ],
+      "test": {
+        "file": "test/conformance/markdown.test.ts",
+        "name": "EMarkdown > escapes double quotes in link/image href and title attributes"
+      }
+    },
+    {
+      "id": "markdown-nested-lists",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EMarkdown",
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "semanticAssertions": [
+        "nested list nesting",
+        "loose list paragraph wrapping"
+      ],
+      "test": {
+        "file": "test/conformance/markdown.test.ts",
+        "name": "EMarkdown > matches nested and loose list nesting from the React oracle"
       }
     },
     {
@@ -603,6 +799,236 @@
         "file": "test/conformance/phase-one-components.test.ts",
         "name": "content primitives > matches EText typography and ordered margin behavior"
       }
+    },
+    {
+      "id": "tw-author-style-precedence",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts",
+      "semanticAssertions": [
+        "author style wins over utility"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-author-style-precedence: author style wins over utility"
+      }
+    },
+    {
+      "id": "tw-basic-inlining",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "utility classes inlined to style",
+        "classes removed from element"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-basic-inlining: utilities inlined to style, classes removed"
+      }
+    },
+    {
+      "id": "tw-button-classes",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "button anchor inlined utilities",
+        "Outlook padding fragments preserved"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-button-classes: anchor inlines utilities and derives Outlook spacers from padding"
+      }
+    },
+    {
+      "id": "tw-column-classes",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "column cell padding and alignment"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-column-classes: column cell padding and alignment"
+      }
+    },
+    {
+      "id": "tw-component-style-override",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "utility overrides component default margins"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-component-style-override: utility flows into the primitive and its margin logic re-runs"
+      }
+    },
+    {
+      "id": "tw-custom-theme",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "custom theme color resolves to hex background"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-custom-theme: custom theme color resolves to rgb background"
+      }
+    },
+    {
+      "id": "tw-duplicate-classes",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "duplicate class collapses to single declaration"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-duplicate-classes: duplicate class collapses to a single declaration"
+      }
+    },
+    {
+      "id": "tw-heading-classes",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "heading font size and weight inlined"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-heading-classes: heading font size and weight inlined"
+      }
+    },
+    {
+      "id": "tw-important",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "important modifier preserved in inline style"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-important: important modifier preserved in inline style"
+      }
+    },
+    {
+      "id": "tw-media-queries",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/utils/css/downlevel-for-email-clients.ts",
+      "semanticAssertions": [
+        "non-inlinable rules injected into head style",
+        "min-width downlevel",
+        "sanitized class names"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-media-queries: non-inlinable rules injected into head style, downleveled and sanitized"
+      }
+    },
+    {
+      "id": "tw-mso-preserved",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts",
+      "semanticAssertions": [
+        "mso-* author style preserved alongside inlined utility"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-mso-preserved: mso-* author style survives alongside inlined utility"
+      }
+    },
+    {
+      "id": "tw-pixel-preset",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "pixel-based spacing yields px padding instead of rem"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-pixel-preset: pixel-based spacing yields px padding instead of rem"
+      }
+    },
+    {
+      "id": "tw-preserves-head-children",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "existing head title and style preserved",
+        "injected style appended"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-preserves-head-children: existing head children kept, injected style placed before them"
+      }
+    },
+    {
+      "id": "tw-residual-class-sanitization",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/utils/compatibility/sanitize-class-name.ts",
+      "semanticAssertions": [
+        "pseudo and fraction classes sanitized",
+        "residual classes on element"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-residual-class-sanitization: pseudo and fraction classes sanitized on element and in head css"
+      }
+    },
+    {
+      "id": "tw-row-classes",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "row table inlined width and background"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-row-classes: row table inlines width and background"
+      }
+    },
+    {
+      "id": "tw-section-padding",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ETailwind",
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "semanticAssertions": [
+        "section wrapper cell padding from utility"
+      ],
+      "test": {
+        "file": "test/conformance/tailwind.test.ts",
+        "name": "eTailwind conformance > tw-section-padding: utility padding is split onto the Section cell"
+      }
     }
   ],
   "intentionalDivergences": [
@@ -637,36 +1063,5 @@
       "status": "passed"
     }
   ],
-  "unsupported": [
-    {
-      "id": "code-block",
-      "reactComponent": "CodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block",
-      "reason": "Syntax-highlighted code output is outside the focused v0.1 primitive set."
-    },
-    {
-      "id": "code-inline",
-      "reactComponent": "CodeInline",
-      "reactReference": "packages/react-email/src/components/code-inline",
-      "reason": "Inline code styling is outside the focused v0.1 primitive set."
-    },
-    {
-      "id": "font",
-      "reactComponent": "Font",
-      "reactReference": "packages/react-email/src/components/font",
-      "reason": "Font loading behavior requires separate email-client evidence after v0.1."
-    },
-    {
-      "id": "markdown",
-      "reactComponent": "Markdown",
-      "reactReference": "packages/react-email/src/components/markdown",
-      "reason": "Markdown parsing is not required for ordinary Vue SFC authoring in v0.1."
-    },
-    {
-      "id": "tailwind",
-      "reactComponent": "Tailwind",
-      "reactReference": "packages/react-email/src/components/tailwind",
-      "reason": "Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met."
-    }
-  ]
+  "unsupported": []
 }
