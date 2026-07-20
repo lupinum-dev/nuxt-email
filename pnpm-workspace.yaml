@@ -1,5 +1,6 @@
 packages:
   - playground
+  - docs-site
 
 overrides:
   tailwindcss: 4.1.18
@@ -7,4 +8,6 @@ overrides:
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
+  sharp: true
   unrs-resolver: true
+  vue-demi: true
