@@ -1,20 +1,5 @@
 <script setup lang="ts">
-import {
-  EBody,
-  EButton,
-  EColumn,
-  EContainer,
-  EHead,
-  EHeading,
-  EHr,
-  EHtml,
-  EImg,
-  ELink,
-  EPreview,
-  ERow,
-  ESection,
-  EText,
-} from '../../../../../src/runtime/core'
+defineOptions({ name: 'TransactionalEmail' })
 
 defineProps<{
   activationUrl: string
@@ -24,7 +9,10 @@ defineProps<{
 </script>
 
 <template>
-  <EHtml lang="en">
+  <EHtml
+    lang="en"
+    data-registry-proof="NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C"
+  >
     <EHead>
       <title>Activate your Nuxt Email account</title>
     </EHead>

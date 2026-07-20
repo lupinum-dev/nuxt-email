@@ -1,12 +1,9 @@
 # Renderer contract
 
-`renderEmailComponent(component, props)` is the single component renderer used by the Nuxt registry, server API, and development preview. During core development it is available from the server-only `nuxt-email/core` entry point.
+`renderEmail(name, props)` is the single public rendering path. Nuxt generates its template names and prop types from `app/emails/`, then resolves the selected Vue SFC through the same server-only registry used by development preview.
 
 ```ts
-import { renderEmailComponent } from 'nuxt-email/core'
-import WelcomeEmail from './WelcomeEmail.vue'
-
-const result = await renderEmailComponent(WelcomeEmail, {
+const result = await renderEmail('welcome', {
   firstName: 'Ada',
 })
 ```
@@ -28,7 +25,7 @@ interface RenderedEmail {
 - Runtime props declared with Vue's ordinary `defineProps()` or component `props` option are checked before SSR. Missing required props and unknown props fail deterministically.
 - Interpolation and attribute values use Vue SSR escaping. The v0.1 primitive set has no raw-HTML component and rejects content-replacement and event-handler attributes.
 
-Failures are wrapped in `EmailRenderError`. Its `componentName` identifies the template and its `cause` preserves the original error and stack.
+The API is auto-imported only in Nitro server files. Rendering failures are wrapped in `EmailRenderError`. Its `componentName` is the registry template name and its `cause` preserves the original error and stack. An unknown runtime name throws `UnknownEmailTemplateError` with the requested name and the sorted known names.
 
 ## Plain text
 

@@ -1,10 +1,9 @@
 import { defineEventHandler } from 'h3'
-import TransactionalEmail from '../../app/emails/TransactionalEmail.vue'
-import { renderEmailComponent } from '../../../../../src/runtime/core'
 
 export default defineEventHandler(async () => {
   try {
-    await renderEmailComponent(TransactionalEmail, {
+    // @ts-expect-error fixture proves required props are enforced at compile time
+    await renderEmail('transactional', {
       activationUrl: 'https://example.com/activate',
       logoUrl: 'https://example.com/logo.png',
     })

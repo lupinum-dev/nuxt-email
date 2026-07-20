@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import { createCommentVNode, defineComponent, Fragment, h } from 'vue'
+import { createCommentVNode, defineComponent, Fragment, h, resolveComponent } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { EmailRenderError } from '../../src/runtime/render/errors'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
@@ -51,6 +51,24 @@ describe('component rendering', () => {
     expect(first).toEqual(second)
     expect(Object.keys(first)).toEqual(['html', 'text'])
     expect(first.text).toBe('Hello')
+  })
+
+  it('resolves the public E-components as globals for compiled Nuxt email SFCs', async () => {
+    const GlobalComponentEmail = defineComponent({
+      name: 'GlobalComponentEmail',
+      setup: () => () => h(resolveComponent('EHtml'), null, {
+        default: () => h(resolveComponent('EBody'), null, {
+          default: () => h(resolveComponent('EText'), null, {
+            default: () => 'Global primitives work',
+          }),
+        }),
+      }),
+    })
+
+    const result = await renderEmailComponent(GlobalComponentEmail)
+
+    expect(result.html).toContain('<html dir="ltr" lang="en">')
+    expect(result.text).toBe('Global primitives work')
   })
 
   it.each([

@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
+import * as emailComponents from '../components'
 import { assembleEmailDocument } from './document'
 
 type ComponentWithProps = Component & {
@@ -42,6 +43,9 @@ export async function renderComponentToHtml(
 ): Promise<string> {
   assertKnownProps(component, props)
   const app = createSSRApp(component, props)
+  for (const [name, emailComponent] of Object.entries(emailComponents)) {
+    app.component(name, emailComponent)
+  }
   const renderedHtml = (await renderToString(app))
     .replaceAll('<!--[-->', '')
     .replaceAll('<!--]-->', '')

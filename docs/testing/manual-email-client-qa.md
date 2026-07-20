@@ -1,6 +1,6 @@
 # Manual email-client QA
 
-This checklist is the external release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/TransactionalEmail.vue`. Automated conformance tests must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email v0.1; the tester sends the rendered `html` and `text` with an account they control.
+This checklist is the external release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/transactional.vue`. Automated conformance tests must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email v0.1; the tester sends the rendered `html` and `text` with an account they control.
 
 ## Fixed fixture coverage
 
@@ -10,7 +10,7 @@ The fixture contains preview text, an explicit document title, a remote logo URL
 
 1. Check out the release-candidate commit and record its full commit hash.
 2. Run the repository verification commands and save the results with the release artifact.
-3. Render `TransactionalEmail.vue` with the committed fixture props through `renderEmailComponent()`.
+3. Render `transactional.vue` with the committed fixture props through `renderEmail('transactional', props)`.
 4. Replace only the fixture `logoUrl` with an HTTPS image URL controlled by the tester if image loading must be verified.
 5. Send the exact rendered HTML and plain text to test mailboxes through a provider SDK chosen by the tester.
 6. Inspect the same message in Gmail web, Apple Mail on macOS or iOS, and Outlook for Windows.

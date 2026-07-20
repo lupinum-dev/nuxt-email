@@ -8,10 +8,6 @@
     ".": {
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
-    },
-    "./core": {
-      "types": "./dist/runtime/core.d.ts",
-      "import": "./dist/runtime/core.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -19,9 +15,6 @@
     "*": {
       ".": [
         "./dist/types.d.mts"
-      ],
-      "core": [
-        "./dist/runtime/core.d.ts"
       ]
     }
   },
@@ -42,7 +35,7 @@
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
+    "test:types": "nuxt prepare test/fixtures/basic && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
     "vue": "^3.5.0"
