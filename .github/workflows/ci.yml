@@ -16,14 +16,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: Node ${{ matrix.node-version }}
-    runs-on: ubuntu-latest
+  test:
+    name: ${{ matrix.os }} · Node ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        # Node versions mirror the package `engines` contract
+        # (`^22.12.0 || ^24.11.0`): the 22.12 floor and the current 24 line.
+        # Node 20 is intentionally out of the v0.1 support contract.
         node-version:
           - 22.12.0
           - 24.x
@@ -53,10 +60,15 @@ jobs:
       - name: Unit, component, module, conformance, and production-bundle tests
         run: pnpm test
 
+      # The conformance-report, React Email oracle, and full package/fresh-install
+      # verifications are runtime-heavy and platform-independent. Run them once on the
+      # primary Linux runner at the Node floor rather than across every matrix cell.
       - name: Conformance report reproducibility
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
         run: pnpm conformance:check
 
       - name: Check out the pinned React Email oracle source
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
         uses: actions/checkout@v6
         with:
           repository: resend/react-email
@@ -65,9 +77,39 @@ jobs:
           path: .oracle/react-email
 
       - name: React Email oracle reproducibility
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
         run: pnpm oracle:check
         env:
           NUXT_EMAIL_REACT_EMAIL_CHECKOUT: ${{ github.workspace }}/.oracle/react-email
 
       - name: Package build, contents, and fresh-install smoke test
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
         run: pnpm release:verify
+
+  # The documentation site is a separate workspace member with a heavy prerender
+  # (Sharp-backed OG images). It is not part of the release gate, so it runs once,
+  # ubuntu-only, and is allowed to fail without blocking CI.
+  docs-site:
+    name: Docs site build (optional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare and build the docs site
+        working-directory: docs-site
+        run: |
+          pnpm exec nuxt prepare
+          pnpm exec nuxt build
