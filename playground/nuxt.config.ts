@@ -1,5 +1,4 @@
 export default defineNuxtConfig({
   modules: ['nuxt-email'],
-  devtools: { enabled: true },
-  compatibilityDate: 'latest',
+  compatibilityDate: '2025-07-15',
 })
