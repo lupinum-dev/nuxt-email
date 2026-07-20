@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { RenderedEmail } from './types'
+import { createEmailRenderContext } from './define-email'
 import { assertCompleteEmailDocument } from './document'
 import { EmailRenderError } from './errors'
 import { renderPlainText } from './plain-text'
@@ -23,11 +24,14 @@ export async function renderEmailComponent(
   props: Record<string, unknown> = {},
 ): Promise<RenderedEmail> {
   try {
-    const html = await renderComponentToHtml(component, props)
+    const context = createEmailRenderContext()
+    const html = await renderComponentToHtml(component, props, context)
     assertCompleteEmailDocument(html)
+    const subject = context.subject?.(props)
     return {
       html,
       text: renderPlainText(html),
+      ...(subject === undefined ? {} : { subject }),
     }
   }
   catch (error) {

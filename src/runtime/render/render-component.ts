@@ -1,7 +1,9 @@
 import type { Component } from 'vue'
+import type { EmailRenderContext } from './define-email'
 import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as emailComponents from '../components'
+import { createEmailRenderContext } from './define-email'
 import { assembleEmailDocument } from './document'
 
 type ComponentWithProps = Component & {
@@ -40,13 +42,14 @@ function assertKnownProps(component: Component, props: Record<string, unknown>):
 export async function renderComponentToHtml(
   component: Component,
   props: Record<string, unknown> = {},
+  context: EmailRenderContext = createEmailRenderContext(),
 ): Promise<string> {
   assertKnownProps(component, props)
   const app = createSSRApp(component, props)
   for (const [name, emailComponent] of Object.entries(emailComponents)) {
     app.component(name, emailComponent)
   }
-  const renderedHtml = (await renderToString(app))
+  const renderedHtml = (await renderToString(app, context))
     .replaceAll('<!--[-->', '')
     .replaceAll('<!--]-->', '')
     .replaceAll('<!---->', '')
