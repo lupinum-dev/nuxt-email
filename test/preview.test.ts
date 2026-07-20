@@ -133,11 +133,13 @@ describe('development email preview', async () => {
         return result.html
       }, {
         interval: 100,
-        timeout: 10_000,
+        timeout: 20_000,
       }).toContain('PREVIEW_VERSION_TWO')
     }
     finally {
       await writeFile(welcomeTemplate, originalSource)
     }
-  })
+    // Rebuild latency under a fully parallel suite exceeds the 5s default budget,
+    // and the poll window must fit inside the test's own timeout.
+  }, 30_000)
 })
