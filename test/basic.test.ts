@@ -17,4 +17,16 @@ describe('ssr', async () => {
 
     expect(html).toBe('<main data-email-proof> Hello Ada</main>')
   })
+
+  it('renders the fixed transactional SFC through the canonical renderer', async () => {
+    const result = await $fetch<{ html: string, text: string }>('/api/render-transactional')
+
+    expect(result.html).toContain('<title>Activate your Nuxt Email account</title>')
+    expect(result.html).toContain('Welcome, Ada')
+    expect(result.html).toContain('<!--[if mso]>')
+    expect(result.html).toContain('text-align:center')
+    expect(result.html).toContain('href="https://example.com/activate?token=fixture&amp;source=email"')
+    expect(result.text).toContain('Activate account https://example.com/activate?token=fixture&source=email')
+    expect(result.text).not.toContain('Your account is ready — activate it now.')
+  })
 })
