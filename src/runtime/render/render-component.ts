@@ -4,7 +4,7 @@ import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as emailComponents from '../components'
 import { applyTailwindPostRender } from '../tailwind/post-render'
-import { createEmailRenderContext, runWithEmailRenderContext } from './define-email'
+import { createEmailRenderContext, defineEmail, runWithEmailRenderContext } from './define-email'
 import { assembleEmailDocument } from './document'
 
 type ComponentWithProps = Component & {
@@ -40,6 +40,22 @@ function assertKnownProps(component: Component, props: Record<string, unknown>):
   }
 }
 
+/**
+ * Templates authored as SFCs call `defineEmail(...)` as a bare identifier: it is
+ * a Nuxt server auto-import, so Nuxt's build injects the import and the compiled
+ * `setup()` never references a global. Outside Nuxt — a template rendered through
+ * the `nuxt-email/testing` subpath in a plain Vitest run — no auto-import exists,
+ * so the same compiled `setup()` resolves `defineEmail` off globalThis. Provide it
+ * there, mirroring the E* components registered on the app above. `defineEmail`
+ * reads the active render context from AsyncLocalStorage, so a single shared global
+ * reference stays correct across concurrent renders. `??=` never clobbers a binding
+ * already present (e.g. Nuxt's own).
+ */
+function provideDefineEmailGlobal(): void {
+  const globalScope = globalThis as typeof globalThis & { defineEmail?: typeof defineEmail }
+  globalScope.defineEmail ??= defineEmail
+}
+
 export async function renderComponentToHtml(
   component: Component,
   props: Record<string, unknown> = {},
@@ -50,6 +66,7 @@ export async function renderComponentToHtml(
   for (const [name, emailComponent] of Object.entries(emailComponents)) {
     app.component(name, emailComponent)
   }
+  provideDefineEmailGlobal()
 
   // Vue SSR swallows errors thrown from an async `<script setup>` (after any
   // await): `renderToString` resolves to `<!---->` instead of rejecting, which

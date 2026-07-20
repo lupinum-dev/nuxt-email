@@ -210,6 +210,11 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant('import' in rootExport && rootExport.import === './dist/module.mjs', 'Packed import export must point to ./dist/module.mjs')
   invariant('types' in rootExport && rootExport.types === './dist/types.d.mts', 'Packed type export must point to ./dist/types.d.mts')
 
+  const testingExport = packed.exports?.['./testing']
+  invariant(typeof testingExport === 'object' && testingExport !== null, 'Packed package must export its ./testing subpath')
+  invariant('import' in testingExport && testingExport.import === './dist/runtime/testing/index.js', 'Packed ./testing import export must point to ./dist/runtime/testing/index.js')
+  invariant('types' in testingExport && testingExport.types === './dist/runtime/testing/index.d.ts', 'Packed ./testing type export must point to ./dist/runtime/testing/index.d.ts')
+
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
   invariant(packed.peerDependencies?.nuxt === releaseContract.nuxt, `Packed Nuxt peer range must be ${releaseContract.nuxt}`)
   invariant(packed.peerDependencies?.vue === releaseContract.vue, `Packed Vue peer range must be ${releaseContract.vue}`)
@@ -460,6 +465,8 @@ async function verifyRelease(): Promise<void> {
       'dist/module.mjs',
       'dist/types.d.mts',
       'dist/runtime/render/render-component.js',
+      'dist/runtime/testing/index.js',
+      'dist/runtime/testing/index.d.ts',
       'dist/runtime/server/preview-page-script.js',
       'dist/runtime/server/preview-page.css.js',
       'dist/runtime/server/preview-page.get.js',

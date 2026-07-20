@@ -53,14 +53,22 @@ describe('nuxt-email/testing: renderEmailComponent', () => {
     expect(result.text).toBe('Hi Ada')
   })
 
-  it('surfaces a subject declared via defineEmail on the result', async () => {
-    // defineEmail is autoimported at runtime; import it directly from source for the test.
-    const { defineEmail } = await import('../../src/runtime/render/define-email')
+  it('surfaces a subject declared via a bare (auto-imported) defineEmail call', async () => {
+    // `defineEmail` is a Nuxt auto-import, so the Vue SFC compiler emits it as a
+    // bare identifier and the compiled `setup()` resolves it off globalThis when
+    // rendered outside Nuxt (the documented plain-Vitest workflow). `new Function`
+    // gives the setup the same free-global resolution without a lexical binding —
+    // faithful to a real compiled template, so it fails if the render pipeline does
+    // not provide `defineEmail` globally.
+    const callDefineEmail = new Function(
+      'options',
+      'return defineEmail(options)',
+    ) as (options: { subject: (props: { name: string }) => string }) => void
     const Email = defineComponent({
       name: 'SubjectEmail',
       props: { name: { type: String, required: true } },
       setup(props) {
-        defineEmail<{ name: string }>({ subject: p => `Welcome, ${p.name}` })
+        callDefineEmail({ subject: p => `Welcome, ${p.name}` })
         return () => h('html', [h('body', [h('p', `Hi ${props.name}`)])])
       },
     })
