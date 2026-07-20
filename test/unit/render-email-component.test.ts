@@ -130,6 +130,25 @@ describe('render errors', () => {
     })
   })
 
+  it('surfaces the real cause thrown from an async setup, not a misleading document error', async () => {
+    // Vue SSR resolves renderToString to '<!---->' when an async <script setup> throws after an
+    // await, which would otherwise mask the true failure behind an incomplete-<html>-root error.
+    const cause = new Error('async data fetch failed')
+    const AsyncBrokenEmail = defineComponent({
+      name: 'AsyncBrokenEmail',
+      async setup() {
+        await new Promise(resolve => setTimeout(resolve, 1))
+        throw cause
+      },
+    })
+
+    const error = await renderEmailComponent(AsyncBrokenEmail).catch(value => value)
+
+    expect(error).toBeInstanceOf(EmailRenderError)
+    expect(error).toMatchObject({ componentName: 'AsyncBrokenEmail', cause })
+    expect(error.cause.message).not.toContain('exactly one <html> root')
+  })
+
   it('uses the compiled SFC name when a script-setup component fails', async () => {
     const cause = new Error('SFC failed')
     const ScriptSetupEmail = defineComponent({

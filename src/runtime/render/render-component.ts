@@ -3,7 +3,7 @@ import type { EmailRenderContext } from './define-email'
 import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as emailComponents from '../components'
-import { createEmailRenderContext } from './define-email'
+import { createEmailRenderContext, runWithEmailRenderContext } from './define-email'
 import { assembleEmailDocument } from './document'
 
 type ComponentWithProps = Component & {
@@ -49,10 +49,28 @@ export async function renderComponentToHtml(
   for (const [name, emailComponent] of Object.entries(emailComponents)) {
     app.component(name, emailComponent)
   }
-  const renderedHtml = (await renderToString(app, context))
-    .replaceAll('<!--[-->', '')
-    .replaceAll('<!--]-->', '')
-    .replaceAll('<!---->', '')
 
-  return assembleEmailDocument(renderedHtml)
+  // Vue SSR swallows errors thrown from an async `<script setup>` (after any
+  // await): `renderToString` resolves to `<!---->` instead of rejecting, which
+  // would otherwise surface downstream as a misleading incomplete-document error
+  // and mask the real cause (e.g. a failed data fetch). Capturing the first error
+  // through the app error handler and rethrowing it preserves the true cause.
+  // Installing a handler also makes synchronous setup/render throws resolve with a
+  // captured error rather than reject, so this one path covers both cases.
+  let renderFailure: { cause: unknown } | undefined
+  app.config.errorHandler = (error) => {
+    renderFailure ??= { cause: error }
+  }
+
+  const renderedHtml = await runWithEmailRenderContext(context, () => renderToString(app, context))
+  if (renderFailure !== undefined) {
+    throw renderFailure.cause
+  }
+
+  return assembleEmailDocument(
+    renderedHtml
+      .replaceAll('<!--[-->', '')
+      .replaceAll('<!--]-->', '')
+      .replaceAll('<!---->', ''),
+  )
 }

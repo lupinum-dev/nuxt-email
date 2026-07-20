@@ -54,6 +54,26 @@ describe('defineEmail subject registration', () => {
     expect(second.subject).toBe('Second: Grace')
   })
 
+  it('resolves the subject when defineEmail runs after a top-level await in async setup', async () => {
+    // Realistic pattern: `const user = await fetchUser(); defineEmail({ subject: ... })`.
+    // useSSRContext() loses the component instance across the await, so the render context is
+    // now carried through AsyncLocalStorage instead.
+    const AsyncSubjectEmail = defineComponent({
+      name: 'AsyncSubjectEmail',
+      props: { firstName: { type: String, required: true } },
+      async setup(props: SubjectProps) {
+        await new Promise(resolve => setTimeout(resolve, 1))
+        defineEmail<SubjectProps>({ subject: p => `Hi ${p.firstName}` })
+        return () => h('html', [h('body', [h('p', `Hi ${props.firstName}`)])])
+      },
+    })
+
+    const result = await renderEmailComponent(AsyncSubjectEmail, { firstName: 'Ada' })
+
+    expect(result.subject).toBe('Hi Ada')
+    expect(result.html).toContain('Hi Ada')
+  })
+
   it('lets a later defineEmail call win within a single render', async () => {
     const Reassigned = defineComponent({
       name: 'ReassignedEmail',

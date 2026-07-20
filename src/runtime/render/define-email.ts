@@ -1,4 +1,4 @@
-import { useSSRContext } from 'vue'
+import { AsyncLocalStorage } from 'node:async_hooks'
 
 /**
  * Options declared by an email template via {@link defineEmail}.
@@ -11,6 +11,17 @@ export interface DefineEmailOptions<TProps> {
 }
 
 const EMAIL_RENDER_BRAND = Symbol('nuxt-email:render-context')
+
+/**
+ * Per-render context propagated across `await` boundaries. `useSSRContext()` is
+ * built on Vue's `inject()`, which loses the active component instance after the
+ * first `await` in an async `<script setup>`, so `defineEmail()` called after a
+ * top-level `await` (e.g. `const user = await fetchUser()` before declaring the
+ * subject) would fail. `AsyncLocalStorage` follows the async execution instead, so
+ * `defineEmail()` reaches the right context whether it runs before or after an
+ * await, and concurrent renders each see their own store.
+ */
+const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
 
 /**
  * Per-render registry provided to the SSR app. A fresh instance is created for
@@ -33,6 +44,15 @@ export function createEmailRenderContext(): EmailRenderContext {
   return { [EMAIL_RENDER_BRAND]: true }
 }
 
+/**
+ * Run `fn` (the render) with `context` as the active email render context so any
+ * `defineEmail()` call inside the rendered template — sync or after an await —
+ * resolves to it.
+ */
+export function runWithEmailRenderContext<T>(context: EmailRenderContext, fn: () => T): T {
+  return renderContextStorage.run(context, fn)
+}
+
 function isEmailRenderContext(value: unknown): value is EmailRenderContext {
   return typeof value === 'object'
     && value !== null
@@ -48,7 +68,7 @@ function isEmailRenderContext(value: unknown): value is EmailRenderContext {
  * {@link DefineEmailOutsideRenderError}.
  */
 export function defineEmail<TProps = Record<string, unknown>>(options: DefineEmailOptions<TProps>): void {
-  const context = useSSRContext<Partial<EmailRenderContext>>()
+  const context = renderContextStorage.getStore()
   if (!isEmailRenderContext(context)) {
     throw new DefineEmailOutsideRenderError()
   }
