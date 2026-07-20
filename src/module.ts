@@ -2,6 +2,7 @@ import { isAbsolute, relative, resolve } from 'node:path'
 import {
   addComponentsDir,
   addServerImports,
+  addServerHandler,
   addServerTemplate,
   addTypeTemplate,
   createResolver,
@@ -10,6 +11,7 @@ import {
   useNitro,
 } from '@nuxt/kit'
 import vue from '@vitejs/plugin-vue'
+import { attachPreviewFixtures } from './preview-fixtures'
 import { discoverEmailTemplates } from './template-discovery'
 import { generateEmailRegistry, generateEmailTypes } from './template-generation'
 
@@ -36,7 +38,13 @@ export default defineNuxtModule({
   async setup(_options, nuxt) {
     const resolver = createResolver(import.meta.url)
     const emailDirectory = resolve(nuxt.options.srcDir, 'emails')
-    let templates = await discoverEmailTemplates(emailDirectory)
+    const loadTemplates = async () => {
+      const discoveredTemplates = await discoverEmailTemplates(emailDirectory)
+      return nuxt.options.dev
+        ? attachPreviewFixtures(discoveredTemplates)
+        : discoveredTemplates
+    }
+    let templates = await loadTemplates()
     const registryRuntimePaths = {
       emailRenderError: resolver.resolve('./runtime/render/errors'),
       renderEmailComponent: resolver.resolve('./runtime/render/render-email-component'),
@@ -67,6 +75,27 @@ export default defineNuxtModule({
       pathPrefix: false,
     })
 
+    if (nuxt.options.dev) {
+      addServerHandler({
+        route: '/__email',
+        method: 'get',
+        env: 'dev',
+        handler: resolver.resolve('./runtime/server/preview-page.get'),
+      })
+      addServerHandler({
+        route: '/__email/api/templates',
+        method: 'get',
+        env: 'dev',
+        handler: resolver.resolve('./runtime/server/preview-templates.get'),
+      })
+      addServerHandler({
+        route: '/__email/render',
+        method: 'get',
+        env: 'dev',
+        handler: resolver.resolve('./runtime/server/preview-render.get'),
+      })
+    }
+
     let reloadRegistry = async (): Promise<void> => {}
     nuxt.hook('ready', () => {
       const nitro = useNitro()
@@ -86,7 +115,7 @@ export default defineNuxtModule({
         return
       }
 
-      const nextTemplates = await discoverEmailTemplates(emailDirectory)
+      const nextTemplates = await loadTemplates()
       templates = nextTemplates
       await updateTemplates({
         filter: template => template.filename === typeTemplate.filename,

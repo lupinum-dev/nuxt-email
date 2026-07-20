@@ -8,6 +8,7 @@ import {
 export interface DiscoveredEmailTemplate {
   name: string
   sourcePath: string
+  fixturePath?: string
 }
 
 function compareCodePoints(left: string, right: string): number {

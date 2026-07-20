@@ -24,6 +24,7 @@ interface BuildResult {
 
 const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
+const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
 const executeFile = promisify(execFile)
 
 async function collectFiles(directory: string): Promise<string[]> {
@@ -189,5 +190,67 @@ describe('production server boundary', () => {
 
   it('fails clearly when application code imports renderEmail', { timeout: 120_000 }, async () => {
     await expect(buildFixture(clientImportFixture)).rejects.toThrow(/failed to find "renderEmail" imported from "#imports"/i)
+  })
+
+  it('omits preview routes and fixtures while keeping production email rendering', { timeout: 120_000 }, async () => {
+    const result = await buildFixture(previewFixture)
+
+    try {
+      const publicFiles = (await collectFiles(join(result.outputDir, 'public')))
+        .filter(path => /\.(?:css|html|js|json|map|mjs)$/.test(path))
+      const serverFiles = (await collectFiles(join(result.outputDir, 'server')))
+        .filter(path => /\.(?:js|json|map|mjs)$/.test(path))
+      const outputPaths = [...publicFiles, ...serverFiles]
+        .map(path => relative(result.outputDir, path).replaceAll('\\', '/'))
+      const publicOutput = (
+        await Promise.all(publicFiles.map(path => readFile(path, 'utf8')))
+      ).join('\n')
+      const serverOutput = (
+        await Promise.all(serverFiles.map(path => readFile(path, 'utf8')))
+      ).join('\n')
+      const productionOutput = `${publicOutput}\n${serverOutput}`
+
+      expect(outputPaths.filter(path => path.includes('/__email'))).toEqual([])
+      expect(outputPaths.filter(path => /preview-(?:page|render|templates)\.get/.test(path))).toEqual([])
+      expect(outputPaths.filter(path => path.includes('.fixtures.'))).toEqual([])
+
+      expect(serverOutput).not.toContain('route: \'/__email\'')
+      expect(serverOutput).not.toContain('route: \'/__email/api/templates\'')
+      expect(serverOutput).not.toContain('route: \'/__email/render\'')
+      expect(productionOutput).not.toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
+      expect(productionOutput).not.toContain('NUXT_EMAIL_FIXTURE_ONLY_93D1')
+      expect(productionOutput).not.toContain('preview-page.get')
+      expect(productionOutput).not.toContain('preview-render.get')
+      expect(productionOutput).not.toContain('preview-templates.get')
+      expect(productionOutput).not.toContain('welcome.fixtures')
+      expect(productionOutput).not.toContain('broken.fixtures')
+
+      const directRenderRoutes = serverFiles.filter(path => (
+        path.replaceAll('\\', '/').endsWith('/chunks/routes/api/direct-render.get.mjs')
+      ))
+      expect(directRenderRoutes).toHaveLength(1)
+      const [directRenderRoute] = directRenderRoutes
+      if (!directRenderRoute) {
+        throw new Error('Production build did not emit the direct render route')
+      }
+
+      const { stdout } = await executeFile(process.execPath, [
+        '--input-type=module',
+        '--eval',
+        `const route = await import(${JSON.stringify(pathToFileURL(directRenderRoute).href)}); console.log(JSON.stringify(await route.default()))`,
+      ], {
+        env: { ...process.env, NODE_ENV: 'production' },
+      })
+      const rendered = JSON.parse(stdout) as { html: string, text: string }
+
+      expect(rendered.html).toContain('Welcome, Ada')
+      expect(rendered.html).toContain('PREVIEW_VERSION_ONE')
+      expect(rendered.html).toContain('Welcome from the preview fixture.')
+      expect(rendered.text).toContain('WELCOME, ADA')
+      expect(rendered.text).toContain('PREVIEW_VERSION_ONE')
+    }
+    finally {
+      await rm(result.temporaryDirectory, { recursive: true, force: true })
+    }
   })
 })

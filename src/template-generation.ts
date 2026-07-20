@@ -19,7 +19,13 @@ export function generateEmailRegistry(
   runtimePaths: RegistryRuntimePaths,
 ): string {
   const entries = templates.map((template) => {
-    return `  [${JSON.stringify(template.name)}]: () => import(${importPath(template.sourcePath)}),`
+    const fixture = template.fixturePath
+      ? `\n    fixture: () => import(${importPath(template.fixturePath)}),`
+      : ''
+
+    return `  [${JSON.stringify(template.name)}]: {
+    component: () => import(${importPath(template.sourcePath)}),${fixture}
+  },`
   })
 
   return `import { EmailRenderError } from ${importPath(runtimePaths.emailRenderError)}
@@ -39,7 +45,7 @@ export async function renderEmail(name, props) {
   }
 
   try {
-    const templateModule = await loader()
+    const templateModule = await loader.component()
     return await renderEmailComponent(templateModule.default, props)
   }
   catch (error) {
@@ -54,7 +60,13 @@ export function generateEmailTypes(
   typePaths: RegistryTypePaths,
 ): string {
   const entries = templates.map((template) => {
-    return `  ${JSON.stringify(template.name)}: () => Promise<typeof import(${importPath(template.sourcePath)})>`
+    const fixture = template.fixturePath
+      ? `\n    fixture: () => Promise<typeof import(${importPath(template.fixturePath)})>`
+      : ''
+
+    return `  ${JSON.stringify(template.name)}: {
+    component: () => Promise<typeof import(${importPath(template.sourcePath)})>${fixture}
+  }`
   })
 
   return `export const emailTemplates: Readonly<{
@@ -72,7 +84,7 @@ type _EmailProps<Component extends _EmailComponent> = keyof _DeclaredEmailProps<
   : _DeclaredEmailProps<Component>
 
 export type EmailTemplateProps = {
-  [Name in EmailTemplateName]: _EmailProps<Awaited<ReturnType<(typeof emailTemplates)[Name]>>['default']>
+  [Name in EmailTemplateName]: _EmailProps<Awaited<ReturnType<(typeof emailTemplates)[Name]['component']>>['default']>
 }
 
 export function renderEmail<Name extends EmailTemplateName>(
