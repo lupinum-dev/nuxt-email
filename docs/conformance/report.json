@@ -1,0 +1,672 @@
+{
+  "schemaVersion": 1,
+  "nuxtEmailVersion": "0.1.0",
+  "oracle": {
+    "package": "react-email",
+    "version": "6.9.0",
+    "rendererPackage": "@react-email/render",
+    "rendererVersion": "2.1.0",
+    "reactVersion": "19.2.7",
+    "reactDomVersion": "19.2.7",
+    "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
+    "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
+  },
+  "oracleSha256": "0a7b89e1d7e3df885db527ea68f4dbbbfdaa6d0bce3d200c80f416fa3e0a2a99",
+  "summary": {
+    "failed": 0,
+    "passed": 30,
+    "runnable": 30,
+    "unsupported": 5
+  },
+  "classificationCounts": {
+    "normalized": {
+      "failed": 0,
+      "passed": 9,
+      "total": 9
+    },
+    "semantic": {
+      "failed": 0,
+      "passed": 5,
+      "total": 5
+    },
+    "exact": {
+      "failed": 0,
+      "passed": 10,
+      "total": 10
+    },
+    "intentional-divergence": {
+      "failed": 0,
+      "passed": 6,
+      "total": 6
+    },
+    "unsupported": {
+      "failed": 0,
+      "passed": 0,
+      "total": 5
+    }
+  },
+  "componentCounts": {
+    "BasicDocument": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EBody": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EButton": {
+      "failed": 0,
+      "passed": 3,
+      "total": 3
+    },
+    "renderPlainText with EButton": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "CompleteBasicEmail": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "renderPlainText": {
+      "failed": 0,
+      "passed": 9,
+      "total": 9
+    },
+    "EContainer": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EHead": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EHeading": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EHr": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EHtml": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EImg": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "ELink": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EPreview": {
+      "failed": 0,
+      "passed": 4,
+      "total": 4
+    },
+    "ERow and EColumn": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "ESection": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    },
+    "EText": {
+      "failed": 0,
+      "passed": 1,
+      "total": 1
+    }
+  },
+  "cases": [
+    {
+      "id": "basic-document",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "BasicDocument",
+      "reactReference": "packages/react-email/src/components and packages/render/src/node/render.tsx",
+      "semanticAssertions": [
+        "document defaults and head metadata",
+        "body presentation table",
+        "escaped text and URL attributes"
+      ],
+      "test": {
+        "file": "test/conformance/phase-zero.test.ts",
+        "name": "phase zero rendering proof > matches the pinned React Email document after narrow normalization"
+      }
+    },
+    {
+      "id": "body-reset",
+      "classification": "semantic",
+      "status": "passed",
+      "nuxtComponent": "EBody",
+      "reactReference": "packages/react-email/src/components/body/body.spec.tsx",
+      "semanticAssertions": [
+        "presentation table",
+        "body margin and padding reset",
+        "full style copied to inner cell"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "document primitives > renders EBody with the presentation table and exact style placement"
+      }
+    },
+    {
+      "id": "button-asymmetric",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EButton",
+      "reactReference": "packages/react-email/src/components/button/button.tsx",
+      "semanticAssertions": [
+        "asymmetric Outlook spacing",
+        "user style precedence",
+        "attributes and escaping"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EButton > preserves user styles, native attributes, target, and escaping"
+      }
+    },
+    {
+      "id": "button-asymmetric-text",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText with EButton",
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.ts",
+      "semanticAssertions": [
+        "button label and escaped destination"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EButton > preserves user styles, native attributes, target, and escaping"
+      }
+    },
+    {
+      "id": "button-no-padding",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EButton",
+      "reactReference": "packages/react-email/src/components/button/button.spec.tsx",
+      "semanticAssertions": [
+        "default target",
+        "zero-width Outlook fragments",
+        "no padding longhands"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EButton > matches the no-padding React oracle and exact zero-width fragments"
+      }
+    },
+    {
+      "id": "button-padding",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EButton",
+      "reactReference": "packages/react-email/src/components/button/button.spec.tsx",
+      "semanticAssertions": [
+        "anchor defaults",
+        "expanded padding",
+        "Outlook text raise and horizontal spacing"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EButton > matches the padded React oracle including exact Outlook fragments"
+      }
+    },
+    {
+      "id": "complete-basic-email",
+      "classification": "semantic",
+      "status": "passed",
+      "nuxtComponent": "CompleteBasicEmail",
+      "reactReference": "packages/react-email/src/components and packages/render/src/node/render.tsx",
+      "semanticAssertions": [
+        "document defaults and head metadata",
+        "body presentation table",
+        "leaf primitive structure and styles",
+        "escaped text and URL attributes"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "complete Phase 1 email > renders deterministic server-only HTML and exact oracle plain text"
+      }
+    },
+    {
+      "id": "complete-basic-email-text",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.ts",
+      "semanticAssertions": [
+        "head and images excluded",
+        "links and horizontal rules represented"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "complete Phase 1 email > renders deterministic server-only HTML and exact oracle plain text"
+      }
+    },
+    {
+      "id": "container-padding",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EContainer",
+      "reactReference": "packages/react-email/src/components/container/container.tsx",
+      "semanticAssertions": [
+        "centered presentation table",
+        "maximum width",
+        "padding moved to inner cell"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "table layout primitives > matches EContainer centering, maximum width, and padding placement"
+      }
+    },
+    {
+      "id": "head-content",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EHead",
+      "reactReference": "packages/react-email/src/components/head/head.spec.tsx",
+      "semanticAssertions": [
+        "content type metadata",
+        "Apple reformatting metadata",
+        "child order"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "document primitives > renders EHead metadata before user content and matches the oracle"
+      }
+    },
+    {
+      "id": "heading-style",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EHeading",
+      "reactReference": "packages/react-email/src/components/heading/heading.spec.tsx",
+      "semanticAssertions": [
+        "selected heading tag",
+        "ordinary style forwarding"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "content primitives > matches EHeading tag selection and Vue style forwarding"
+      }
+    },
+    {
+      "id": "horizontal-rule-overrides",
+      "classification": "semantic",
+      "status": "passed",
+      "nuxtComponent": "EHr",
+      "reactReference": "packages/react-email/src/components/hr/hr.spec.tsx",
+      "semanticAssertions": [
+        "horizontal rule tag",
+        "default rule styles",
+        "user style precedence"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "content primitives > renders EHr defaults and user style precedence"
+      }
+    },
+    {
+      "id": "html-defaults",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "EHtml",
+      "reactReference": "packages/react-email/src/components/html/html.spec.tsx",
+      "semanticAssertions": [
+        "html tag",
+        "ltr direction",
+        "English language"
+      ],
+      "intentionalDivergence": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "document primitives > renders EHtml defaults, overrides, slots, and escaped attributes"
+      }
+    },
+    {
+      "id": "image-overrides",
+      "classification": "semantic",
+      "status": "passed",
+      "nuxtComponent": "EImg",
+      "reactReference": "packages/react-email/src/components/img/img.spec.tsx",
+      "semanticAssertions": [
+        "image attributes",
+        "default client-safe styles",
+        "user style precedence"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "content primitives > renders EImg attributes, explicit decorative alt text, and client-safe styles"
+      }
+    },
+    {
+      "id": "link-overrides",
+      "classification": "semantic",
+      "status": "passed",
+      "nuxtComponent": "ELink",
+      "reactReference": "packages/react-email/src/components/link/link.spec.tsx",
+      "semanticAssertions": [
+        "anchor tag",
+        "escaped URL",
+        "target override",
+        "user style precedence"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "content primitives > renders ELink defaults, overrides, forwarding, and escaped content"
+      }
+    },
+    {
+      "id": "plain-text-blockquote",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "quote prefix on every line"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-blockquote"
+      }
+    },
+    {
+      "id": "plain-text-breaks",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "single hard break",
+        "consecutive hard breaks"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-breaks"
+      }
+    },
+    {
+      "id": "plain-text-links",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "fragment href suppressed",
+        "mailto scheme stripped",
+        "bare anchor text"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-links"
+      }
+    },
+    {
+      "id": "plain-text-nested-lists",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "nested list indentation",
+        "list item separation"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-nested-lists"
+      }
+    },
+    {
+      "id": "plain-text-ordered-start",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "ordered list numbering",
+        "start attribute"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-ordered-start"
+      }
+    },
+    {
+      "id": "plain-text-preformatted",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "spaces and line breaks preserved"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-preformatted"
+      }
+    },
+    {
+      "id": "plain-text-tables",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.spec.ts and unstable-to-plain-text.spec.ts",
+      "semanticAssertions": [
+        "ordinary cell flattening",
+        "nested table separation",
+        "aligned data table"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-tables"
+      }
+    },
+    {
+      "id": "plain-text-unicode",
+      "classification": "exact",
+      "status": "passed",
+      "nuxtComponent": "renderPlainText",
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.ts",
+      "semanticAssertions": [
+        "Unicode preserved without normalization or wrapping"
+      ],
+      "test": {
+        "file": "test/conformance/plain-text.test.ts",
+        "name": "plain-text conformance > matches the pinned React Email oracle for plain-text-unicode"
+      }
+    },
+    {
+      "id": "preview-max-length",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "EPreview",
+      "reactReference": "packages/react-email/src/components/preview/preview.spec.tsx",
+      "semanticAssertions": [
+        "text truncated at 200 UTF-16 code units",
+        "no filler after maximum length"
+      ],
+      "intentionalDivergence": "EPreview omits React 19 title output and keeps hiding and plain-text exclusion invariant because Vue SSR cannot safely hoist title into head.",
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EPreview > uses one filler sequence at 199 characters and none at 200"
+      }
+    },
+    {
+      "id": "preview-short",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "EPreview",
+      "reactReference": "packages/react-email/src/components/preview/preview.spec.tsx",
+      "semanticAssertions": [
+        "hidden preview text",
+        "200-character filler policy",
+        "plain-text exclusion"
+      ],
+      "intentionalDivergence": "React 19 hoists Preview title output into head; Vue authors place title explicitly in EHead. EPreview also keeps hiding styles and data-skip-in-text fixed so user attributes cannot expose filler.",
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EPreview > renders exact hidden preview filler without React title leakage"
+      }
+    },
+    {
+      "id": "preview-style-override",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "EPreview",
+      "reactReference": "packages/react-email/src/components/preview/preview.tsx",
+      "semanticAssertions": [
+        "hidden preview remains hidden when user styles are forwarded"
+      ],
+      "intentionalDivergence": "React replaces all hiding styles when a user style is provided; EPreview retains the hiding defaults as an email-safety invariant.",
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EPreview > forwards safe attributes while keeping plain-text exclusion fixed"
+      }
+    },
+    {
+      "id": "preview-unicode-boundary",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "EPreview",
+      "reactReference": "packages/react-email/src/components/preview/preview.tsx",
+      "semanticAssertions": [
+        "preview truncation never emits an unpaired surrogate"
+      ],
+      "intentionalDivergence": "React truncates at 200 UTF-16 code units and can split a surrogate pair; EPreview drops the whole boundary code point and fills the remaining preview position.",
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "EPreview > drops a boundary emoji instead of emitting React Email's split surrogate"
+      }
+    },
+    {
+      "id": "row-columns",
+      "classification": "intentional-divergence",
+      "status": "passed",
+      "nuxtComponent": "ERow and EColumn",
+      "reactReference": "packages/react-email/src/components/row and packages/react-email/src/components/column",
+      "semanticAssertions": [
+        "presentation table row",
+        "two direct cells",
+        "width and style forwarding"
+      ],
+      "intentionalDivergence": "EColumn omits React Email's internal data-id marker because no Vue behavior consumes it.",
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "table layout primitives > renders ESection, ERow, and two direct EColumn cells as valid table layout"
+      }
+    },
+    {
+      "id": "section-padding",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "ESection",
+      "reactReference": "packages/react-email/src/components/section/section.tsx",
+      "semanticAssertions": [
+        "presentation table",
+        "one wrapper cell",
+        "padding moved to wrapper cell"
+      ],
+      "test": {
+        "file": "test/conformance/phase-two-components.test.ts",
+        "name": "table layout primitives > matches ESection structure and padding placement"
+      }
+    },
+    {
+      "id": "text-margins",
+      "classification": "normalized",
+      "status": "passed",
+      "nuxtComponent": "EText",
+      "reactReference": "packages/react-email/src/components/text/text.spec.tsx",
+      "semanticAssertions": [
+        "paragraph tag",
+        "default typography",
+        "ordered margin precedence",
+        "user style precedence"
+      ],
+      "test": {
+        "file": "test/conformance/phase-one-components.test.ts",
+        "name": "content primitives > matches EText typography and ordered margin behavior"
+      }
+    }
+  ],
+  "intentionalDivergences": [
+    {
+      "id": "html-defaults",
+      "note": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "status": "passed"
+    },
+    {
+      "id": "preview-max-length",
+      "note": "EPreview omits React 19 title output and keeps hiding and plain-text exclusion invariant because Vue SSR cannot safely hoist title into head.",
+      "status": "passed"
+    },
+    {
+      "id": "preview-short",
+      "note": "React 19 hoists Preview title output into head; Vue authors place title explicitly in EHead. EPreview also keeps hiding styles and data-skip-in-text fixed so user attributes cannot expose filler.",
+      "status": "passed"
+    },
+    {
+      "id": "preview-style-override",
+      "note": "React replaces all hiding styles when a user style is provided; EPreview retains the hiding defaults as an email-safety invariant.",
+      "status": "passed"
+    },
+    {
+      "id": "preview-unicode-boundary",
+      "note": "React truncates at 200 UTF-16 code units and can split a surrogate pair; EPreview drops the whole boundary code point and fills the remaining preview position.",
+      "status": "passed"
+    },
+    {
+      "id": "row-columns",
+      "note": "EColumn omits React Email's internal data-id marker because no Vue behavior consumes it.",
+      "status": "passed"
+    }
+  ],
+  "unsupported": [
+    {
+      "id": "code-block",
+      "reactComponent": "CodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block",
+      "reason": "Syntax-highlighted code output is outside the focused v0.1 primitive set."
+    },
+    {
+      "id": "code-inline",
+      "reactComponent": "CodeInline",
+      "reactReference": "packages/react-email/src/components/code-inline",
+      "reason": "Inline code styling is outside the focused v0.1 primitive set."
+    },
+    {
+      "id": "font",
+      "reactComponent": "Font",
+      "reactReference": "packages/react-email/src/components/font",
+      "reason": "Font loading behavior requires separate email-client evidence after v0.1."
+    },
+    {
+      "id": "markdown",
+      "reactComponent": "Markdown",
+      "reactReference": "packages/react-email/src/components/markdown",
+      "reason": "Markdown parsing is not required for ordinary Vue SFC authoring in v0.1."
+    },
+    {
+      "id": "tailwind",
+      "reactComponent": "Tailwind",
+      "reactReference": "packages/react-email/src/components/tailwind",
+      "reason": "Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met."
+    }
+  ]
+}

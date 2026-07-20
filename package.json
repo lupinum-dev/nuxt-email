@@ -29,14 +29,18 @@
     "dist"
   ],
   "scripts": {
+    "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./scripts/conformance-reporter.ts",
+    "conformance:write": "NUXT_EMAIL_CONFORMANCE_REPORT=write vitest run test/conformance --reporter=default --reporter=./scripts/conformance-reporter.ts",
     "prepack": "nuxt-module-build build",
     "dev": "pnpm dev:prepare && nuxt dev playground",
     "dev:build": "nuxt build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare playground",
     "oracle:check": "node --import tsx scripts/generate-react-oracle.ts --check",
     "oracle:write": "node --import tsx scripts/generate-react-oracle.ts --write",
+    "performance:measure": "node --expose-gc --import tsx scripts/measure-renderer.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
     "test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
   },
