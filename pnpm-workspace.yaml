@@ -1,6 +1,9 @@
 packages:
   - playground
 
+overrides:
+  tailwindcss: 4.1.18
+
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
