@@ -8,8 +8,13 @@ describe('ssr', async () => {
   })
 
   it('renders the index page', async () => {
-    // Get response to a server-rendered page with `$fetch`.
     const html = await $fetch('/')
     expect(html).toContain('<div>basic</div>')
+  })
+
+  it('compiles and renders a Vue SFC inside Nitro', async () => {
+    const html = await $fetch('/api/render')
+
+    expect(html).toBe('<main data-email-proof> Hello Ada</main>')
   })
 })

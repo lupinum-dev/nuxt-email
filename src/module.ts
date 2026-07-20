@@ -1,19 +1,26 @@
-import { defineNuxtModule, addPlugin, createResolver } from '@nuxt/kit'
+import { defineNuxtModule } from '@nuxt/kit'
+import vue from '@vitejs/plugin-vue'
 
-// Module options TypeScript interface definition
-export interface ModuleOptions {}
+type NitroRollupOptions = {
+  nitro?: {
+    rollupConfig?: {
+      plugins?: unknown
+    }
+  }
+}
 
-export default defineNuxtModule<ModuleOptions>({
+export default defineNuxtModule({
   meta: {
-    name: 'my-module',
-    configKey: 'myModule',
+    name: 'nuxt-email',
+    configKey: 'nuxtEmail',
   },
-  // Default configuration options of the Nuxt module
-  defaults: {},
-  setup(_options, _nuxt) {
-    const resolver = createResolver(import.meta.url)
-
-    // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
-    addPlugin(resolver.resolve('./runtime/plugin'))
+  setup(_options, nuxt) {
+    const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions
+    const nitro = (nuxtOptions.nitro ??= {})
+    nitro.rollupConfig ??= {}
+    const existingPlugins = nitro.rollupConfig.plugins
+    nitro.rollupConfig.plugins = existingPlugins
+      ? [existingPlugins, vue()]
+      : [vue()]
   },
 })
