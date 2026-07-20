@@ -20,8 +20,8 @@ Status: not approved for publication. `nuxt-email` is the working package name; 
 
 - Vue interpolation and attributes remain escaped by default.
 - The component set has no raw-HTML primitive and rejects content-replacement and event-handler attributes.
-- Renderer and templates are excluded from application client bundles.
-- Preview UI, preview endpoints, and fixture modules are excluded from production builds.
+- The canonical generated rendering path excludes the renderer and templates from application client bundles.
+- The canonical discovery path excludes preview UI, preview endpoints, and fixture modules from production builds.
 - The preview iframe is sandboxed and raw preview output uses a restrictive content security policy.
 - No public render endpoint or send endpoint is generated for production.
 

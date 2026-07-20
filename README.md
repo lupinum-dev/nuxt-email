@@ -117,7 +117,7 @@ export default {
 } satisfies WelcomeEmailProps
 ```
 
-Run `pnpm exec nuxt dev` and open `/__email`. The page provides the sandboxed email preview, exact HTML, plain text, copy/open actions, render errors, and automatic refresh. Fixtures, preview handlers, and preview UI are excluded from production builds. Read the [preview guide](./docs/preview.md) for the exact security and fixture contract.
+Run `pnpm exec nuxt dev` and open `/__email`. The page provides the sandboxed email preview, exact HTML, plain text, copy/open actions, render errors, and automatic refresh. Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and preview UI are excluded from production builds; do not import fixtures into production application code. Read the [preview guide](./docs/preview.md) for the exact security and fixture contract.
 
 ## Compatibility and limits
 

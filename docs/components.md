@@ -16,7 +16,7 @@ Nuxt Email v0.1 provides fourteen E-prefixed components. They are auto-registere
 
 | Component | Output and important props | Defaults and fixed behavior |
 | --- | --- | --- |
-| `EHtml` | Complete `<html>` root; accepts safe HTML attributes. | `lang="en"`, `dir="ltr"`. Every render must contain exactly one `EHtml` and one `EBody`. |
+| `EHtml` | Complete `<html>` root; accepts safe HTML attributes. | `lang="en"`, `dir="ltr"`. Every render must contain exactly one `<html>` root and one `<body>`; `EHtml` and `EBody` are the supported wrappers. |
 | `EHead` | `<head>` with an optional default slot for `<title>`, `<meta>`, and email head content. | Always inserts UTF-8 content-type and Apple message-reformatting meta tags before slot content. |
 | `EBody` | `<body>` containing the full-width presentation table used for reliable email layout. | `lang="en"`, `dir="ltr"`. User style is applied to the inner cell; background values are mirrored to `<body>`, while specified body margin/padding reset properties are zeroed there. |
 | `EPreview` | Hidden inbox-preview text from a text-only default slot. | Truncates safely at 200 UTF-16 code units, adds the compatibility filler when shorter, cannot be made visible through a style override, and is excluded from plain text. |

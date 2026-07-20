@@ -72,8 +72,8 @@ Nuxt Email renders trusted application templates with untrusted values supplied 
 - All E-prefixed primitives reject `innerHTML`, `textContent`, and attributes beginning with `on`.
 - There is no v0.1 raw-HTML component. Do not use `v-html` or native raw HTML with untrusted content inside an application template.
 - `href` and `src` values are escaped but URL schemes are not validated. Validate application-controlled URLs before rendering.
-- Template modules and the renderer are server-only and excluded from the application client build.
-- Development fixture modules, preview UI, and preview endpoints are absent from production builds.
+- When consumed through the canonical generated API, template modules and the renderer are server-only and excluded from the application client build. Application code must not import email templates into client code.
+- When consumed through Nuxt Email's discovery and preview paths, development fixture modules, preview UI, and preview endpoints are absent from production builds. Application code must not import fixture modules into production code.
 - No production HTTP render route and no send route are generated. A route exists only when the application author creates one.
 - The development raw preview response uses a restrictive content security policy, while the preview application embeds it in a sandboxed iframe without script permission.
 

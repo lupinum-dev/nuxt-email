@@ -186,7 +186,7 @@ Saving `welcome.vue` or its sibling fixture refreshes the preview without a full
 pnpm exec nuxt build
 ```
 
-The production server contains the discovered template and canonical renderer because the Nitro handler needs them. The client bundle does not. The `/__email` application, its endpoints, and every `.fixtures.ts` module are development-only and are absent from production output.
+Through Nuxt Email's canonical generated API, the production server contains the discovered template and renderer because the Nitro handler needs them, while the client bundle does not. The `/__email` application, its endpoints, and discovered `.fixtures.ts` modules are absent from production output. Do not explicitly import email templates into client code or fixture modules into production application code.
 
 ## What to do next
 
