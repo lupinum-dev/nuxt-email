@@ -1,19 +1,24 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { $fetch, fetch as testFetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, createTest, fetch as testFetch, setupMaps } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 
-const fixtureRoot = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
-const welcomeTemplate = fileURLToPath(new URL(
-  './fixtures/preview/app/emails/welcome.vue',
-  import.meta.url,
-))
+const sourceFixtureRoot = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
+const fixtureRoot = await mkdtemp(join(dirname(sourceFixtureRoot), '.preview-test-'))
+await cp(sourceFixtureRoot, fixtureRoot, {
+  recursive: true,
+  filter: source => !['.nuxt', '.output', 'node_modules'].includes(basename(source)),
+})
+const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
 
 describe('development email preview', async () => {
-  await setup({
+  const test = createTest({
     dev: true,
     rootDir: fixtureRoot,
   })
+  test.ctx.teardown = [() => rm(fixtureRoot, { recursive: true, force: true })]
+  await setupMaps.vitest(test)
 
   it('serves the standalone sandboxed preview application', async () => {
     const response = await testFetch('/__email')
