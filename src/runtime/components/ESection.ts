@@ -1,5 +1,6 @@
 import type { DefineComponent, TableHTMLAttributes } from 'vue'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
+import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { assertFixedPresentationTable } from './ERow'
@@ -14,11 +15,13 @@ export const ESection = defineComponent({
   name: 'ESection',
   inheritAttrs: false,
   setup(_props, { attrs, slots }) {
+    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('ESection', attrs)
       assertFixedPresentationTable('ESection', attrs)
       const { style, ...attributes } = attrs
-      const { tableStyle, cellStyle } = splitTablePadding(style)
+      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
+      const { tableStyle, cellStyle } = splitTablePadding(effectiveStyle)
 
       return h('table', {
         align: 'center',

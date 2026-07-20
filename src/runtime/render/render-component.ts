@@ -3,6 +3,7 @@ import type { EmailRenderContext } from './define-email'
 import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import * as emailComponents from '../components'
+import { applyTailwindPostRender } from '../tailwind/post-render'
 import { createEmailRenderContext, runWithEmailRenderContext } from './define-email'
 import { assembleEmailDocument } from './document'
 
@@ -67,10 +68,15 @@ export async function renderComponentToHtml(
     throw renderFailure.cause
   }
 
-  return assembleEmailDocument(
+  const document = assembleEmailDocument(
     renderedHtml
       .replaceAll('<!--[-->', '')
       .replaceAll('<!--]-->', '')
       .replaceAll('<!---->', ''),
   )
+
+  // Complete any Tailwind region: inline nested plain elements, fill the head
+  // <style> with the full non-inlinable CSS, strip region markers. A no-op
+  // (byte-identical) when no <ETailwind> registered a region.
+  return applyTailwindPostRender(document, context.tailwindRegions)
 }

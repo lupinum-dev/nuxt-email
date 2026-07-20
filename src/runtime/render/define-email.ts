@@ -1,3 +1,4 @@
+import type { TailwindRegion } from '../tailwind/nested'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 /**
@@ -31,6 +32,12 @@ const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
 export interface EmailRenderContext {
   readonly [EMAIL_RENDER_BRAND]: true
   subject?: (props: Record<string, unknown>) => string
+  /**
+   * Tailwind regions registered by `<ETailwind>` boundaries during render, in
+   * registration order. Consumed by the post-render pass to complete each head
+   * `<style>` and inline nested plain elements. Absent when no boundary rendered.
+   */
+  tailwindRegions?: TailwindRegion[]
 }
 
 export class DefineEmailOutsideRenderError extends Error {
@@ -42,6 +49,15 @@ export class DefineEmailOutsideRenderError extends Error {
 
 export function createEmailRenderContext(): EmailRenderContext {
   return { [EMAIL_RENDER_BRAND]: true }
+}
+
+/**
+ * The active email render context, or `undefined` outside a render. Used by
+ * `<ETailwind>` to register its region on the same context `renderComponentToHtml`
+ * reads back after render.
+ */
+export function getEmailRenderContext(): EmailRenderContext | undefined {
+  return renderContextStorage.getStore()
 }
 
 /**

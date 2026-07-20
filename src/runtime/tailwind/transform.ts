@@ -1,8 +1,9 @@
 import type { ComputedStyles } from './engine/index'
 import type { Component, VNode, VNodeArrayChildren, VNodeChild } from 'vue'
-import { camelize, Comment, Fragment, h, isVNode, normalizeClass, Static, Text } from 'vue'
+import { camelize, Comment, Fragment, h, isVNode, Static, Text } from 'vue'
 import { EHead } from '../components/EHead'
 import { normalizeEmailStyle } from '../components/style'
+import { classTokens, mergeInlinableStyle, residualClasses } from './inline-utils'
 
 /**
  * Render-time Tailwind inlining over the ETailwind slot's VNode tree.
@@ -54,11 +55,6 @@ function toArray(children: unknown): unknown[] {
   return Array.isArray(children) ? children : [children]
 }
 
-function classTokens(rawClass: unknown): string[] {
-  if (rawClass == null) return []
-  return normalizeClass(rawClass).split(/\s+/).filter(token => token.length > 0)
-}
-
 /**
  * Walk the slot VNode tree once, collecting every class token (in first-seen tree
  * order, duplicates kept — matching React's `classesUsed`) and recording whether a
@@ -98,29 +94,6 @@ export function scanTailwindTree(children: unknown): { classNames: string[], has
   return { classNames, hasHead }
 }
 
-/** Merge the inlinable declarations of an element's classes, in class order. */
-function tailwindStyleFor(tokens: string[], computed: ComputedStyles): Map<string, string> {
-  const merged = new Map<string, string>()
-  for (const token of tokens) {
-    const declarations = computed.inlinable.get(token)
-    if (!declarations) continue
-    for (const [property, value] of declarations) {
-      merged.set(property, value)
-    }
-  }
-  return merged
-}
-
-/** Residual classes to keep on the element, original class order preserved. */
-function residualClassesFor(tokens: string[], computed: ComputedStyles): string[] {
-  const residual: string[] = []
-  for (const token of tokens) {
-    const output = computed.residualClassMap.get(token)
-    if (output !== undefined) residual.push(output)
-  }
-  return residual
-}
-
 /**
  * Compute the replacement props for an element/component that carries a `class`.
  * Mirrors `cloneElementWithInlinedStyles`: build `{ ...tailwind, ...author }` as the
@@ -128,8 +101,8 @@ function residualClassesFor(tokens: string[], computed: ComputedStyles): string[
  */
 function inlineProps(props: Props, computed: ComputedStyles): Props {
   const tokens = classTokens(props.class)
-  const tailwind = tailwindStyleFor(tokens, computed)
-  const residual = residualClassesFor(tokens, computed)
+  const tailwind = mergeInlinableStyle(tokens, computed)
+  const residual = residualClasses(tokens, computed)
 
   const next: Props = {}
   for (const [key, value] of Object.entries(props)) {
@@ -247,21 +220,21 @@ function transformVNode(node: VNode, ctx: TransformContext): VNode {
 
 /**
  * Apply the computed Tailwind styles to the ETailwind slot VNodes: inline styles,
- * rewrite residual classes, and inject the non-inlinable `<style>` into the head.
- * A `<style>` is injected whenever a `<head>` exists (empty when there are no
- * non-inlinable rules), exactly as React Email always injects one.
+ * rewrite residual classes, and inject a `<style>` into the head. A `<style>` is
+ * injected whenever a `<head>` exists, exactly as React Email always injects one.
  *
- * Throws {@link TailwindMissingHeadError} when there are non-inlinable rules and no
- * `<head>` exists inside the region.
+ * Its body is `placeholder`, not the CSS itself: the head renders before any
+ * nested component, so the real non-inlinable CSS (which may include classes only
+ * discovered while nested components render) is substituted post-render by
+ * {@link ./post-render}. The completeness check — including the
+ * {@link TailwindMissingHeadError} throw — is deferred there too, so nested classes
+ * are already counted, matching React Email's `mapReactTree` (which reaches nested
+ * classes before its own `<head>` check).
  */
-export function applyTailwind(children: unknown, computed: ComputedStyles, hasHead: boolean): VNodeChild[] {
-  if (computed.nonInlinableCss !== '' && !hasHead) {
-    throw new TailwindMissingHeadError(computed.nonInlinableClassNames)
-  }
-
+export function applyTailwind(children: unknown, computed: ComputedStyles, placeholder: string): VNodeChild[] {
   const ctx: TransformContext = {
     computed,
-    injectedStyle: h('style', { innerHTML: computed.nonInlinableCss }),
+    injectedStyle: h('style', { innerHTML: placeholder }),
   }
 
   return toArray(children).map(child => transformChild(child, ctx))

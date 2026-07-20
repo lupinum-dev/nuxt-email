@@ -1,5 +1,6 @@
 import type { DefineComponent, HTMLAttributes } from 'vue'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
+import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { mergeEmailStyles } from './style'
@@ -17,12 +18,14 @@ export const EHr = defineComponent({
   name: 'EHr',
   inheritAttrs: false,
   setup(_props, { attrs }) {
+    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('EHr', attrs)
       const { style, ...attributes } = attrs
+      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
       return h('hr', {
         ...attributes,
-        style: mergeEmailStyles(DEFAULT_HR_STYLE, style),
+        style: mergeEmailStyles(DEFAULT_HR_STYLE, effectiveStyle),
       })
     }
   },

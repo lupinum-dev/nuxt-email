@@ -65,7 +65,9 @@ describe('ECodeBlock', () => {
     expect(html).toContain('&quot;Fira Code&quot;')
   })
 
-  it('forwards native pass-through attributes onto the <pre>, matching the oracle', async () => {
+  it('forwards native pass-through attributes onto the <pre>, matching the oracle', {
+    tags: ['conformance:code-block-attributes'],
+  }, async () => {
     // Rendered through a fixture so class/id/dir/... arrive as fall-through attrs (a direct
     // top-level render would reject them as unknown props). React spreads `{...rest}` onto <pre>.
     const fixture: Component = defineComponent({

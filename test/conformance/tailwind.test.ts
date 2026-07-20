@@ -212,6 +212,36 @@ describe('eTailwind conformance', () => {
     expect(html).toContain('<div style="background-color:rgb(18,52,86);">Content</div>')
   })
 
+  it('tw-nested-component: classes produced inside a nested component are inlined, including a nested-only media query', {
+    tags: ['conformance:tw-nested-component'],
+  }, async () => {
+    // A plain function component whose body emits the Tailwind classes. The VNode
+    // transform never sees these vnodes; they are reached by primitive self-inlining
+    // (Text/Button), the post-render plain-element pass (div), and the post-render
+    // head-CSS completion (md:text-lg).
+    const NestedComponent = defineComponent({
+      name: 'NestedComponent',
+      setup() {
+        return () => h('div', { class: 'bg-red-500 p-4 md:text-lg' }, [
+          h(EText, { class: 'm-0' }, { default: () => 'Nested text' }),
+          h(EButton, { class: 'bg-blue-600 px-4 py-2', href: 'https://example.com' }, { default: () => 'Nested button' }),
+        ])
+      },
+    })
+
+    const html = await render(undefined, h(NestedComponent))
+    expectMatches(html, 'tw-nested-component')
+
+    // The plain nested div: utilities inlined, md:text-lg sanitized and kept as residual.
+    expect(html).toContain('<div class="md_text-lg" style="background-color:rgb(251,44,54);padding:1rem;">')
+    // The nested EText: m-0 flows into its margin logic, killing the default 16px margins.
+    expect(html).toContain('margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem;')
+    // The nested EButton: px-4 (16px) drives the Outlook spacer width, derived at render time.
+    expect(html).toContain('<!--[if mso]><i style="mso-font-width:400%;mso-text-raise:12px" hidden>&#8202;&#8202;</i><![endif]-->')
+    // The nested-only md:text-lg media query reaches the head style.
+    expect(html).toContain('<style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style>')
+  })
+
   it('throws React Email\'s exact no-head error when non-inlinable rules have nowhere to go', async () => {
     const fixture = defineComponent({
       name: 'NoHeadFixture',

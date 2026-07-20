@@ -1,7 +1,10 @@
 import type { TailwindConfig } from '../tailwind/engine/index'
+import type { NestedTailwindHolder } from '../tailwind/nested'
 import type { DefineComponent, PropType } from 'vue'
-import { defineComponent } from 'vue'
+import { createCommentVNode, defineComponent, provide } from 'vue'
+import { getEmailRenderContext } from '../render/define-email'
 import { createTailwindEngine } from '../tailwind/engine/index'
+import { createTailwindRegion, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import { applyTailwind, scanTailwindTree } from '../tailwind/transform'
 
 export interface ETailwindProps {
@@ -20,10 +23,14 @@ export interface ETailwindProps {
  * and pseudo-class rules into a `<style>` in the `<head>`, and rewrites residual
  * class names.
  *
- * The compile step is async (Tailwind's `compile()` is async), so `setup` awaits
- * the engine; the actual inlining is synchronous and happens in the render
- * function, which walks the slot VNodes. Nothing outside a `<Tailwind>` boundary
- * is affected, so emails that do not use it render exactly as before.
+ * The slot-visible subtree is inlined synchronously by the VNode transform. Classes
+ * emitted inside NESTED user components (which only exist once Vue renders them
+ * during SSR) are reached two other ways: E* primitives self-inline via the context
+ * provided here ({@link TAILWIND_NESTED_KEY}), and plain elements are inlined
+ * post-render. The region is registered on the per-render context so the post-render
+ * pass ({@link ../tailwind/post-render}) can complete the head `<style>` and splice
+ * nested plain elements. Nothing outside a `<Tailwind>` boundary is affected, so
+ * emails that do not use it render exactly as before.
  */
 export const ETailwind = defineComponent({
   name: 'ETailwind',
@@ -43,17 +50,38 @@ export const ETailwind = defineComponent({
     },
   },
   async setup(props, { slots }) {
+    // Provide the holder synchronously, before the first await: after an await the
+    // active component instance is lost and provide() would no-op. The engine and
+    // region are filled in below, before any child injects the holder (children
+    // render only after this component's render function has run).
+    const holder: NestedTailwindHolder = { engine: null, region: null }
+    provide(TAILWIND_NESTED_KEY, holder)
+
     const engine = await createTailwindEngine({
       config: props.config,
       theme: props.theme,
       utility: props.utility,
     })
+    holder.engine = engine
 
     return () => {
       const children = slots.default?.() ?? []
       const { classNames, hasHead } = scanTailwindTree(children)
       const computed = engine.computeStyles(classNames)
-      return applyTailwind(children, computed, hasHead)
+
+      const region = createTailwindRegion(engine, [...classNames], hasHead)
+      holder.region = region
+      const context = getEmailRenderContext()
+      if (context) {
+        (context.tailwindRegions ??= []).push(region)
+      }
+
+      const applied = applyTailwind(children, computed, region.placeholder)
+      return [
+        createCommentVNode(region.startMarker),
+        ...applied,
+        createCommentVNode(region.endMarker),
+      ]
     }
   },
 }) as DefineComponent<ETailwindProps>

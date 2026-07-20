@@ -227,6 +227,36 @@ Utility classes on descendant elements are inlined into each element's `style`, 
 </ETailwind>
 ```
 
+### Classes inside nested components
+
+Classes on elements written directly in the email template are inlined by a render-time VNode transform. Classes emitted *inside a nested component* — a component whose own render outputs the class-bearing markup — are handled too, so a reusable card or button component styled with Tailwind works exactly like inline markup:
+
+```vue
+<!-- Card.vue: a nested component -->
+<template>
+  <div class="bg-red-500 p-4 md:text-lg">
+    <EText class="m-0">Title</EText>
+    <EButton class="bg-blue-600 px-4 py-2" href="https://example.com">Open</EButton>
+  </div>
+</template>
+```
+
+```vue
+<!-- Email template -->
+<ETailwind>
+  <EHtml>
+    <EHead />
+    <EBody>
+      <Card />
+    </EBody>
+  </EHtml>
+</ETailwind>
+```
+
+E* primitives with style logic (`EText`, `EButton`, `ESection`, `EContainer`, `ELink`, `EImg`, `EHr`) resolve their own Tailwind classes before running their margin/padding/Outlook derivation, so utilities behave identically whether the primitive is written inline or produced by a nested component. Plain HTML elements and structural primitives (`EHtml`, `EHeading`, `ERow`, `EColumn`) are inlined after render. Non-inlinable rules from nested classes (e.g. the `md:text-lg` above) still reach the `<head>` `<style>`, and the missing-`<head>` error still fires when such a class has nowhere to go.
+
+Limitations: `ECodeInline`, `ECodeBlock`, `EMarkdown`, `EPreview`, and `EFont` do not treat a nested `class` as a Tailwind style target (their `class`/head semantics differ), and nested `<ETailwind>` boundaries are not supported. Emails that do not use `<ETailwind>` are entirely unaffected — the nested support adds zero cost to them.
+
 ## Complete-document requirement
 
 These primitives do not repair invalid template roots. A template must render exactly one `<html>` root and exactly one `<body>`:

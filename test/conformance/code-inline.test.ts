@@ -60,7 +60,9 @@ describe('ECodeInline', () => {
     expect(oracle.cases['code-inline-basic'].html).toContain(`<style>${ORANGE_FR_STYLE}</style>`)
   })
 
-  it('renders the unclassed case, normalizing away React\'s insignificant leading class space', async () => {
+  it('renders the unclassed case, normalizing away React\'s insignificant leading class space', {
+    tags: ['conformance:code-inline-no-class'],
+  }, async () => {
     const html = await renderComponent(
       EText,
       null as unknown as Record<string, unknown>,

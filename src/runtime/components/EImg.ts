@@ -1,5 +1,6 @@
 import type { DefineComponent, ImgHTMLAttributes } from 'vue'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
+import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { mergeEmailStyles } from './style'
@@ -30,6 +31,7 @@ export const EImg = defineComponent({
     },
   },
   setup(props, { attrs }) {
+    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('EImg', attrs)
       if (typeof props.alt !== 'string') {
@@ -39,11 +41,12 @@ export const EImg = defineComponent({
         throw new TypeError('EImg src must be a non-empty string')
       }
       const { style, ...attributes } = attrs
+      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
       return h('img', {
         ...attributes,
         alt: props.alt,
         src: props.src,
-        style: mergeEmailStyles(DEFAULT_IMAGE_STYLE, style),
+        style: mergeEmailStyles(DEFAULT_IMAGE_STYLE, effectiveStyle),
       })
     }
   },
