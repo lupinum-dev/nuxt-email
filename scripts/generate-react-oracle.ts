@@ -235,6 +235,23 @@ async function generateOracle() {
   // preserve them through Tailwind style inlining, so assert the shape deliberately.
   const msoPreservedStyle = { msoHide: 'all', color: 'blue' } as unknown as React.CSSProperties
 
+  // A plain function component (NOT markAsElement'd) whose body emits Tailwind classes:
+  // a plain <div>, a <Text>, and a <Button>, plus a md:* class that must reach the head.
+  // React's mapReactTree re-invokes it to inline the classes produced inside; nuxt-email
+  // reaches them via primitive self-inlining, a post-render plain-element pass, and a
+  // post-render head-CSS completion. Proves nested-component Tailwind support end to end.
+  const NestedComponent = () =>
+    React.createElement(
+      'div',
+      { className: 'bg-red-500 p-4 md:text-lg' },
+      React.createElement(Text, { className: 'm-0' }, 'Nested text'),
+      React.createElement(
+        Button,
+        { className: 'bg-blue-600 px-4 py-2', href: 'https://example.com' },
+        'Nested button',
+      ),
+    )
+
   async function captureRenderError(node: React.ReactNode): Promise<string | null> {
     try {
       await render(node)
@@ -799,6 +816,18 @@ async function generateOracle() {
       input: { config: 'theme.extend.colors.brand', className: 'bg-brand' },
       semanticAssertions: ['custom theme color resolves to hex background'],
     }, tailwindEmail({ theme: { extend: { colors: { brand: '#123456' } } } }, React.createElement('div', { className: 'bg-brand' }, 'Content'))),
+    'tw-nested-component': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/utils/react/map-react-tree.ts',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'nested function component', classNames: 'bg-red-500 p-4 md:text-lg / m-0 / bg-blue-600 px-4 py-2' },
+      semanticAssertions: [
+        'classes produced inside a nested component are inlined',
+        'nested Text default margins overridden by utility',
+        'nested Button Outlook spacers derived from utility padding',
+        'nested-only media query reaches the head style',
+      ],
+    }, tailwindEmail(undefined, React.createElement(NestedComponent))),
   }
 
   return {

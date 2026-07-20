@@ -934,6 +934,22 @@
         "custom theme color resolves to hex background"
       ],
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"background-color:rgb(18,52,86)\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-nested-component": {
+      "reactReference": "packages/react-email/src/components/tailwind/utils/react/map-react-tree.ts",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "nested function component",
+        "classNames": "bg-red-500 p-4 md:text-lg / m-0 / bg-blue-600 px-4 py-2"
+      },
+      "semanticAssertions": [
+        "classes produced inside a nested component are inlined",
+        "nested Text default margins overridden by utility",
+        "nested Button Outlook spacers derived from utility padding",
+        "nested-only media query reaches the head style"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"md_text-lg\" style=\"background-color:rgb(251,44,54);padding:1rem\"><p style=\"font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem\">Nested text</p><a href=\"https://example.com\" style=\"line-height:100%;text-decoration:none;display:inline-block;max-width:100%;mso-padding-alt:0px;background-color:rgb(21,93,252);padding-right:16px;padding-left:16px;padding-bottom:8px;padding-top:8px\" target=\"_blank\"><span><!--[if mso]><i style=\"mso-font-width:400%;mso-text-raise:12px\" hidden>&#8202;&#8202;</i><![endif]--></span><span style=\"max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:6px\">Nested button</span><span><!--[if mso]><i style=\"mso-font-width:400%\" hidden>&#8202;&#8202;&#8203;</i><![endif]--></span></a></div></td></tr></tbody></table><!--/$--></body></html>"
     }
   },
   "errors": {
