@@ -1,84 +1,157 @@
-<!--
-Get your module up and running quickly.
+# Nuxt Email
 
-Find and replace all on all files (CMD+SHIFT+F):
-- Name: My Module
-- Package name: my-module
-- Description: My new Nuxt module
--->
+Nuxt Email is a Nuxt module for authoring transactional emails as ordinary Vue SFCs and rendering deterministic HTML and plain text from Nitro server code. Its email-safe primitives are tested against a pinned React Email behavioral oracle, while discovery, typing, preview, and rendering follow Vue and Nuxt conventions.
 
-# My Module
+## Release status
 
-[![npm version][npm-version-src]][npm-version-href]
-[![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![License][license-src]][license-href]
-[![Nuxt][nuxt-src]][nuxt-href]
+`0.1.0` is the current release-candidate version, not an approved public release. `nuxt-email` is the working package name; npm name ownership and publishing access still need confirmation. Until that is resolved, install the exact verified release-candidate tarball supplied by the maintainer rather than assuming the npm name is available.
 
-My new Nuxt module for doing amazing things.
+Final publication is also blocked on freezing the candidate commit and tarball checksum, the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](./docs/release/v0.1-release-candidate.md) for the live gate status.
 
-- [✨ &nbsp;Release Notes](/CHANGELOG.md)
-<!-- - [🏀 Online playground](https://stackblitz.com/github/your-org/my-module?file=playground%2Fapp.vue) -->
-<!-- - [📖 &nbsp;Documentation](https://example.com) -->
+## Supported environment
 
-## Features
+- Node.js `^22.12.0 || ^24.11.0` — Node 22 from 22.12 onward, or Node 24 from 24.11 onward.
+- Nuxt `^4.4.8` — Nuxt 4.4.8 or a later Nuxt 4 release.
+- Vue `^3.5.0`.
 
-<!-- Highlight some of the features your module provide here -->
-- ⛰ &nbsp;Foo
-- 🚠 &nbsp;Bar
-- 🌲 &nbsp;Baz
+The automated release matrix runs the lockfile's Nuxt `4.4.8` on Node `22.12.0` and the current Node `24.x` runner. Later Nuxt 4 releases are accepted by the peer range but are not separate CI anchors while `4.4.8` is current.
 
-## Quick Setup
+Node 20, Node 23, Node 25, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the v0.1 support contract.
 
-Install the module to your Nuxt application with one command:
+## Install and configure
+
+In an existing supported Nuxt application, install the verified local tarball:
 
 ```bash
-npx nuxt module add my-module
+pnpm add /absolute/path/to/nuxt-email-0.1.0-rc.tgz
 ```
 
-That's it! You can now use My Module in your Nuxt app ✨
+Register the module:
 
+```ts
+// nuxt.config.ts
+import NuxtEmail from 'nuxt-email'
 
-## Contribution
+export default defineNuxtConfig({
+  modules: [NuxtEmail],
+})
+```
 
-<details>
-  <summary>Local development</summary>
-  
-  ```bash
-  # Install dependencies
-  npm install
-  
-  # Generate type stubs
-  npm run dev:prepare
-  
-  # Develop with the playground
-  npm run dev
-  
-  # Build the playground
-  npm run dev:build
-  
-  # Run ESLint
-  npm run lint
-  
-  # Run Vitest
-  npm run test
-  npm run test:watch
-  
-  # Release new version
-  npm run release
-  ```
+There are no v0.1 module options. Follow the [complete fresh-install guide](./docs/getting-started.md) for the release-tested setup.
 
-</details>
+## Author a Vue email
 
+Every `.vue` file under `app/emails/` is a template. Nested paths become slash-separated names; for example, `app/emails/account/reset-password.vue` is named `account/reset-password`. `app/emails/components/` is reserved for application-owned supporting components and is not discovered as templates.
 
-<!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/my-module/latest.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-version-href]: https://npmjs.com/package/my-module
+```vue
+<!-- app/emails/welcome.vue -->
+<script setup lang="ts">
+defineProps<{
+  activationUrl: string
+  firstName: string
+}>()
+</script>
 
-[npm-downloads-src]: https://img.shields.io/npm/dm/my-module.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-downloads-href]: https://npm.chart.dev/my-module
+<template>
+  <EHtml lang="en">
+    <EHead>
+      <title>Activate your account</title>
+    </EHead>
+    <EBody>
+      <EPreview>Your account is ready.</EPreview>
+      <EContainer>
+        <EHeading>Welcome, {{ firstName }}</EHeading>
+        <EText>Finish setting up your account.</EText>
+        <EButton :href="activationUrl" :style="{ padding: '12px 20px' }">
+          Activate account
+        </EButton>
+      </EContainer>
+    </EBody>
+  </EHtml>
+</template>
+```
 
-[license-src]: https://img.shields.io/npm/l/my-module.svg?style=flat&colorA=020420&colorB=00DC82
-[license-href]: https://npmjs.com/package/my-module
+The fourteen `E*` components are auto-registered for email rendering; templates do not import them. Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, and Vue style bindings. The [component reference](./docs/components.md) records every component's important props, fixed semantics, and defaults.
 
-[nuxt-src]: https://img.shields.io/badge/Nuxt-020420?logo=nuxt
-[nuxt-href]: https://nuxt.com
+## Render from Nitro
+
+`renderEmail` is auto-imported only in Nitro server code. Its template name and props are generated from the same registry used at runtime.
+
+```ts
+// server/api/welcome.get.ts
+export default defineEventHandler(async () => {
+  return await renderEmail('welcome', {
+    activationUrl: 'https://example.com/activate',
+    firstName: 'Ada',
+  })
+})
+```
+
+The result is exactly:
+
+```ts
+interface RenderedEmail {
+  html: string
+  text: string
+}
+```
+
+Do not import `renderEmail` into Vue components or other client code. Nuxt Email does not send mail, choose providers, manage recipients, or own subjects. Pass the returned `html` and `text` to the provider SDK in your application, alongside that provider's own `from`, `to`, and `subject` fields. See the [renderer and error contract](./docs/renderer.md).
+
+## Preview in development
+
+Add one exact sibling fixture for deterministic sample props:
+
+```ts
+// app/emails/welcome.fixtures.ts
+import type WelcomeEmail from './welcome.vue'
+
+type WelcomeEmailProps = Omit<
+  InstanceType<typeof WelcomeEmail>['$props'],
+  keyof import('vue').PublicProps
+>
+
+export default {
+  activationUrl: 'https://example.com/activate',
+  firstName: 'Ada',
+} satisfies WelcomeEmailProps
+```
+
+Run `pnpm exec nuxt dev` and open `/__email`. The page provides the sandboxed email preview, exact HTML, plain text, copy/open actions, render errors, and automatic refresh. Fixtures, preview handlers, and preview UI are excluded from production builds. Read the [preview guide](./docs/preview.md) for the exact security and fixture contract.
+
+## Compatibility and limits
+
+Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for supported behavior, intentional Vue/email-safety divergences, and unsupported React Email components. The oracle is pinned to React Email `6.9.0`, `@react-email/render` `2.1.0`, and source commit `6eb428924c4c2774228a07cbec1977ad8898f143`; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
+
+The v0.1 surface intentionally excludes Tailwind, Markdown, font loading, code components, provider adapters, send endpoints, template metadata, raw-HTML primitives, configuration options, and a public registry API.
+
+## Documentation
+
+- [Getting started](./docs/getting-started.md)
+- [Component reference](./docs/components.md)
+- [Renderer, plain-text, error, and security contracts](./docs/renderer.md)
+- [Development preview](./docs/preview.md)
+- [React Email migration](./docs/migration-from-react-email.md)
+- [Generated conformance report](./docs/conformance/report.md)
+- [Manual email-client QA](./docs/testing/manual-email-client-qa.md)
+- [External beta record](./docs/testing/external-beta.md)
+- [Changelog](./CHANGELOG.md)
+
+## Local development
+
+Use the repository-pinned pnpm version:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm dev:prepare
+pnpm lint
+pnpm test:types
+pnpm test
+pnpm conformance:check
+pnpm oracle:check
+pnpm performance:measure
+pnpm dev:build
+pnpm release:verify
+```
+
+`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then runs the release-tested fresh-install path twice in isolated applications. Publication remains blocked until the external gates in the release-candidate record are complete.
