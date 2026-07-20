@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
+    },
+    "./core": {
+      "types": "./dist/runtime/core.d.ts",
+      "import": "./dist/runtime/core.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -15,6 +19,9 @@
     "*": {
       ".": [
         "./dist/types.d.mts"
+      ],
+      "core": [
+        "./dist/runtime/core.d.ts"
       ]
     }
   },

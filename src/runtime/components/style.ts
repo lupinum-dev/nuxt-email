@@ -19,7 +19,9 @@ export function normalizeEmailStyle(style: unknown): EmailStyle | undefined {
 
   const emailStyle: EmailStyle = {}
   for (const [property, value] of Object.entries(normalized)) {
-    emailStyle[property.startsWith('--') ? property : camelize(property)] = value
+    if (value !== undefined) {
+      emailStyle[property.startsWith('--') ? property : camelize(property)] = value
+    }
   }
 
   return emailStyle

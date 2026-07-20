@@ -3,7 +3,22 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { render } from '@react-email/render'
 import React from 'react'
-import { Body, Head, Heading, Hr, Html, Img, Link, Text } from 'react-email'
+import {
+  Body,
+  Button,
+  Column,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Img,
+  Link,
+  Preview,
+  Row,
+  Section,
+  Text,
+} from 'react-email'
 
 const ORACLE_PATH = fileURLToPath(new URL('../test/conformance/oracle/react-email-6.9.0.json', import.meta.url))
 const REACT_EMAIL_CHECKOUT = fileURLToPath(new URL('../../react-email', import.meta.url))
@@ -71,6 +86,8 @@ function verifyPinnedSource(): void {
 }
 
 async function generateOracle() {
+  const previewValue = 'Inbox preview'
+  const previewWhitespace = '\u00A0\u200C\u200B\u200D\u200E\u200F\uFEFF'
   const phaseZeroDocument = React.createElement(
     Html,
     { lang: 'en' },
@@ -102,6 +119,23 @@ async function generateOracle() {
       React.createElement(Hr),
     ),
   )
+
+  const asymmetricButton = React.createElement(Button, {
+    'aria-label': 'Activate & continue',
+    'className': 'primary',
+    'href': 'https://example.com/?value="quoted"&mode=test',
+    'id': 'button-test',
+    'rel': 'noreferrer',
+    'style': {
+      backgroundColor: '#111',
+      display: 'block',
+      lineHeight: '150%',
+      maxWidth: '50%',
+      padding: '1px 11px 3px 4px',
+      textDecoration: 'underline',
+    },
+    'target': '_self',
+  }, 'Click & continue')
 
   const cases = {
     'basic-document': await renderCase({
@@ -229,6 +263,116 @@ async function generateOracle() {
       id: 'hr-test',
       style: { borderColor: 'black', width: '50%' },
     })),
+    'preview-short': await renderCase({
+      reactReference: 'packages/react-email/src/components/preview/preview.spec.tsx',
+      nuxtComponent: 'EPreview',
+      classification: 'intentional-divergence',
+      input: { text: previewValue },
+      semanticAssertions: ['hidden preview text', '200-character filler policy', 'plain-text exclusion'],
+      expectedExactFragments: [
+        `<div>${previewWhitespace.repeat(200 - previewValue.length)}</div>`,
+      ],
+      intentionalDivergence: 'React 19 hoists Preview title output into head; Vue authors place title explicitly in EHead. EPreview also keeps hiding styles and data-skip-in-text fixed so user attributes cannot expose filler.',
+    }, React.createElement(Preview, null, previewValue)),
+    'preview-max-length': await renderCase({
+      reactReference: 'packages/react-email/src/components/preview/preview.spec.tsx',
+      nuxtComponent: 'EPreview',
+      classification: 'intentional-divergence',
+      input: { textLength: 200 },
+      semanticAssertions: ['text truncated at 200 UTF-16 code units', 'no filler after maximum length'],
+      intentionalDivergence: 'EPreview omits React 19 title output and keeps hiding and plain-text exclusion invariant because Vue SSR cannot safely hoist title into head.',
+    }, React.createElement(Preview, null, 'x'.repeat(200))),
+    'preview-style-override': await renderCase({
+      reactReference: 'packages/react-email/src/components/preview/preview.tsx',
+      nuxtComponent: 'EPreview',
+      classification: 'intentional-divergence',
+      input: { style: { color: 'red' }, text: 'Styled preview' },
+      semanticAssertions: ['hidden preview remains hidden when user styles are forwarded'],
+      intentionalDivergence: 'React replaces all hiding styles when a user style is provided; EPreview retains the hiding defaults as an email-safety invariant.',
+    }, React.createElement(Preview, {
+      children: 'Styled preview',
+      style: { color: 'red' },
+    })),
+    'container-padding': await renderCase({
+      reactReference: 'packages/react-email/src/components/container/container.tsx',
+      nuxtComponent: 'EContainer',
+      classification: 'normalized',
+      input: { style: { backgroundColor: 'white', maxWidth: '600px', padding: '24px' } },
+      semanticAssertions: ['centered presentation table', 'maximum width', 'padding moved to inner cell'],
+    }, React.createElement(Container, {
+      id: 'container-test',
+      style: { backgroundColor: 'white', maxWidth: '600px', padding: '24px' },
+    }, 'Container content')),
+    'section-padding': await renderCase({
+      reactReference: 'packages/react-email/src/components/section/section.tsx',
+      nuxtComponent: 'ESection',
+      classification: 'normalized',
+      input: { style: { backgroundColor: '#f4f4f4', padding: '16px 20px' } },
+      semanticAssertions: ['presentation table', 'one wrapper cell', 'padding moved to wrapper cell'],
+    }, React.createElement(Section, {
+      id: 'section-test',
+      style: { backgroundColor: '#f4f4f4', padding: '16px 20px' },
+    }, 'Section content')),
+    'row-columns': await renderCase({
+      reactReference: 'packages/react-email/src/components/row and packages/react-email/src/components/column',
+      nuxtComponent: 'ERow and EColumn',
+      classification: 'intentional-divergence',
+      input: { columns: 2 },
+      semanticAssertions: ['presentation table row', 'two direct cells', 'width and style forwarding'],
+      intentionalDivergence: 'EColumn omits React Email\'s internal data-id marker because no Vue behavior consumes it.',
+    }, React.createElement(
+      Row,
+      {
+        id: 'row-test',
+        children: [
+          React.createElement(Column, { key: 'left', style: { color: 'red' }, width: '50%' }, 'Left'),
+          React.createElement(Column, { key: 'right', width: '50%' }, 'Right'),
+        ],
+      },
+    )),
+    'button-padding': await renderCase({
+      reactReference: 'packages/react-email/src/components/button/button.spec.tsx',
+      nuxtComponent: 'EButton',
+      classification: 'normalized',
+      input: { href: 'https://example.com', padding: '12px 20px' },
+      semanticAssertions: ['anchor defaults', 'expanded padding', 'Outlook text raise and horizontal spacing'],
+      expectedExactFragments: [
+        '<!--[if mso]><i style="mso-font-width:500%;mso-text-raise:18px" hidden>&#8202;&#8202;</i><![endif]-->',
+        '<!--[if mso]><i style="mso-font-width:500%" hidden>&#8202;&#8202;&#8203;</i><![endif]-->',
+      ],
+    }, React.createElement(Button, {
+      href: 'https://example.com',
+      style: { padding: '12px 20px' },
+    }, 'Activate account')),
+    'button-no-padding': await renderCase({
+      reactReference: 'packages/react-email/src/components/button/button.spec.tsx',
+      nuxtComponent: 'EButton',
+      classification: 'normalized',
+      input: { href: 'https://example.com' },
+      semanticAssertions: ['default target', 'zero-width Outlook fragments', 'no padding longhands'],
+      expectedExactFragments: [
+        '<!--[if mso]><i style="mso-font-width:0%;mso-text-raise:0px" hidden></i><![endif]-->',
+        '<!--[if mso]><i style="mso-font-width:0%" hidden>&#8203;</i><![endif]-->',
+      ],
+    }, React.createElement(Button, { href: 'https://example.com' })),
+    'button-asymmetric': await renderCase({
+      reactReference: 'packages/react-email/src/components/button/button.tsx',
+      nuxtComponent: 'EButton',
+      classification: 'normalized',
+      input: { href: 'quoted and escaped URL', padding: '1px 11px 3px 4px', target: '_self' },
+      semanticAssertions: ['asymmetric Outlook spacing', 'user style precedence', 'attributes and escaping'],
+      expectedExactFragments: [
+        '<!--[if mso]><i style="mso-font-width:200%;mso-text-raise:3px" hidden>&#8202;</i><![endif]-->',
+        '<!--[if mso]><i style="mso-font-width:275%" hidden>&#8202;&#8202;&#8203;</i><![endif]-->',
+      ],
+    }, asymmetricButton),
+    'button-asymmetric-text': await renderTextCase({
+      reactReference: 'packages/render/src/shared/utils/to-plain-text.ts',
+      nuxtComponent: 'renderPlainText with EButton',
+      classification: 'exact',
+      input: { fixture: 'asymmetric button' },
+      semanticAssertions: ['button label and escaped destination'],
+    }, asymmetricButton),
   }
 
   return {
