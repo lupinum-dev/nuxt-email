@@ -9,7 +9,6 @@ import { ETailwind } from '../../src/runtime/components/ETailwind'
 import { createTailwindEngine } from '../../src/runtime/tailwind/engine/index'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import {
-  nonInlinableClassNames,
   scanTailwindTree,
   TailwindMissingHeadError,
 } from '../../src/runtime/tailwind/transform'
@@ -49,12 +48,24 @@ describe('scanTailwindTree', () => {
   })
 })
 
-describe('nonInlinableClassNames', () => {
+describe('computed.nonInlinableClassNames', () => {
   it('returns only the original names of classes that produced non-inlinable rules', async () => {
     const engine = await createTailwindEngine()
     const computed = engine.computeStyles(['md:bg-red-500', 'p-4', 'not-a-utility'])
-    // p-4 is inlinable (absent from residual); not-a-utility is unknown (maps to itself).
-    expect(nonInlinableClassNames(computed)).toEqual(['md:bg-red-500'])
+    // p-4 is inlinable (absent); not-a-utility is unknown (no rule); md:bg-red-500 is non-inlinable.
+    expect(computed.nonInlinableClassNames).toEqual(['md:bg-red-500'])
+  })
+
+  it('orders the names by stylesheet emission, not authored order (matches React)', async () => {
+    const engine = await createTailwindEngine()
+
+    // Authored `md sm` but emitted `sm(40rem) md(48rem)`; React lists stylesheet order.
+    expect(engine.computeStyles(['md:bg-red-500', 'sm:text-lg']).nonInlinableClassNames)
+      .toEqual(['sm:text-lg', 'md:bg-red-500'])
+
+    // Pseudo-class first, then ascending breakpoints, regardless of authored order.
+    expect(engine.computeStyles(['lg:hidden', 'hover:bg-red-500', 'sm:text-lg', 'md:w-1/2']).nonInlinableClassNames)
+      .toEqual(['hover:bg-red-500', 'sm:text-lg', 'md:w-1/2', 'lg:hidden'])
   })
 })
 

@@ -1,4 +1,6 @@
+import type { Component } from 'vue'
 import oracle from './oracle/react-email-6.9.0.json'
+import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { ECodeBlock } from '../../src/runtime/components/ECodeBlock'
 import type { CodeBlockLanguage } from '../../src/runtime/components/code-block-languages'
@@ -61,6 +63,49 @@ describe('ECodeBlock', () => {
     expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['code-block-css-lang'].html))
     // Double-quoted font-family entries escape as &quot;, matching React.
     expect(html).toContain('&quot;Fira Code&quot;')
+  })
+
+  it('forwards native pass-through attributes onto the <pre>, matching the oracle', async () => {
+    // Rendered through a fixture so class/id/dir/... arrive as fall-through attrs (a direct
+    // top-level render would reject them as unknown props). React spreads `{...rest}` onto <pre>.
+    const fixture: Component = defineComponent({
+      name: 'CodeBlockAttributesFixture',
+      setup: () => () => h(ECodeBlock, {
+        'code': codeSnippet,
+        'language': 'javascript',
+        'theme': dracula,
+        'class': 'snippet',
+        'id': 'sample',
+        'dir': 'ltr',
+        'title': 'Sample',
+        'aria-label': 'code sample',
+        'role': 'group',
+        'data-x': '1',
+      }),
+    })
+
+    const html = await renderComponentToHtml(fixture)
+
+    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['code-block-attributes'].html))
+    expect(html).toContain('id="sample"')
+    expect(html).toContain('data-x="1"')
+    expect(html).toContain('aria-label="code sample"')
+    expect(html).toContain('role="group"')
+  })
+
+  it('throws on unsafe forwarded attributes instead of emitting them', async () => {
+    const fixture: Component = defineComponent({
+      name: 'CodeBlockUnsafeFixture',
+      setup: () => () => h(ECodeBlock, {
+        code: codeSnippet,
+        language: 'javascript',
+        theme: dracula,
+        onClick: () => {},
+      }),
+    })
+
+    await expect(renderComponentToHtml(fixture))
+      .rejects.toThrow('ECodeBlock does not support unsafe HTML attribute: onClick')
   })
 
   it('throws a typed error when the language grammar is unavailable', async () => {

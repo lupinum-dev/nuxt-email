@@ -2,6 +2,8 @@ import type * as PrismNS from 'prismjs'
 import type { DefineComponent, PropType } from 'vue'
 import { createRequire } from 'node:module'
 import { createStaticVNode, defineComponent } from 'vue'
+import { ssrRenderAttrs } from 'vue/server-renderer'
+import { assertSafeEmailAttributes } from './attributes'
 import type { CodeBlockLanguage } from './code-block-languages'
 import type { CodeBlockTheme } from './code-block-themes'
 import { normalizeEmailStyle } from './style'
@@ -130,6 +132,7 @@ export const ECodeBlock = defineComponent({
   },
   setup(props, { attrs }) {
     return () => {
+      assertSafeEmailAttributes('ECodeBlock', attrs)
       ensureGrammarsLoaded()
       const grammar = Prism.languages[props.language] as PrismNS.Grammar | undefined
       if (grammar === undefined) {
@@ -162,7 +165,13 @@ export const ECodeBlock = defineComponent({
         inner += '<br/>'
       }
 
-      const html = `<pre${styleAttribute(preStyle)}><code>${inner}</code></pre>`
+      // React spreads `{...rest}` onto the <pre>, so forward the native fall-through
+      // attributes (class, id, dir, title, aria-*, data-*, role, ...). `style` is
+      // consumed above into preStyle; ssrRenderAttrs drops event handlers/ref exactly
+      // as react-dom drops them from HTML, matching how sibling components forward attrs.
+      const forwardedAttrs: Record<string, unknown> = { ...attrs }
+      delete forwardedAttrs.style
+      const html = `<pre${ssrRenderAttrs(forwardedAttrs)}${styleAttribute(preStyle)}><code>${inner}</code></pre>`
       return createStaticVNode(html, 1)
     }
   },

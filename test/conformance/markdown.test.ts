@@ -109,6 +109,35 @@ describe('EMarkdown', () => {
     expect(html).toContain('<strong style="padding:1px 2px">strong</strong>')
   })
 
+  it('forwards fall-through attributes and applies react-dom px units to numeric container styles', {
+    tags: ['conformance:markdown-container-and-attrs'],
+  }, async () => {
+    const html = await renderComponentToHtml(markdownFixture({
+      class: 'wrap',
+      id: 'note',
+      dir: 'rtl',
+      source: markdownCustomDocument,
+      markdownContainerStyles: { padding: 8, paddingTop: 10, marginBottom: 20, lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
+    }))
+
+    expect(normalizeEmailHtml(html)).toBe(
+      normalizeEmailHtml(stripMarkdownDataId(oracle.cases['markdown-container-and-attrs'].html)),
+    )
+    // Fall-through attributes forwarded onto the container div.
+    expect(html).toContain('class="wrap"')
+    expect(html).toContain('id="note"')
+    expect(html).toContain('dir="rtl"')
+    // Non-unitless numerics gain px; unitless (line-height/opacity/z-index) and zero stay bare.
+    expect(html).toContain('padding:8px')
+    expect(html).toContain('padding-top:10px')
+    expect(html).toContain('margin-bottom:20px')
+    expect(html).toContain('line-height:2;')
+    expect(html).toContain('opacity:0;')
+    expect(html).toContain('z-index:5;')
+    expect(html).toContain('height:0;')
+    expect(html).not.toContain('height:0px')
+  })
+
   it('escapes double quotes in link/image href and title attributes', {
     tags: ['conformance:markdown-links-escaping'],
   }, async () => {

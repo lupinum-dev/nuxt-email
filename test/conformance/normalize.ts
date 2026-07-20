@@ -1,5 +1,23 @@
 const REACT_BOUNDARY_MARKERS = /<!--(?:\$|\/\$|html|head|body)-->/g
 
+/**
+ * Canonicalize a single attribute value for comparison:
+ *  - `style`: drop a terminal `;` (react-dom omits it; Vue keeps it).
+ *  - `class`: trim and collapse whitespace runs. react-dom renders a class string
+ *    verbatim (so `${className || ''} cino` yields a leading space when unclassed),
+ *    while Vue's `normalizeClass` trims it. Class-list whitespace is semantically
+ *    insignificant, so absorb it here rather than diverge the rendered output.
+ */
+function normalizeAttributeValue(name: string, value: string): string {
+  if (name === 'style') {
+    return value.endsWith(';') ? value.slice(0, -1) : value
+  }
+  if (name === 'class') {
+    return value.trim().replace(/\s+/g, ' ')
+  }
+  return value
+}
+
 function normalizeTag(tag: string): string {
   if (tag.startsWith('<!--') || tag.startsWith('<!DOCTYPE') || tag.startsWith('</')) {
     return tag
@@ -72,9 +90,7 @@ function normalizeTag(tag: string): string {
     }
 
     const value = source.slice(valueStart, valueEnd)
-    const normalizedValue = name === 'style' && value.endsWith(';')
-      ? value.slice(0, -1)
-      : value
+    const normalizedValue = normalizeAttributeValue(name, value)
     attributes.push({ name, value: `${name}=${quote}${normalizedValue}${quote}` })
     cursor = valueEnd + 1
   }

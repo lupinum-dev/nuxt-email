@@ -14,6 +14,13 @@ describe('email HTML normalization', () => {
     expect(normalizeEmailHtml(input)).toBe('<img alt="Logo" cellpadding="0" cellspacing="0" style="color:red" width="10">')
   })
 
+  it('trims and collapses class-attribute whitespace (React leading space vs Vue trimmed)', () => {
+    expect(normalizeEmailHtml('<code class=" cino">x</code>')).toBe('<code class="cino">x</code>')
+    expect(normalizeEmailHtml('<span class="a   b  c">x</span>')).toBe('<span class="a b c">x</span>')
+    // Token order is preserved; only insignificant separator whitespace is normalized.
+    expect(normalizeEmailHtml('<i class=" md_x sm_y ">x</i>')).toBe('<i class="md_x sm_y">x</i>')
+  })
+
   it('preserves MSO conditionals byte-for-byte', () => {
     const input = '<!--[if mso]><i style="mso-font-width:500%" hidden>&#8202;</i><![endif]-->'
 

@@ -550,6 +550,19 @@
       ],
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\"><style>\n        meta ~ .cino {\n          display: none !important;\n          opacity: 0 !important;\n        }\n\n        meta ~ .cio {\n          display: block !important;\n        }\n      </style><code class=\"inline-code cino\">const x = 1;</code><span class=\"inline-code cio\" style=\"display:none\">const x = 1;</span></p><!--/$-->"
     },
+    "code-inline-no-class": {
+      "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
+      "nuxtComponent": "ECodeInline",
+      "classification": "normalized",
+      "input": {
+        "child": "const x = 1;"
+      },
+      "semanticAssertions": [
+        "unclassed code copy is ` cino`",
+        "unclassed span copy is ` cio`"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\"><style>\n        meta ~ .cino {\n          display: none !important;\n          opacity: 0 !important;\n        }\n\n        meta ~ .cio {\n          display: block !important;\n        }\n      </style><code class=\" cino\">const x = 1;</code><span class=\" cio\" style=\"display:none\">const x = 1;</span></p><!--/$-->"
+    },
     "code-block-basic": {
       "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
       "nuxtComponent": "ECodeBlock",
@@ -596,6 +609,24 @@
         "alternate theme token styles"
       ],
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><pre style=\"background:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:&quot;Fira Code&quot;, &quot;Fira Mono&quot;, Menlo, Consolas, &quot;DejaVu Sans Mono&quot;, monospace;direction:ltr;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;line-height:1.5;-moz-tab-size:2;-o-tab-size:2;tab-size:2;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:1em;margin:0.5em 0;overflow:auto;border-radius:0.3em;width:100%\"><code><span style=\"color:hsl(95, 38%, 62%)\">.btn</span><span> ‍​</span><span style=\"color:hsl(220, 14%, 71%)\">{</span><br/><span> ‍​ ‍​</span><span style=\"color:hsl(355, 65%, 65%)\">color</span><span style=\"color:hsl(220, 14%, 71%)\">:</span><span> ‍​</span><span>red</span><span style=\"color:hsl(220, 14%, 71%)\">;</span><br/><span> ‍​ ‍​</span><span style=\"color:hsl(355, 65%, 65%)\">padding</span><span style=\"color:hsl(220, 14%, 71%)\">:</span><span> ‍​</span><span style=\"color:hsl(29, 54%, 61%)\">4</span><span>px</span><span> ‍​</span><span style=\"color:hsl(29, 54%, 61%)\">8</span><span>px</span><span style=\"color:hsl(220, 14%, 71%)\">;</span><br/><span style=\"color:hsl(220, 14%, 71%)\">}</span><br/></code></pre><!--/$-->"
+    },
+    "code-block-attributes": {
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "nuxtComponent": "ECodeBlock",
+      "classification": "normalized",
+      "input": {
+        "className": "snippet",
+        "id": "sample",
+        "dir": "ltr",
+        "title": "Sample",
+        "aria-label": "code sample",
+        "role": "group",
+        "data-x": "1"
+      },
+      "semanticAssertions": [
+        "native pass-through attributes forwarded onto <pre>"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><pre class=\"snippet\" id=\"sample\" dir=\"ltr\" title=\"Sample\" aria-label=\"code sample\" role=\"group\" data-x=\"1\" style=\"color:#f8f8f2;background:#282a36;text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:Consolas, Monaco, &#x27;Andale Mono&#x27;, &#x27;Ubuntu Mono&#x27;, monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:1em;margin:.5em 0;overflow:auto;border-radius:0.3em;width:100%\"><code><span style=\"color:#8be9fd\">const</span><span> ‍​greeting ‍​</span><span style=\"color:#f8f8f2\">=</span><span> ‍​</span><span style=\"color:#50fa7b\">&#x27;hi&#x27;</span><span style=\"color:#f8f8f2\">;</span><br/><span style=\"color:#8be9fd\">function</span><span> ‍​</span><span style=\"color:#f1fa8c\">wave</span><span style=\"color:#f8f8f2\">(</span><span style=\"color:#f8f8f2\">)</span><span> ‍​</span><span style=\"color:#f8f8f2\">{</span><br/><span> ‍​ ‍​</span><span style=\"color:#8be9fd\">return</span><span> ‍​greeting</span><span style=\"color:#f8f8f2\">;</span><br/><span style=\"color:#f8f8f2\">}</span><br/></code></pre><!--/$-->"
     },
     "markdown-document": {
       "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
@@ -660,6 +691,31 @@
         "loose list paragraph wrapping"
       ],
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div data-id=\"react-email-markdown\"><ul>\n<li><p>Item one</p>\n<ul>\n<li>Nested one</li>\n<li>Nested two</li>\n</ul>\n</li>\n<li>Item two</li>\n</ul>\n<ol>\n<li><p>Ordered one</p>\n</li>\n<li><p>Ordered two (loose)</p>\n</li>\n</ol>\n</div><!--/$-->"
+    },
+    "markdown-container-and-attrs": {
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "nuxtComponent": "EMarkdown",
+      "classification": "normalized",
+      "input": {
+        "className": "wrap",
+        "id": "note",
+        "dir": "rtl",
+        "markdownContainerStyles": {
+          "padding": 8,
+          "paddingTop": 10,
+          "marginBottom": 20,
+          "lineHeight": 2,
+          "opacity": 0,
+          "zIndex": 5,
+          "height": 0
+        }
+      },
+      "semanticAssertions": [
+        "fall-through attributes forwarded onto container div",
+        "numeric container styles gain react-dom px units",
+        "unitless and zero values kept unitless"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div class=\"wrap\" id=\"note\" dir=\"rtl\" data-id=\"react-email-markdown\" style=\"padding:8px;padding-top:10px;margin-bottom:20px;line-height:2;opacity:0;z-index:5;height:0\"><h1 style=\"font-weight:500;padding-top:20px;font-size:2.5rem\">Styled heading</h1><p>Body text with <strong style=\"font-weight:bold\">strong</strong> emphasis.</p>\n</div><!--/$-->"
     },
     "tw-basic-inlining": {
       "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
@@ -881,7 +937,8 @@
     }
   },
   "errors": {
-    "tailwind-non-inlinable-without-head": "Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500."
+    "tailwind-non-inlinable-without-head": "Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500.",
+    "tailwind-non-inlinable-without-head-multi": "Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: hover:bg-red-500 sm:text-lg md:w-1/2 lg:hidden."
   },
   "unsupported": []
 }

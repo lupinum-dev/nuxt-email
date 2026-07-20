@@ -223,4 +223,19 @@ describe('eTailwind conformance', () => {
       oracle.errors['tailwind-non-inlinable-without-head'],
     )
   })
+
+  it('lists multiple offending classes in React\'s stylesheet-emission order, not authored order', async () => {
+    // Authored `lg hover sm md`; React lists `hover sm md lg` (pseudo-class then ascending
+    // breakpoints). The message is asserted whole so a reordering regression fails.
+    const fixture = defineComponent({
+      name: 'NoHeadMultiFixture',
+      setup() {
+        return () => h(ETailwind, null, {
+          default: () => h('div', { class: 'lg:hidden hover:bg-red-500 sm:text-lg md:w-1/2' }),
+        })
+      },
+    })
+    const error = await renderComponentToHtml(fixture).catch(value => value)
+    expect(error.message).toBe(oracle.errors['tailwind-non-inlinable-without-head-multi'])
+  })
 })

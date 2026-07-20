@@ -40,6 +40,15 @@ export interface ComputedStyles {
    * `clone-element-with-inlined-styles.ts`.
    */
   residualClassMap: Map<string, string>
+  /**
+   * Original (unsanitized) names of every class that produced a non-inlinable
+   * rule, in stylesheet-emission order — the exact list React Email interpolates
+   * into its no-`<head>` error (`Array.from(nonInlinableRules.keys())`,
+   * tailwind.tsx). This order (breakpoint/variant emission order) differs from the
+   * authored class order, so it cannot be reconstructed from {@link residualClassMap}
+   * and must be carried canonically.
+   */
+  nonInlinableClassNames: string[]
 }
 
 export interface TailwindEngine {
@@ -113,7 +122,12 @@ export async function createTailwindEngine(
       }
     }
 
-    return { inlinable, nonInlinableCss, residualClassMap }
+    return {
+      inlinable,
+      nonInlinableCss,
+      residualClassMap,
+      nonInlinableClassNames: Array.from(nonInlinableRules.keys()),
+    }
   }
 
   return { computeStyles }

@@ -98,21 +98,6 @@ export function scanTailwindTree(children: unknown): { classNames: string[], has
   return { classNames, hasHead }
 }
 
-/**
- * Original (unsanitized) names of the classes that produced non-inlinable rules,
- * in first-seen order — the list React interpolates into its no-`<head>` error.
- * A class is non-inlinable exactly when its residual output differs from the
- * original (sanitizeClassName rewrites the `:` / `/` that every variant class
- * carries); unknown classes map to themselves and are excluded.
- */
-export function nonInlinableClassNames(computed: ComputedStyles): string[] {
-  const names: string[] = []
-  for (const [original, output] of computed.residualClassMap) {
-    if (output !== original) names.push(original)
-  }
-  return names
-}
-
 /** Merge the inlinable declarations of an element's classes, in class order. */
 function tailwindStyleFor(tokens: string[], computed: ComputedStyles): Map<string, string> {
   const merged = new Map<string, string>()
@@ -271,7 +256,7 @@ function transformVNode(node: VNode, ctx: TransformContext): VNode {
  */
 export function applyTailwind(children: unknown, computed: ComputedStyles, hasHead: boolean): VNodeChild[] {
   if (computed.nonInlinableCss !== '' && !hasHead) {
-    throw new TailwindMissingHeadError(nonInlinableClassNames(computed))
+    throw new TailwindMissingHeadError(computed.nonInlinableClassNames)
   }
 
   const ctx: TransformContext = {

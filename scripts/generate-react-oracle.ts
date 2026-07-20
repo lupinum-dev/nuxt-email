@@ -249,6 +249,12 @@ async function generateOracle() {
     React.createElement(Tailwind, null, React.createElement('div', { className: 'md:bg-red-500' })),
   )
 
+  // Multiple non-inlinable classes: React lists them in stylesheet-emission order
+  // (pseudo-class, then ascending breakpoints), NOT the authored order.
+  const tailwindNonInlinableWithoutHeadMultiError = await captureRenderError(
+    React.createElement(Tailwind, null, React.createElement('div', { className: 'lg:hidden hover:bg-red-500 sm:text-lg md:w-1/2' })),
+  )
+
   const cases = {
     'basic-document': await renderCase({
       reactReference: 'packages/react-email/src/components and packages/render/src/node/render.tsx',
@@ -581,6 +587,13 @@ async function generateOracle() {
       input: { className: 'inline-code', child: 'const x = 1;' },
       semanticAssertions: ['Orange.fr style rule', 'cino code copy', 'cio span copy always present'],
     }, React.createElement(Text, null, React.createElement(CodeInline, { className: 'inline-code' }, 'const x = 1;'))),
+    'code-inline-no-class': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-inline/code-inline.tsx',
+      nuxtComponent: 'ECodeInline',
+      classification: 'normalized',
+      input: { child: 'const x = 1;' },
+      semanticAssertions: ['unclassed code copy is ` cino`', 'unclassed span copy is ` cio`'],
+    }, React.createElement(Text, null, React.createElement(CodeInline, null, 'const x = 1;'))),
     'code-block-basic': await renderCase({
       reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
       nuxtComponent: 'ECodeBlock',
@@ -602,6 +615,24 @@ async function generateOracle() {
       input: { language: 'css', theme: 'oneDark' },
       semanticAssertions: ['css grammar tokenization', 'alternate theme token styles'],
     }, React.createElement(CodeBlock, { code: cssSnippet, language: 'css', theme: oneDark })),
+    'code-block-attributes': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
+      nuxtComponent: 'ECodeBlock',
+      classification: 'normalized',
+      input: { 'className': 'snippet', 'id': 'sample', 'dir': 'ltr', 'title': 'Sample', 'aria-label': 'code sample', 'role': 'group', 'data-x': '1' },
+      semanticAssertions: ['native pass-through attributes forwarded onto <pre>'],
+    }, React.createElement(CodeBlock, {
+      'code': codeSnippet,
+      'language': 'javascript',
+      'theme': dracula,
+      'className': 'snippet',
+      'id': 'sample',
+      'dir': 'ltr',
+      'title': 'Sample',
+      'aria-label': 'code sample',
+      'role': 'group',
+      'data-x': '1',
+    } as unknown as React.ComponentProps<typeof CodeBlock>)),
     'markdown-document': await renderCase({
       reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
       nuxtComponent: 'EMarkdown',
@@ -634,6 +665,19 @@ async function generateOracle() {
       input: { fixture: 'nested and loose lists' },
       semanticAssertions: ['nested list nesting', 'loose list paragraph wrapping'],
     }, React.createElement(Markdown, null, markdownNestedDocument)),
+    'markdown-container-and-attrs': await renderCase({
+      reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
+      nuxtComponent: 'EMarkdown',
+      classification: 'normalized',
+      input: { className: 'wrap', id: 'note', dir: 'rtl', markdownContainerStyles: { padding: 8, paddingTop: 10, marginBottom: 20, lineHeight: 2, opacity: 0, zIndex: 5, height: 0 } },
+      semanticAssertions: ['fall-through attributes forwarded onto container div', 'numeric container styles gain react-dom px units', 'unitless and zero values kept unitless'],
+    }, React.createElement(Markdown, {
+      className: 'wrap',
+      id: 'note',
+      dir: 'rtl',
+      markdownContainerStyles: { padding: 8, paddingTop: 10, marginBottom: 20, lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
+      children: markdownCustomDocument,
+    } as unknown as React.ComponentProps<typeof Markdown>)),
     'tw-basic-inlining': await renderCase({
       reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
       nuxtComponent: 'ETailwind',
@@ -762,6 +806,7 @@ async function generateOracle() {
     cases,
     errors: {
       'tailwind-non-inlinable-without-head': tailwindNonInlinableWithoutHeadError,
+      'tailwind-non-inlinable-without-head-multi': tailwindNonInlinableWithoutHeadMultiError,
     },
     unsupported: [],
   }
