@@ -65,7 +65,7 @@ describe('phase zero rendering proof', () => {
     const vueHtml = await renderComponentToHtml(BasicDocument)
     const normalizedVue = normalizeEmailHtml(vueHtml)
 
-    expect(normalizedVue).toBe(normalizeEmailHtml(oracle.cases['basic-document']))
+    expect(normalizedVue).toBe(normalizeEmailHtml(oracle.cases['basic-document'].html))
     expect(normalizedVue).toContain('<html dir="ltr" lang="en"><head>')
     expect(normalizedVue).toContain('<body dir="ltr" lang="en"><table border="0" width="100%" cellpadding="0" cellspacing="0" role="presentation" align="center"><tbody><tr><td dir="ltr" lang="en">')
     expect(vueHtml).toContain('Hello &amp; &lt;Ada&gt; — Grüß dich')

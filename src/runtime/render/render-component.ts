@@ -23,7 +23,10 @@ export async function renderComponentToHtml(
 ): Promise<string> {
   assertKnownProps(component, props)
   const app = createSSRApp(component, props)
-  const renderedHtml = await renderToString(app)
+  const renderedHtml = (await renderToString(app))
+    .replaceAll('<!--[-->', '')
+    .replaceAll('<!--]-->', '')
+    .replaceAll('<!---->', '')
 
   return assembleEmailDocument(renderedHtml)
 }

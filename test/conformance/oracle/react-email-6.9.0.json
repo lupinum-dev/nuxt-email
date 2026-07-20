@@ -10,6 +10,199 @@
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
   "cases": {
-    "basic-document": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\">Hello &amp; &lt;Ada&gt; — Grüß dich</p><a href=\"https://example.com/?value=&quot;quoted&quot;&amp;mode=test\">Open</a></td></tr></tbody></table><!--/$--></body></html>"
+    "basic-document": {
+      "reactReference": "packages/react-email/src/components and packages/render/src/node/render.tsx",
+      "nuxtComponent": "BasicDocument",
+      "classification": "normalized",
+      "input": {
+        "fixture": "phase zero comparison document"
+      },
+      "semanticAssertions": [
+        "document defaults and head metadata",
+        "body presentation table",
+        "escaped text and URL attributes"
+      ],
+      "expectedExactFragments": [
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\">Hello &amp; &lt;Ada&gt; — Grüß dich</p><a href=\"https://example.com/?value=&quot;quoted&quot;&amp;mode=test\">Open</a></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "complete-basic-email": {
+      "reactReference": "packages/react-email/src/components and packages/render/src/node/render.tsx",
+      "nuxtComponent": "CompleteBasicEmail",
+      "classification": "semantic",
+      "input": {
+        "fixture": "complete basic email"
+      },
+      "semanticAssertions": [
+        "document defaults and head metadata",
+        "body presentation table",
+        "leaf primitive structure and styles",
+        "escaped text and URL attributes"
+      ],
+      "expectedExactFragments": [
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><title>Internal title</title><style>body{color:#111}</style></head><body dir=\"ltr\" lang=\"en\" style=\"background-color:#f4f4f4;padding:0\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\" style=\"background-color:#f4f4f4;padding:20px\"><h2 style=\"margin-left:4px;margin-right:4px\">Welcome Ada</h2><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\">Hello &amp; &lt;Ada&gt; — Grüß dich</p><a href=\"https://example.com/?value=&quot;quoted&quot;&amp;mode=test\" style=\"color:#067df7;text-decoration-line:none\" target=\"_blank\">Open account</a><img alt=\"Nuxt logo\" height=\"32\" src=\"https://example.com/logo.png\" style=\"display:block;outline:none;border:none;text-decoration:none\" width=\"32\"/><hr style=\"width:100%;border:none;border-color:transparent;border-top:1px solid #eaeaea\"/></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "complete-basic-email-text": {
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "complete basic email HTML"
+      },
+      "semanticAssertions": [
+        "head and images excluded",
+        "links and horizontal rules represented"
+      ],
+      "text": "WELCOME ADA\n\nHello & <Ada> — Grüß dich\n\nOpen account https://example.com/?value=\"quoted\"&mode=test\n\n----------------------------------------"
+    },
+    "html-defaults": {
+      "reactReference": "packages/react-email/src/components/html/html.spec.tsx",
+      "nuxtComponent": "EHtml",
+      "classification": "intentional-divergence",
+      "input": {},
+      "semanticAssertions": [
+        "html tag",
+        "ltr direction",
+        "English language"
+      ],
+      "intentionalDivergence": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head></head><!--$--><!--html--><!--/$--></html>"
+    },
+    "head-content": {
+      "reactReference": "packages/react-email/src/components/head/head.spec.tsx",
+      "nuxtComponent": "EHead",
+      "classification": "normalized",
+      "input": {
+        "child": "style element"
+      },
+      "semanticAssertions": [
+        "content type metadata",
+        "Apple reformatting metadata",
+        "child order"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><head id=\"head-test\"><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>body{color:red}</style></head><!--$--><!--head--><!--/$-->"
+    },
+    "body-reset": {
+      "reactReference": "packages/react-email/src/components/body/body.spec.tsx",
+      "nuxtComponent": "EBody",
+      "classification": "semantic",
+      "input": {
+        "style": {
+          "backgroundColor": "pink",
+          "color": "navy",
+          "marginInlineStart": "12px",
+          "padding": "20px"
+        }
+      },
+      "semanticAssertions": [
+        "presentation table",
+        "body margin and padding reset",
+        "full style copied to inner cell"
+      ],
+      "expectedExactFragments": [
+        "margin-inline-start:0",
+        "padding:0"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><body id=\"body-test\" dir=\"ltr\" lang=\"en\" style=\"background-color:pink;margin-inline-start:0;padding:0\"><!--$--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\" style=\"background-color:pink;color:navy;margin-inline-start:12px;padding:20px\">Body content</td></tr></tbody></table><!--/$--></body>"
+    },
+    "text-margins": {
+      "reactReference": "packages/react-email/src/components/text/text.spec.tsx",
+      "nuxtComponent": "EText",
+      "classification": "normalized",
+      "input": {
+        "style": {
+          "color": "red",
+          "margin": "12px",
+          "marginTop": "0px"
+        }
+      },
+      "semanticAssertions": [
+        "paragraph tag",
+        "default typography",
+        "ordered margin precedence",
+        "user style precedence"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p id=\"text-test\" style=\"font-size:14px;line-height:24px;color:red;margin:12px;margin-top:0px;margin-bottom:12px;margin-left:12px;margin-right:12px\">Text content</p><!--/$-->"
+    },
+    "heading-spacing": {
+      "reactReference": "packages/react-email/src/components/heading/heading.spec.tsx",
+      "nuxtComponent": "EHeading",
+      "classification": "normalized",
+      "input": {
+        "as": "h2",
+        "mx": 4,
+        "mt": "5",
+        "style": {
+          "color": "red",
+          "marginRight": "9px"
+        }
+      },
+      "semanticAssertions": [
+        "selected heading tag",
+        "spacing conversion",
+        "user style precedence"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><h2 id=\"heading-test\" style=\"margin-left:4px;margin-right:9px;margin-top:5px;color:red\">Heading content</h2><!--/$-->"
+    },
+    "link-overrides": {
+      "reactReference": "packages/react-email/src/components/link/link.spec.tsx",
+      "nuxtComponent": "ELink",
+      "classification": "semantic",
+      "input": {
+        "href": "quoted and escaped URL",
+        "target": "_self",
+        "style": {
+          "color": "red"
+        }
+      },
+      "semanticAssertions": [
+        "anchor tag",
+        "escaped URL",
+        "target override",
+        "user style precedence"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><a id=\"link-test\" href=\"https://example.com/?value=&quot;quoted&quot;&amp;mode=test\" style=\"color:red;text-decoration-line:none\" target=\"_self\">Link &amp; content</a><!--/$-->"
+    },
+    "image-overrides": {
+      "reactReference": "packages/react-email/src/components/img/img.spec.tsx",
+      "nuxtComponent": "EImg",
+      "classification": "semantic",
+      "input": {
+        "alt": "Logo & mark",
+        "dimensions": [
+          300,
+          120
+        ],
+        "style": {
+          "border": "1px solid black"
+        }
+      },
+      "semanticAssertions": [
+        "image attributes",
+        "default client-safe styles",
+        "user style precedence"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><img id=\"img-test\" alt=\"Logo &amp; mark\" height=\"120\" src=\"https://example.com/logo.png?mode=light&amp;size=2\" style=\"display:block;outline:none;border:1px solid black;text-decoration:none\" width=\"300\"/><!--/$-->"
+    },
+    "horizontal-rule-overrides": {
+      "reactReference": "packages/react-email/src/components/hr/hr.spec.tsx",
+      "nuxtComponent": "EHr",
+      "classification": "semantic",
+      "input": {
+        "style": {
+          "borderColor": "black",
+          "width": "50%"
+        }
+      },
+      "semanticAssertions": [
+        "horizontal rule tag",
+        "default rule styles",
+        "user style precedence"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><hr id=\"hr-test\" style=\"width:50%;border:none;border-color:black;border-top:1px solid #eaeaea\"/><!--/$-->"
+    }
   }
 }
