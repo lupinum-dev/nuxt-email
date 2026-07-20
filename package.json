@@ -2,6 +2,13 @@
   "name": "nuxt-email",
   "version": "0.1.0",
   "description": "Typed Vue email authoring and server-side rendering for Nuxt",
+  "keywords": [
+    "email",
+    "nuxt",
+    "ssr",
+    "transactional-email",
+    "vue"
+  ],
   "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@11.13.1",
@@ -15,6 +22,7 @@
     }
   },
   "main": "./dist/module.mjs",
+  "types": "./dist/types.d.mts",
   "typesVersions": {
     "*": {
       ".": [
@@ -23,6 +31,8 @@
     }
   },
   "files": [
+    "CHANGELOG.md",
+    "docs",
     "dist",
     "THIRD_PARTY_NOTICES"
   ],

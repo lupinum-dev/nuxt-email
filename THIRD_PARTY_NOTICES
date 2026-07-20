@@ -3,8 +3,10 @@ React Email
 
 Nuxt Email contains Vue adaptations of selected compatibility algorithms and
 markup strategies from React Email 6.9.0, pinned at source commit
-6eb428924c4c2774228a07cbec1977ad8898f143. See
-docs/conformance/provenance.md for the exact local and upstream source paths.
+6eb428924c4c2774228a07cbec1977ad8898f143. The adapted surface is limited to
+button padding and Outlook spacing, text margin expansion, table padding
+placement, and hidden preview text. The pinned upstream source is available at
+https://github.com/resend/react-email/tree/6eb428924c4c2774228a07cbec1977ad8898f143.
 
 Copyright 2024 Plus Five Five, Inc
 

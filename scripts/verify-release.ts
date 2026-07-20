@@ -27,6 +27,7 @@ interface PackageManifest {
   license?: unknown
   type?: unknown
   main?: unknown
+  types?: unknown
   packageManager?: unknown
   files?: unknown
   engines?: Record<string, unknown>
@@ -176,12 +177,15 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.license === 'MIT', 'Packed package license must be MIT')
   invariant(packed.type === 'module', 'Packed package must declare ESM with type="module"')
   invariant(packed.main === './dist/module.mjs', 'Packed package main entry must be ./dist/module.mjs')
+  invariant(packed.types === './dist/types.d.mts', 'Packed package types entry must be ./dist/types.d.mts')
   invariant(
     Array.isArray(packed.files)
-    && packed.files.length === 2
+    && packed.files.length === 4
+    && packed.files.includes('CHANGELOG.md')
+    && packed.files.includes('docs')
     && packed.files.includes('dist')
     && packed.files.includes('THIRD_PARTY_NOTICES'),
-    'Packed files allowlist must contain exactly dist and THIRD_PARTY_NOTICES',
+    'Packed files allowlist must contain exactly CHANGELOG.md, docs, dist, and THIRD_PARTY_NOTICES',
   )
   invariant(typeof packed.engines?.node === 'string' && packed.engines.node.length > 0, 'Packed package must declare its supported Node range')
 
@@ -404,7 +408,13 @@ async function verifyRelease(): Promise<void> {
     for (const requiredFile of [
       'LICENSE',
       'README.md',
+      'CHANGELOG.md',
       'THIRD_PARTY_NOTICES',
+      'docs/components.md',
+      'docs/conformance/report.md',
+      'docs/getting-started.md',
+      'docs/migration-from-react-email.md',
+      'docs/renderer.md',
       'dist/module.mjs',
       'dist/types.d.mts',
       'dist/runtime/render/render-component.js',
@@ -412,7 +422,7 @@ async function verifyRelease(): Promise<void> {
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }
-    const allowedPackageFile = /^(?:LICENSE|README\.md|THIRD_PARTY_NOTICES|package\.json|dist\/)/
+    const allowedPackageFile = /^(?:CHANGELOG\.md|LICENSE|README\.md|THIRD_PARTY_NOTICES|package\.json|docs\/|dist\/)/
     invariant(
       packedFiles.every(path => allowedPackageFile.test(path)),
       `Packed package contains files outside the release allowlist: ${packedFiles.filter(path => !allowedPackageFile.test(path)).join(', ')}`,
@@ -422,6 +432,26 @@ async function verifyRelease(): Promise<void> {
       'Packed package contains workspace-only source, test, script, playground, or dependency files',
     )
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
+
+    const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
+    for (const requiredText of ['# Nuxt Email', 'nuxt-email', 'renderEmail']) {
+      invariant(packedReadme.includes(requiredText), `Packed README is missing required text: ${requiredText}`)
+    }
+    for (const scaffoldText of [
+      'Get your module up and running quickly.',
+      'My new Nuxt module for doing amazing things.',
+      'npx nuxt module add my-module',
+      'your-org/my-module',
+      'Nuxt module playground',
+    ]) {
+      invariant(!packedReadme.includes(scaffoldText), `Packed README contains scaffold text: ${scaffoldText}`)
+    }
+    const localReadmeLinks = [...packedReadme.matchAll(/\]\((?![#a-z]+:)([^)]+)\)/gi)]
+      .map(match => match[1]!.split('#', 1)[0]!.replace(/^\.\//, ''))
+      .filter(Boolean)
+    for (const linkedPath of localReadmeLinks) {
+      invariant(packedFiles.includes(linkedPath), `Packed README links to a missing local file: ${linkedPath}`)
+    }
 
     const sourceThirdPartyNotices = await readFile(join(packageRoot, 'THIRD_PARTY_NOTICES'), 'utf8')
     const packedThirdPartyNotices = await readFile(join(inspectedPackageRoot, 'THIRD_PARTY_NOTICES'), 'utf8')
