@@ -7,17 +7,25 @@ import React from 'react'
 import {
   Body,
   Button,
+  CodeBlock,
+  CodeInline,
   Column,
   Container,
+  dracula,
+  Font,
   Head,
   Heading,
   Hr,
   Html,
   Img,
   Link,
+  Markdown,
+  oneDark,
+  pixelBasedPreset,
   Preview,
   Row,
   Section,
+  Tailwind,
   Text,
 } from 'react-email'
 import { plainTextCorpus } from '../test/conformance/plain-text-corpus'
@@ -150,6 +158,96 @@ async function generateOracle() {
     },
     'target': '_self',
   }, 'Click & continue')
+
+  // --- Feature component fixtures (Font, CodeInline, CodeBlock, Markdown, Tailwind) ---
+
+  type TailwindConfig = NonNullable<React.ComponentProps<typeof Tailwind>['config']>
+
+  const fontDocument = (fontProps: React.ComponentProps<typeof Font>) =>
+    React.createElement(
+      Html,
+      null,
+      React.createElement(Head, null, React.createElement(Font, fontProps)),
+      React.createElement(Body, null, 'Sample body copy in the branded font.'),
+    )
+
+  const codeSnippet = 'const greeting = \'hi\';\nfunction wave() {\n  return greeting;\n}'
+  const cssSnippet = '.btn {\n  color: red;\n  padding: 4px 8px;\n}'
+
+  const markdownDocument = [
+    '# Heading One',
+    '',
+    'A paragraph with **bold** and *italic* text and a [link](https://example.com).',
+    '',
+    '- First item',
+    '- Second item',
+    '- Third item',
+    '',
+    '> A quoted line of context.',
+    '',
+    '```js',
+    'const total = 1 + 2;',
+    '```',
+    '',
+    '---',
+    '',
+    '![Logo alt](https://example.com/logo.png)',
+  ].join('\n')
+
+  const markdownCustomDocument = [
+    '# Styled heading',
+    '',
+    'Body text with **strong** emphasis.',
+  ].join('\n')
+
+  const markdownEscapingDocument = [
+    '[quoted "link" text](https://example.com/?q="a"&b=c "A \\"quoted\\" title")',
+    '',
+    '![alt "with" quotes](https://example.com/i.png "image \\"title\\"")',
+  ].join('\n')
+
+  const markdownNestedDocument = [
+    '- Item one',
+    '  - Nested one',
+    '  - Nested two',
+    '- Item two',
+    '',
+    '1. Ordered one',
+    '',
+    '2. Ordered two (loose)',
+  ].join('\n')
+
+  const tailwindEmail = (config: TailwindConfig | undefined, body: React.ReactNode, head?: React.ReactNode) =>
+    React.createElement(
+      Tailwind,
+      {
+        ...(config ? { config } : {}),
+        children: React.createElement(
+          Html,
+          null,
+          head ?? React.createElement(Head),
+          React.createElement(Body, null, body),
+        ),
+      },
+    )
+
+  // mso-* style properties are intentionally outside React.CSSProperties; the port must
+  // preserve them through Tailwind style inlining, so assert the shape deliberately.
+  const msoPreservedStyle = { msoHide: 'all', color: 'blue' } as unknown as React.CSSProperties
+
+  async function captureRenderError(node: React.ReactNode): Promise<string | null> {
+    try {
+      await render(node)
+      return null
+    }
+    catch (error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+  }
+
+  const tailwindNonInlinableWithoutHeadError = await captureRenderError(
+    React.createElement(Tailwind, null, React.createElement('div', { className: 'md:bg-red-500' })),
+  )
 
   const cases = {
     'basic-document': await renderCase({
@@ -449,43 +547,223 @@ async function generateOracle() {
       input: { fixture: 'asymmetric button' },
       semanticAssertions: ['button label and escaped destination'],
     }, asymmetricButton),
+    'font-defaults': await renderCase({
+      reactReference: 'packages/react-email/src/components/font/font.tsx',
+      nuxtComponent: 'EFont',
+      classification: 'normalized',
+      input: { fontFamily: 'Roboto', fallbackFontFamily: 'Verdana' },
+      semanticAssertions: ['@font-face defaults', 'mso-font-alt uses first fallback', 'global font-family rule'],
+    }, fontDocument({ fontFamily: 'Roboto', fallbackFontFamily: 'Verdana' })),
+    'font-webfont': await renderCase({
+      reactReference: 'packages/react-email/src/components/font/font.tsx',
+      nuxtComponent: 'EFont',
+      classification: 'normalized',
+      input: { webFont: { url: 'https://example.com/roboto.woff2', format: 'woff2' }, fontWeight: 700, fontStyle: 'italic' },
+      semanticAssertions: ['src url and format', 'custom weight and style'],
+    }, fontDocument({
+      fontFamily: 'Roboto',
+      fallbackFontFamily: 'Verdana',
+      webFont: { url: 'https://example.com/roboto.woff2', format: 'woff2' },
+      fontWeight: 700,
+      fontStyle: 'italic',
+    })),
+    'font-multiple-fallbacks': await renderCase({
+      reactReference: 'packages/react-email/src/components/font/font.tsx',
+      nuxtComponent: 'EFont',
+      classification: 'normalized',
+      input: { fallbackFontFamily: ['Georgia', 'serif'] },
+      semanticAssertions: ['mso-font-alt uses first array entry', 'fallbacks joined in global rule'],
+    }, fontDocument({ fontFamily: 'Roboto', fallbackFontFamily: ['Georgia', 'serif'] })),
+    'code-inline-basic': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-inline/code-inline.tsx',
+      nuxtComponent: 'ECodeInline',
+      classification: 'normalized',
+      input: { className: 'inline-code', child: 'const x = 1;' },
+      semanticAssertions: ['Orange.fr style rule', 'cino code copy', 'cio span copy always present'],
+    }, React.createElement(Text, null, React.createElement(CodeInline, { className: 'inline-code' }, 'const x = 1;'))),
+    'code-block-basic': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
+      nuxtComponent: 'ECodeBlock',
+      classification: 'normalized',
+      input: { language: 'javascript', theme: 'dracula', lines: 3 },
+      semanticAssertions: ['theme base pre styles', 'per-token span styles', 'nbsp+ZWJ+ZWSP spaces', 'line breaks'],
+    }, React.createElement(CodeBlock, { code: codeSnippet, language: 'javascript', theme: dracula })),
+    'code-block-line-numbers': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
+      nuxtComponent: 'ECodeBlock',
+      classification: 'normalized',
+      input: { language: 'javascript', theme: 'dracula', lineNumbers: true, fontFamily: 'monospace' },
+      semanticAssertions: ['line-number prefix span', 'custom font family applied'],
+    }, React.createElement(CodeBlock, { code: codeSnippet, language: 'javascript', theme: dracula, lineNumbers: true, fontFamily: 'monospace' })),
+    'code-block-css-lang': await renderCase({
+      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
+      nuxtComponent: 'ECodeBlock',
+      classification: 'normalized',
+      input: { language: 'css', theme: 'oneDark' },
+      semanticAssertions: ['css grammar tokenization', 'alternate theme token styles'],
+    }, React.createElement(CodeBlock, { code: cssSnippet, language: 'css', theme: oneDark })),
+    'markdown-document': await renderCase({
+      reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
+      nuxtComponent: 'EMarkdown',
+      classification: 'normalized',
+      input: { fixture: 'full markdown document' },
+      semanticAssertions: ['default per-element inline styles', 'container div with data-id', 'links target _blank', 'tables role presentation'],
+    }, React.createElement(Markdown, null, markdownDocument)),
+    'markdown-custom-styles': await renderCase({
+      reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
+      nuxtComponent: 'EMarkdown',
+      classification: 'normalized',
+      input: { markdownCustomStyles: { h1: { color: 'red' }, bold: { padding: '1px 2px' } }, markdownContainerStyles: { padding: '8px' } },
+      semanticAssertions: ['custom styles merged over defaults', 'container style override'],
+    }, React.createElement(Markdown, {
+      markdownCustomStyles: { h1: { color: 'red' }, bold: { padding: '1px 2px' } },
+      markdownContainerStyles: { padding: '8px' },
+      children: markdownCustomDocument,
+    })),
+    'markdown-links-escaping': await renderCase({
+      reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
+      nuxtComponent: 'EMarkdown',
+      classification: 'normalized',
+      input: { fixture: 'link and image with double quotes in href and title' },
+      semanticAssertions: ['double quotes escaped in attributes', 'target _blank on link'],
+    }, React.createElement(Markdown, null, markdownEscapingDocument)),
+    'markdown-nested-lists': await renderCase({
+      reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
+      nuxtComponent: 'EMarkdown',
+      classification: 'normalized',
+      input: { fixture: 'nested and loose lists' },
+      semanticAssertions: ['nested list nesting', 'loose list paragraph wrapping'],
+    }, React.createElement(Markdown, null, markdownNestedDocument)),
+    'tw-basic-inlining': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'bg-red-500 text-white p-4' },
+      semanticAssertions: ['utility classes inlined to style', 'classes removed from element'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'bg-red-500 text-white p-4' }, 'Content'))),
+    'tw-author-style-precedence': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'bg-red-500', style: { backgroundColor: 'blue' } },
+      semanticAssertions: ['author style wins over utility'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'bg-red-500', style: { backgroundColor: 'blue' } }, 'Content'))),
+    'tw-component-style-override': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Text', className: 'm-0' },
+      semanticAssertions: ['utility overrides component default margins'],
+    }, tailwindEmail(undefined, React.createElement(Text, { className: 'm-0' }, 'Content'))),
+    'tw-section-padding': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Section', className: 'p-4' },
+      semanticAssertions: ['section wrapper cell padding from utility'],
+    }, tailwindEmail(undefined, React.createElement(Section, { className: 'p-4' }, 'Content'))),
+    'tw-row-classes': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Row', className: 'w-full bg-gray-100' },
+      semanticAssertions: ['row table inlined width and background'],
+    }, tailwindEmail(undefined, React.createElement(Row, { className: 'w-full bg-gray-100', children: React.createElement(Column, null, 'Cell') }))),
+    'tw-column-classes': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Column', className: 'p-2 text-center' },
+      semanticAssertions: ['column cell padding and alignment'],
+    }, tailwindEmail(undefined, React.createElement(Row, null, React.createElement(Column, { className: 'p-2 text-center' }, 'Cell')))),
+    'tw-heading-classes': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Heading', className: 'text-2xl font-bold' },
+      semanticAssertions: ['heading font size and weight inlined'],
+    }, tailwindEmail(undefined, React.createElement(Heading, { className: 'text-2xl font-bold' }, 'Title'))),
+    'tw-button-classes': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { component: 'Button', className: 'bg-blue-600 px-4 py-2 text-white', href: 'https://example.com' },
+      semanticAssertions: ['button anchor inlined utilities', 'Outlook padding fragments preserved'],
+    }, tailwindEmail(undefined, React.createElement(Button, { className: 'bg-blue-600 px-4 py-2 text-white', href: 'https://example.com' }, 'Activate'))),
+    'tw-media-queries': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/utils/css/downlevel-for-email-clients.ts',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'md:bg-red-500 sm:text-lg' },
+      semanticAssertions: ['non-inlinable rules injected into head style', 'min-width downlevel', 'sanitized class names'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'md:bg-red-500 sm:text-lg' }, 'Content'))),
+    'tw-preserves-head-children': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { headChildren: ['title', 'style'], className: 'md:bg-red-500' },
+      semanticAssertions: ['existing head title and style preserved', 'injected style appended'],
+    }, tailwindEmail(
+      undefined,
+      React.createElement('div', { className: 'md:bg-red-500' }, 'Content'),
+      React.createElement(
+        Head,
+        null,
+        React.createElement('title', null, 'Preserved title'),
+        React.createElement('style', null, 'body{color:#111}'),
+      ),
+    )),
+    'tw-residual-class-sanitization': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/utils/compatibility/sanitize-class-name.ts',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'hover:bg-red-500 md:w-1/2' },
+      semanticAssertions: ['pseudo and fraction classes sanitized', 'residual classes on element'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'hover:bg-red-500 md:w-1/2' }, 'Content'))),
+    'tw-important': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: '!text-red-500' },
+      semanticAssertions: ['important modifier preserved in inline style'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: '!text-red-500' }, 'Content'))),
+    'tw-duplicate-classes': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'p-4 p-4' },
+      semanticAssertions: ['duplicate class collapses to single declaration'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'p-4 p-4' }, 'Content'))),
+    'tw-mso-preserved': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { className: 'bg-red-500', style: { msoHide: 'all', color: 'blue' } },
+      semanticAssertions: ['mso-* author style preserved alongside inlined utility'],
+    }, tailwindEmail(undefined, React.createElement('div', { className: 'bg-red-500', style: msoPreservedStyle }, 'Content'))),
+    'tw-pixel-preset': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { config: 'presets: [pixelBasedPreset]', className: 'p-4' },
+      semanticAssertions: ['pixel-based spacing yields px padding instead of rem'],
+    }, tailwindEmail({ presets: [pixelBasedPreset] }, React.createElement('div', { className: 'p-4' }, 'Content'))),
+    'tw-custom-theme': await renderCase({
+      reactReference: 'packages/react-email/src/components/tailwind/tailwind.tsx',
+      nuxtComponent: 'ETailwind',
+      classification: 'normalized',
+      input: { config: 'theme.extend.colors.brand', className: 'bg-brand' },
+      semanticAssertions: ['custom theme color resolves to hex background'],
+    }, tailwindEmail({ theme: { extend: { colors: { brand: '#123456' } } } }, React.createElement('div', { className: 'bg-brand' }, 'Content'))),
   }
 
   return {
     oracle: oracleMetadata,
     cases,
-    unsupported: [
-      {
-        id: 'code-block',
-        reactComponent: 'CodeBlock',
-        reactReference: 'packages/react-email/src/components/code-block',
-        reason: 'Syntax-highlighted code output is outside the focused v0.1 primitive set.',
-      },
-      {
-        id: 'code-inline',
-        reactComponent: 'CodeInline',
-        reactReference: 'packages/react-email/src/components/code-inline',
-        reason: 'Inline code styling is outside the focused v0.1 primitive set.',
-      },
-      {
-        id: 'font',
-        reactComponent: 'Font',
-        reactReference: 'packages/react-email/src/components/font',
-        reason: 'Font loading behavior requires separate email-client evidence after v0.1.',
-      },
-      {
-        id: 'markdown',
-        reactComponent: 'Markdown',
-        reactReference: 'packages/react-email/src/components/markdown',
-        reason: 'Markdown parsing is not required for ordinary Vue SFC authoring in v0.1.',
-      },
-      {
-        id: 'tailwind',
-        reactComponent: 'Tailwind',
-        reactReference: 'packages/react-email/src/components/tailwind',
-        reason: 'Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met.',
-      },
-    ],
+    errors: {
+      'tailwind-non-inlinable-without-head': tailwindNonInlinableWithoutHeadError,
+    },
+    unsupported: [],
   }
 }
 

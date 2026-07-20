@@ -485,38 +485,403 @@
         "button label and escaped destination"
       ],
       "text": "Click & continue https://example.com/?value=\"quoted\"&mode=test"
+    },
+    "font-defaults": {
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "nuxtComponent": "EFont",
+      "classification": "normalized",
+      "input": {
+        "fontFamily": "Roboto",
+        "fallbackFontFamily": "Verdana"
+      },
+      "semanticAssertions": [
+        "@font-face defaults",
+        "mso-font-alt uses first fallback",
+        "global font-family rule"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>\n    @font-face {\n      font-family: 'Roboto';\n      font-style: normal;\n      font-weight: 400;\n      mso-font-alt: 'Verdana';\n      \n    }\n\n    * {\n      font-family: 'Roboto', Verdana;\n    }\n  </style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\">Sample body copy in the branded font.</td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "font-webfont": {
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "nuxtComponent": "EFont",
+      "classification": "normalized",
+      "input": {
+        "webFont": {
+          "url": "https://example.com/roboto.woff2",
+          "format": "woff2"
+        },
+        "fontWeight": 700,
+        "fontStyle": "italic"
+      },
+      "semanticAssertions": [
+        "src url and format",
+        "custom weight and style"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>\n    @font-face {\n      font-family: 'Roboto';\n      font-style: italic;\n      font-weight: 700;\n      mso-font-alt: 'Verdana';\n      src: url(https://example.com/roboto.woff2) format('woff2');\n    }\n\n    * {\n      font-family: 'Roboto', Verdana;\n    }\n  </style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\">Sample body copy in the branded font.</td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "font-multiple-fallbacks": {
+      "reactReference": "packages/react-email/src/components/font/font.tsx",
+      "nuxtComponent": "EFont",
+      "classification": "normalized",
+      "input": {
+        "fallbackFontFamily": [
+          "Georgia",
+          "serif"
+        ]
+      },
+      "semanticAssertions": [
+        "mso-font-alt uses first array entry",
+        "fallbacks joined in global rule"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>\n    @font-face {\n      font-family: 'Roboto';\n      font-style: normal;\n      font-weight: 400;\n      mso-font-alt: 'Georgia';\n      \n    }\n\n    * {\n      font-family: 'Roboto', Georgia, serif;\n    }\n  </style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\">Sample body copy in the branded font.</td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "code-inline-basic": {
+      "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
+      "nuxtComponent": "ECodeInline",
+      "classification": "normalized",
+      "input": {
+        "className": "inline-code",
+        "child": "const x = 1;"
+      },
+      "semanticAssertions": [
+        "Orange.fr style rule",
+        "cino code copy",
+        "cio span copy always present"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\"><style>\n        meta ~ .cino {\n          display: none !important;\n          opacity: 0 !important;\n        }\n\n        meta ~ .cio {\n          display: block !important;\n        }\n      </style><code class=\"inline-code cino\">const x = 1;</code><span class=\"inline-code cio\" style=\"display:none\">const x = 1;</span></p><!--/$-->"
+    },
+    "code-block-basic": {
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "nuxtComponent": "ECodeBlock",
+      "classification": "normalized",
+      "input": {
+        "language": "javascript",
+        "theme": "dracula",
+        "lines": 3
+      },
+      "semanticAssertions": [
+        "theme base pre styles",
+        "per-token span styles",
+        "nbsp+ZWJ+ZWSP spaces",
+        "line breaks"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><pre style=\"color:#f8f8f2;background:#282a36;text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:Consolas, Monaco, &#x27;Andale Mono&#x27;, &#x27;Ubuntu Mono&#x27;, monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:1em;margin:.5em 0;overflow:auto;border-radius:0.3em;width:100%\"><code><span style=\"color:#8be9fd\">const</span><span> ‍​greeting ‍​</span><span style=\"color:#f8f8f2\">=</span><span> ‍​</span><span style=\"color:#50fa7b\">&#x27;hi&#x27;</span><span style=\"color:#f8f8f2\">;</span><br/><span style=\"color:#8be9fd\">function</span><span> ‍​</span><span style=\"color:#f1fa8c\">wave</span><span style=\"color:#f8f8f2\">(</span><span style=\"color:#f8f8f2\">)</span><span> ‍​</span><span style=\"color:#f8f8f2\">{</span><br/><span> ‍​ ‍​</span><span style=\"color:#8be9fd\">return</span><span> ‍​greeting</span><span style=\"color:#f8f8f2\">;</span><br/><span style=\"color:#f8f8f2\">}</span><br/></code></pre><!--/$-->"
+    },
+    "code-block-line-numbers": {
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "nuxtComponent": "ECodeBlock",
+      "classification": "normalized",
+      "input": {
+        "language": "javascript",
+        "theme": "dracula",
+        "lineNumbers": true,
+        "fontFamily": "monospace"
+      },
+      "semanticAssertions": [
+        "line-number prefix span",
+        "custom font family applied"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><pre style=\"color:#f8f8f2;background:#282a36;text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:Consolas, Monaco, &#x27;Andale Mono&#x27;, &#x27;Ubuntu Mono&#x27;, monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:1em;margin:.5em 0;overflow:auto;border-radius:0.3em;width:100%\"><code><span style=\"width:2em;height:1em;display:inline-block;font-family:monospace\">1</span><span style=\"font-family:monospace;color:#8be9fd\">const</span><span style=\"font-family:monospace\"> ‍​greeting ‍​</span><span style=\"font-family:monospace;color:#f8f8f2\">=</span><span style=\"font-family:monospace\"> ‍​</span><span style=\"font-family:monospace;color:#50fa7b\">&#x27;hi&#x27;</span><span style=\"font-family:monospace;color:#f8f8f2\">;</span><br/><span style=\"width:2em;height:1em;display:inline-block;font-family:monospace\">2</span><span style=\"font-family:monospace;color:#8be9fd\">function</span><span style=\"font-family:monospace\"> ‍​</span><span style=\"font-family:monospace;color:#f1fa8c\">wave</span><span style=\"font-family:monospace;color:#f8f8f2\">(</span><span style=\"font-family:monospace;color:#f8f8f2\">)</span><span style=\"font-family:monospace\"> ‍​</span><span style=\"font-family:monospace;color:#f8f8f2\">{</span><br/><span style=\"width:2em;height:1em;display:inline-block;font-family:monospace\">3</span><span style=\"font-family:monospace\"> ‍​ ‍​</span><span style=\"font-family:monospace;color:#8be9fd\">return</span><span style=\"font-family:monospace\"> ‍​greeting</span><span style=\"font-family:monospace;color:#f8f8f2\">;</span><br/><span style=\"width:2em;height:1em;display:inline-block;font-family:monospace\">4</span><span style=\"font-family:monospace;color:#f8f8f2\">}</span><br/></code></pre><!--/$-->"
+    },
+    "code-block-css-lang": {
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "nuxtComponent": "ECodeBlock",
+      "classification": "normalized",
+      "input": {
+        "language": "css",
+        "theme": "oneDark"
+      },
+      "semanticAssertions": [
+        "css grammar tokenization",
+        "alternate theme token styles"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><pre style=\"background:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3);font-family:&quot;Fira Code&quot;, &quot;Fira Mono&quot;, Menlo, Consolas, &quot;DejaVu Sans Mono&quot;, monospace;direction:ltr;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;line-height:1.5;-moz-tab-size:2;-o-tab-size:2;tab-size:2;-webkit-hyphens:none;-moz-hyphens:none;hyphens:none;padding:1em;margin:0.5em 0;overflow:auto;border-radius:0.3em;width:100%\"><code><span style=\"color:hsl(95, 38%, 62%)\">.btn</span><span> ‍​</span><span style=\"color:hsl(220, 14%, 71%)\">{</span><br/><span> ‍​ ‍​</span><span style=\"color:hsl(355, 65%, 65%)\">color</span><span style=\"color:hsl(220, 14%, 71%)\">:</span><span> ‍​</span><span>red</span><span style=\"color:hsl(220, 14%, 71%)\">;</span><br/><span> ‍​ ‍​</span><span style=\"color:hsl(355, 65%, 65%)\">padding</span><span style=\"color:hsl(220, 14%, 71%)\">:</span><span> ‍​</span><span style=\"color:hsl(29, 54%, 61%)\">4</span><span>px</span><span> ‍​</span><span style=\"color:hsl(29, 54%, 61%)\">8</span><span>px</span><span style=\"color:hsl(220, 14%, 71%)\">;</span><br/><span style=\"color:hsl(220, 14%, 71%)\">}</span><br/></code></pre><!--/$-->"
+    },
+    "markdown-document": {
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "nuxtComponent": "EMarkdown",
+      "classification": "normalized",
+      "input": {
+        "fixture": "full markdown document"
+      },
+      "semanticAssertions": [
+        "default per-element inline styles",
+        "container div with data-id",
+        "links target _blank",
+        "tables role presentation"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div data-id=\"react-email-markdown\"><h1 style=\"font-weight:500;padding-top:20px;font-size:2.5rem\">Heading One</h1><p>A paragraph with <strong style=\"font-weight:bold\">bold</strong> and <em style=\"font-style:italic\">italic</em> text and a <a href=\"https://example.com\" target=\"_blank\" style=\"color:#007bff;text-decoration:underline;background-color:transparent\">link</a>.</p>\n<ul>\n<li>First item</li>\n<li>Second item</li>\n<li>Third item</li>\n</ul>\n<blockquote style=\"background:#f9f9f9;border-left:10px solid #ccc;margin:1.5em 10px;padding:1em 10px\">\n<p>A quoted line of context.</p>\n</blockquote>\n<pre style=\"color:#212529;font-size:87.5%;display:block;background: #f8f8f8;font-family:SFMono-Regular,Menlo,Monaco,Consolas,monospace;padding-top:10px;padding-right:10px;padding-left:10px;padding-bottom:1px;margin-bottom:20px;word-wrap:break-word\"><code>const total = 1 + 2;\n</code></pre>\n<hr />\n<p><img src=\"https://example.com/logo.png\" alt=\"Logo alt\"></p>\n</div><!--/$-->"
+    },
+    "markdown-custom-styles": {
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "nuxtComponent": "EMarkdown",
+      "classification": "normalized",
+      "input": {
+        "markdownCustomStyles": {
+          "h1": {
+            "color": "red"
+          },
+          "bold": {
+            "padding": "1px 2px"
+          }
+        },
+        "markdownContainerStyles": {
+          "padding": "8px"
+        }
+      },
+      "semanticAssertions": [
+        "custom styles merged over defaults",
+        "container style override"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div data-id=\"react-email-markdown\" style=\"padding:8px\"><h1 style=\"color:red\">Styled heading</h1><p>Body text with <strong style=\"padding:1px 2px\">strong</strong> emphasis.</p>\n</div><!--/$-->"
+    },
+    "markdown-links-escaping": {
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "nuxtComponent": "EMarkdown",
+      "classification": "normalized",
+      "input": {
+        "fixture": "link and image with double quotes in href and title"
+      },
+      "semanticAssertions": [
+        "double quotes escaped in attributes",
+        "target _blank on link"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div data-id=\"react-email-markdown\"><p><a href=\"https://example.com/?q=&quot;a&quot;&b=c\" target=\"_blank\" title=\"A &quot;quoted&quot; title\" style=\"color:#007bff;text-decoration:underline;background-color:transparent\">quoted &quot;link&quot; text</a></p>\n<p><img src=\"https://example.com/i.png\" alt=\"alt &quot;with&quot; quotes\" title=\"image &quot;title&quot;\"></p>\n</div><!--/$-->"
+    },
+    "markdown-nested-lists": {
+      "reactReference": "packages/react-email/src/components/markdown/markdown.tsx",
+      "nuxtComponent": "EMarkdown",
+      "classification": "normalized",
+      "input": {
+        "fixture": "nested and loose lists"
+      },
+      "semanticAssertions": [
+        "nested list nesting",
+        "loose list paragraph wrapping"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><div data-id=\"react-email-markdown\"><ul>\n<li><p>Item one</p>\n<ul>\n<li>Nested one</li>\n<li>Nested two</li>\n</ul>\n</li>\n<li>Item two</li>\n</ul>\n<ol>\n<li><p>Ordered one</p>\n</li>\n<li><p>Ordered two (loose)</p>\n</li>\n</ol>\n</div><!--/$-->"
+    },
+    "tw-basic-inlining": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "bg-red-500 text-white p-4"
+      },
+      "semanticAssertions": [
+        "utility classes inlined to style",
+        "classes removed from element"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"background-color:rgb(251,44,54);color:rgb(255,255,255);padding:1rem\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-author-style-precedence": {
+      "reactReference": "packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "bg-red-500",
+        "style": {
+          "backgroundColor": "blue"
+        }
+      },
+      "semanticAssertions": [
+        "author style wins over utility"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"background-color:blue\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-component-style-override": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Text",
+        "className": "m-0"
+      },
+      "semanticAssertions": [
+        "utility overrides component default margins"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><p style=\"font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem\">Content</p></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-section-padding": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Section",
+        "className": "p-4"
+      },
+      "semanticAssertions": [
+        "section wrapper cell padding from utility"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><table align=\"center\" width=\"100%\" border=\"0\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\"><tbody><tr><td style=\"padding:1rem\">Content</td></tr></tbody></table></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-row-classes": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Row",
+        "className": "w-full bg-gray-100"
+      },
+      "semanticAssertions": [
+        "row table inlined width and background"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><table align=\"center\" width=\"100%\" border=\"0\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" style=\"width:100%;background-color:rgb(243,244,246)\"><tbody style=\"width:100%\"><tr style=\"width:100%\"><td data-id=\"__react-email-column\">Cell</td></tr></tbody></table></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-column-classes": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Column",
+        "className": "p-2 text-center"
+      },
+      "semanticAssertions": [
+        "column cell padding and alignment"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><table align=\"center\" width=\"100%\" border=\"0\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\"><tbody style=\"width:100%\"><tr style=\"width:100%\"><td data-id=\"__react-email-column\" style=\"padding:0.5rem;text-align:center\">Cell</td></tr></tbody></table></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-heading-classes": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Heading",
+        "className": "text-2xl font-bold"
+      },
+      "semanticAssertions": [
+        "heading font size and weight inlined"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><h1 style=\"font-size:1.5rem;line-height:1.3333333333333333;font-weight:700\">Title</h1></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-button-classes": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "component": "Button",
+        "className": "bg-blue-600 px-4 py-2 text-white",
+        "href": "https://example.com"
+      },
+      "semanticAssertions": [
+        "button anchor inlined utilities",
+        "Outlook padding fragments preserved"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><a href=\"https://example.com\" style=\"line-height:100%;text-decoration:none;display:inline-block;max-width:100%;mso-padding-alt:0px;background-color:rgb(21,93,252);padding-right:16px;padding-left:16px;padding-bottom:8px;padding-top:8px;color:rgb(255,255,255)\" target=\"_blank\"><span><!--[if mso]><i style=\"mso-font-width:400%;mso-text-raise:12px\" hidden>&#8202;&#8202;</i><![endif]--></span><span style=\"max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:6px\">Activate</span><span><!--[if mso]><i style=\"mso-font-width:400%\" hidden>&#8202;&#8202;&#8203;</i><![endif]--></span></a></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-media-queries": {
+      "reactReference": "packages/react-email/src/components/tailwind/utils/css/downlevel-for-email-clients.ts",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "md:bg-red-500 sm:text-lg"
+      },
+      "semanticAssertions": [
+        "non-inlinable rules injected into head style",
+        "min-width downlevel",
+        "sanitized class names"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>@media (min-width:40rem){.sm_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}@media (min-width:48rem){.md_bg-red-500{background-color:rgb(251,44,54)!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"md_bg-red-500 sm_text-lg\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-preserves-head-children": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "headChildren": [
+          "title",
+          "style"
+        ],
+        "className": "md:bg-red-500"
+      },
+      "semanticAssertions": [
+        "existing head title and style preserved",
+        "injected style appended"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><title>Preserved title</title><style>@media (min-width:48rem){.md_bg-red-500{background-color:rgb(251,44,54)!important}}</style><style>body{color:#111}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"md_bg-red-500\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-residual-class-sanitization": {
+      "reactReference": "packages/react-email/src/components/tailwind/utils/compatibility/sanitize-class-name.ts",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "hover:bg-red-500 md:w-1/2"
+      },
+      "semanticAssertions": [
+        "pseudo and fraction classes sanitized",
+        "residual classes on element"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>.hover_bg-red-500{@media (hover:hover){&:hover{background-color:rgb(251,44,54)!important}}}@media (min-width:48rem){.md_w-1_2{width:50%!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"hover_bg-red-500 md_w-1_2\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-important": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "!text-red-500"
+      },
+      "semanticAssertions": [
+        "important modifier preserved in inline style"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"color:rgb(251,44,54)!important\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-duplicate-classes": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "p-4 p-4"
+      },
+      "semanticAssertions": [
+        "duplicate class collapses to single declaration"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"padding:1rem\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-mso-preserved": {
+      "reactReference": "packages/react-email/src/components/tailwind/utils/tailwindcss/clone-element-with-inlined-styles.ts",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "className": "bg-red-500",
+        "style": {
+          "msoHide": "all",
+          "color": "blue"
+        }
+      },
+      "semanticAssertions": [
+        "mso-* author style preserved alongside inlined utility"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"background-color:rgb(251,44,54);mso-hide:all;color:blue\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-pixel-preset": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "config": "presets: [pixelBasedPreset]",
+        "className": "p-4"
+      },
+      "semanticAssertions": [
+        "pixel-based spacing yields px padding instead of rem"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"padding:16px\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+    },
+    "tw-custom-theme": {
+      "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
+      "nuxtComponent": "ETailwind",
+      "classification": "normalized",
+      "input": {
+        "config": "theme.extend.colors.brand",
+        "className": "bg-brand"
+      },
+      "semanticAssertions": [
+        "custom theme color resolves to hex background"
+      ],
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div style=\"background-color:rgb(18,52,86)\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
     }
   },
-  "unsupported": [
-    {
-      "id": "code-block",
-      "reactComponent": "CodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block",
-      "reason": "Syntax-highlighted code output is outside the focused v0.1 primitive set."
-    },
-    {
-      "id": "code-inline",
-      "reactComponent": "CodeInline",
-      "reactReference": "packages/react-email/src/components/code-inline",
-      "reason": "Inline code styling is outside the focused v0.1 primitive set."
-    },
-    {
-      "id": "font",
-      "reactComponent": "Font",
-      "reactReference": "packages/react-email/src/components/font",
-      "reason": "Font loading behavior requires separate email-client evidence after v0.1."
-    },
-    {
-      "id": "markdown",
-      "reactComponent": "Markdown",
-      "reactReference": "packages/react-email/src/components/markdown",
-      "reason": "Markdown parsing is not required for ordinary Vue SFC authoring in v0.1."
-    },
-    {
-      "id": "tailwind",
-      "reactComponent": "Tailwind",
-      "reactReference": "packages/react-email/src/components/tailwind",
-      "reason": "Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met."
-    }
-  ]
+  "errors": {
+    "tailwind-non-inlinable-without-head": "Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500."
+  },
+  "unsupported": []
 }
