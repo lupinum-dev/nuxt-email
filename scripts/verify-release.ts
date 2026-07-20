@@ -357,10 +357,22 @@ async function verifyFreshConsumer(
   const routeUrl = pathToFileURL(renderRoutes[0]!).href
   const productionResultStart = 'NUXT_EMAIL_RELEASE_RENDER_RESULT_START'
   const productionResultEnd = 'NUXT_EMAIL_RELEASE_RENDER_RESULT_END'
+  // Nitro emits the route handler as a bare `export default` for a light module
+  // graph, but re-exports it through a frozen Module namespace (its lazy loader
+  // takes `import(route).then(n => n.e)`) once a shared module — e.g.
+  // `defineEmail`'s render-context module used by the template — is hoisted into
+  // this chunk. Resolve the handler for both shapes exactly as Nitro does before
+  // rendering, so this probe exercises the real production handler.
+  const resolveHandler
+    = `(route) => { const ns = typeof route.default === 'function' ? route`
+      + ` : Object.values(route).find((value) => value && typeof value === 'object' && typeof value.default === 'function');`
+      + ` const handler = ns && ns.default;`
+      + ` if (typeof handler !== 'function') { process.stderr.write('Built email route exposed no callable handler; exports: ' + Object.keys(route).join(', ')); process.exit(3); }`
+      + ` return handler; }`
   const productionRender = await run(process.execPath, [
     '--input-type=module',
     '--eval',
-    `const route = await import(${JSON.stringify(routeUrl)}); const first = await route.default(); const second = await route.default(); const payload = ${JSON.stringify(productionResultStart)} + JSON.stringify({ first, second }) + ${JSON.stringify(productionResultEnd)}; process.stdout.write(payload, () => process.exit(0))`,
+    `const route = await import(${JSON.stringify(routeUrl)}); const handler = (${resolveHandler})(route); const first = await handler(); const second = await handler(); const payload = ${JSON.stringify(productionResultStart)} + JSON.stringify({ first, second }) + ${JSON.stringify(productionResultEnd)}; process.stdout.write(payload, () => process.exit(0))`,
   ], consumerDirectory, { NODE_ENV: 'production' }, 30_000)
   timingsMilliseconds.productionRender = productionRender.durationMilliseconds
   const resultStart = productionRender.stdout.indexOf(productionResultStart)
@@ -368,7 +380,16 @@ async function verifyFreshConsumer(
     productionResultEnd,
     resultStart + productionResultStart.length,
   )
-  invariant(resultStart >= 0 && resultEnd > resultStart, 'Production route probe did not emit its result markers')
+  const probeOutputTail = (label: string, output: string): string => {
+    const trimmed = output.trim()
+    return trimmed.length === 0 ? `` : `\n  ${label} tail:\n${trimmed.split(/\r?\n/).slice(-20).map(line => `    ${line}`).join('\n')}`
+  }
+  invariant(
+    resultStart >= 0 && resultEnd > resultStart,
+    'Production route probe did not emit its result markers.'
+    + ' The bundled chunk likely threw before rendering (e.g. a runtime-dynamic'
+    + ` require that cannot resolve from the virtual bundle entry).${probeOutputTail('stderr', productionRender.stderr)}${probeOutputTail('stdout', productionRender.stdout)}`,
+  )
   const serializedResult = productionRender.stdout.slice(
     resultStart + productionResultStart.length,
     resultEnd,
