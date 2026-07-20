@@ -30,12 +30,18 @@ type NitroRollupOptions = {
   }
 }
 
-export default defineNuxtModule({
+type ModuleOptions = Record<string, never>
+
+export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: 'nuxt-email',
-    configKey: 'nuxtEmail',
   },
-  async setup(_options, nuxt) {
+  async setup(options, nuxt) {
+    const optionNames = Object.keys(options).sort()
+    if (optionNames.length > 0) {
+      throw new TypeError(`nuxt-email does not accept module options; received: ${optionNames.join(', ')}`)
+    }
+
     const resolver = createResolver(import.meta.url)
     const emailDirectory = resolve(nuxt.options.srcDir, 'emails')
     const loadTemplates = async () => {
