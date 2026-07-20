@@ -58,6 +58,109 @@
       ],
       "text": "WELCOME ADA\n\nHello & <Ada> — Grüß dich\n\nOpen account https://example.com/?value=\"quoted\"&mode=test\n\n----------------------------------------"
     },
+    "plain-text-nested-lists": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "nested unordered list"
+      },
+      "semanticAssertions": [
+        "nested list indentation",
+        "list item separation"
+      ],
+      "text": " * One\n   * Nested A\n   * Nested B\n * Two"
+    },
+    "plain-text-ordered-start": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "ordered list starting at five"
+      },
+      "semanticAssertions": [
+        "ordered list numbering",
+        "start attribute"
+      ],
+      "text": " 5. One\n 6. Two"
+    },
+    "plain-text-blockquote": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "multiline blockquote"
+      },
+      "semanticAssertions": [
+        "quote prefix on every line"
+      ],
+      "text": "> one\n> two"
+    },
+    "plain-text-breaks": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "additive hard breaks"
+      },
+      "semanticAssertions": [
+        "single hard break",
+        "consecutive hard breaks"
+      ],
+      "text": "a\nb\n\nc"
+    },
+    "plain-text-tables": {
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.spec.ts and unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "ordinary, nested, and data table HTML"
+      },
+      "semanticAssertions": [
+        "ordinary cell flattening",
+        "nested table separation",
+        "aligned data table"
+      ],
+      "text": "ABCD\n\n\n\nCol A\n\nCol B\n\n\n\nAda     Engineer\nGrace   Admiral"
+    },
+    "plain-text-preformatted": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "preformatted whitespace"
+      },
+      "semanticAssertions": [
+        "spaces and line breaks preserved"
+      ],
+      "text": "line  one\n  indented"
+    },
+    "plain-text-links": {
+      "reactReference": "packages/render/src/shared/utils/unstable-to-plain-text.spec.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "fragment, mailto, and bare links"
+      },
+      "semanticAssertions": [
+        "fragment href suppressed",
+        "mailto scheme stripped",
+        "bare anchor text"
+      ],
+      "text": "jump\n\nmail me x@y.com\n\nbare"
+    },
+    "plain-text-unicode": {
+      "reactReference": "packages/render/src/shared/utils/to-plain-text.ts",
+      "nuxtComponent": "renderPlainText",
+      "classification": "exact",
+      "input": {
+        "fixture": "Unicode and combining marks"
+      },
+      "semanticAssertions": [
+        "Unicode preserved without normalization or wrapping"
+      ],
+      "text": "Grüße 🌍 你好 مرحبا 👩🏽‍💻 é é €"
+    },
     "html-defaults": {
       "reactReference": "packages/react-email/src/components/html/html.spec.tsx",
       "nuxtComponent": "EHtml",
@@ -127,25 +230,24 @@
       ],
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p id=\"text-test\" style=\"font-size:14px;line-height:24px;color:red;margin:12px;margin-top:0px;margin-bottom:12px;margin-left:12px;margin-right:12px\">Text content</p><!--/$-->"
     },
-    "heading-spacing": {
+    "heading-style": {
       "reactReference": "packages/react-email/src/components/heading/heading.spec.tsx",
       "nuxtComponent": "EHeading",
       "classification": "normalized",
       "input": {
         "as": "h2",
-        "mx": 4,
-        "mt": "5",
         "style": {
           "color": "red",
-          "marginRight": "9px"
+          "marginLeft": "4px",
+          "marginRight": "9px",
+          "marginTop": "5px"
         }
       },
       "semanticAssertions": [
         "selected heading tag",
-        "spacing conversion",
-        "user style precedence"
+        "ordinary style forwarding"
       ],
-      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><h2 id=\"heading-test\" style=\"margin-left:4px;margin-right:9px;margin-top:5px;color:red\">Heading content</h2><!--/$-->"
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><h2 id=\"heading-test\" style=\"color:red;margin-left:4px;margin-right:9px;margin-top:5px\">Heading content</h2><!--/$-->"
     },
     "link-overrides": {
       "reactReference": "packages/react-email/src/components/link/link.spec.tsx",
@@ -251,6 +353,19 @@
       ],
       "intentionalDivergence": "React replaces all hiding styles when a user style is provided; EPreview retains the hiding defaults as an email-safety invariant.",
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><title>Styled preview</title><!--$--><div style=\"color:red\" data-skip-in-text=\"true\">Styled preview<div> ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿ ‌​‍‎‏﻿</div></div><!--/$-->"
+    },
+    "preview-unicode-boundary": {
+      "reactReference": "packages/react-email/src/components/preview/preview.tsx",
+      "nuxtComponent": "EPreview",
+      "classification": "intentional-divergence",
+      "input": {
+        "text": "199 ASCII code units followed by an emoji"
+      },
+      "semanticAssertions": [
+        "preview truncation never emits an unpaired surrogate"
+      ],
+      "intentionalDivergence": "React truncates at 200 UTF-16 code units and can split a surrogate pair; EPreview drops the whole boundary code point and fills the remaining preview position.",
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><title>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx�</title><!--$--><div style=\"display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0\" data-skip-in-text=\"true\">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx�</div><!--/$-->"
     },
     "container-padding": {
       "reactReference": "packages/react-email/src/components/container/container.tsx",
@@ -371,5 +486,37 @@
       ],
       "text": "Click & continue https://example.com/?value=\"quoted\"&mode=test"
     }
-  }
+  },
+  "unsupported": [
+    {
+      "id": "code-block",
+      "reactComponent": "CodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block",
+      "reason": "Syntax-highlighted code output is outside the focused v0.1 primitive set."
+    },
+    {
+      "id": "code-inline",
+      "reactComponent": "CodeInline",
+      "reactReference": "packages/react-email/src/components/code-inline",
+      "reason": "Inline code styling is outside the focused v0.1 primitive set."
+    },
+    {
+      "id": "font",
+      "reactComponent": "Font",
+      "reactReference": "packages/react-email/src/components/font",
+      "reason": "Font loading behavior requires separate email-client evidence after v0.1."
+    },
+    {
+      "id": "markdown",
+      "reactComponent": "Markdown",
+      "reactReference": "packages/react-email/src/components/markdown",
+      "reason": "Markdown parsing is not required for ordinary Vue SFC authoring in v0.1."
+    },
+    {
+      "id": "tailwind",
+      "reactComponent": "Tailwind",
+      "reactReference": "packages/react-email/src/components/tailwind",
+      "reason": "Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met."
+    }
+  ]
 }

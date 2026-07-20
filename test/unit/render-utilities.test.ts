@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { assertSafeEmailAttributes } from '../../src/runtime/components/attributes'
-import { headingSpacing } from '../../src/runtime/components/heading-spacing'
 import { mergeEmailStyles, normalizeEmailStyle } from '../../src/runtime/components/style'
 import { computeTextMargins } from '../../src/runtime/components/text-margins'
-import { assembleEmailDocument, EMAIL_DOCTYPE } from '../../src/runtime/render/document'
+import {
+  assembleEmailDocument,
+  assertCompleteEmailDocument,
+  EMAIL_DOCTYPE,
+} from '../../src/runtime/render/document'
 
 describe('email document assembly', () => {
   it('adds the configured doctype exactly once', () => {
@@ -14,6 +17,22 @@ describe('email document assembly', () => {
   it('does not alter doctype-like text inside the document', () => {
     const html = '<html><body><pre>&lt;!DOCTYPE html&gt;</pre></body></html>'
     expect(assembleEmailDocument(html)).toBe(`${EMAIL_DOCTYPE}${html}`)
+  })
+
+  it('accepts one complete html document with one body', () => {
+    expect(() => assertCompleteEmailDocument(`${EMAIL_DOCTYPE}<html><head></head><body>Safe</body></html>`))
+      .not.toThrow()
+  })
+
+  it.each([
+    '',
+    '<p>Body only</p>',
+    '<html><head></head></html>',
+    '<html><body>One</body><body>Two</body></html>',
+    '<html><body>One</body></html><html><body>Two</body></html>',
+  ])('rejects an incomplete or ambiguous document root: %j', (html) => {
+    expect(() => assertCompleteEmailDocument(`${EMAIL_DOCTYPE}${html}`))
+      .toThrow('Email templates must render exactly one <html> root containing exactly one <body>')
   })
 })
 
@@ -58,25 +77,6 @@ describe('text margin computation', () => {
       marginRight: undefined,
       marginBottom: undefined,
       marginLeft: undefined,
-    })
-  })
-})
-
-describe('heading spacing', () => {
-  it('applies broad spacing before side-specific overrides', () => {
-    expect(headingSpacing({ m: 1, mx: 2, my: 3, mt: 4, mr: 5, mb: 6, ml: 7 })).toEqual({
-      margin: '1px',
-      marginLeft: '7px',
-      marginRight: '5px',
-      marginTop: '4px',
-      marginBottom: '6px',
-    })
-  })
-
-  it('preserves the pinned React conversion for numeric-looking strings', () => {
-    expect(headingSpacing({ m: '10px', mt: '-1.5', mx: 'invalid' })).toEqual({
-      margin: '10pxpx',
-      marginTop: '-1.5px',
     })
   })
 })

@@ -4,7 +4,9 @@ import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { mergeEmailStyles } from './style'
 
-export type ELinkProps = SafeEmailAttributes<AnchorHTMLAttributes>
+export type ELinkProps = Omit<SafeEmailAttributes<AnchorHTMLAttributes>, 'href'> & {
+  href: string
+}
 
 const DEFAULT_LINK_STYLE = {
   color: '#067df7',
@@ -14,12 +16,22 @@ const DEFAULT_LINK_STYLE = {
 export const ELink = defineComponent({
   name: 'ELink',
   inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
+  props: {
+    href: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('ELink', attrs)
+      if (typeof props.href !== 'string' || props.href.length === 0) {
+        throw new TypeError('ELink href must be a non-empty string')
+      }
       const { style, ...attributes } = attrs
       return h('a', {
         ...attributes,
+        href: props.href,
         style: mergeEmailStyles(DEFAULT_LINK_STYLE, style),
         target: attrs.target ?? '_blank',
       }, slots.default?.())

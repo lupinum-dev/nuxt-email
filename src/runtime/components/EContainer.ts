@@ -4,7 +4,10 @@ import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { splitTablePadding } from './table-padding'
 
-export type EContainerProps = SafeEmailAttributes<TableHTMLAttributes>
+export type EContainerProps = Omit<
+  SafeEmailAttributes<TableHTMLAttributes>,
+  'border' | 'cellpadding' | 'cellspacing' | 'role'
+>
 
 export const EContainer = defineComponent({
   name: 'EContainer',

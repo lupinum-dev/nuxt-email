@@ -10,10 +10,29 @@ type ComponentWithProps = Component & {
 function assertKnownProps(component: Component, props: Record<string, unknown>): void {
   const declaration = (component as ComponentWithProps).props
   const knownProps = new Set(Array.isArray(declaration) ? declaration : Object.keys(declaration ?? {}))
-  const unknownProps = Object.keys(props).filter(name => !knownProps.has(name))
+  const unknownProps = Object.keys(props).filter(name => !knownProps.has(name)).sort()
 
   if (unknownProps.length > 0) {
     throw new TypeError(`Unknown email component prop${unknownProps.length === 1 ? '' : 's'}: ${unknownProps.join(', ')}`)
+  }
+
+  if (Array.isArray(declaration) || declaration === undefined) {
+    return
+  }
+
+  const missingProps = Object.entries(declaration)
+    .filter(([name, option]) => {
+      return typeof option === 'object'
+        && option !== null
+        && 'required' in option
+        && option.required === true
+        && !Object.hasOwn(props, name)
+    })
+    .map(([name]) => name)
+    .sort()
+
+  if (missingProps.length > 0) {
+    throw new TypeError(`Missing required email component prop${missingProps.length === 1 ? '' : 's'}: ${missingProps.join(', ')}`)
   }
 }
 

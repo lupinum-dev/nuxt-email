@@ -52,7 +52,10 @@ const CompleteBasicEmail = defineComponent({
         }),
         h(EBody, { style: { backgroundColor: '#f4f4f4', padding: '20px' } }, {
           default: () => [
-            h(EHeading, { as: 'h2', mx: 4 }, { default: () => 'Welcome Ada' }),
+            h(EHeading, {
+              as: 'h2',
+              style: { marginLeft: '4px', marginRight: '4px' },
+            }, { default: () => 'Welcome Ada' }),
             h(EText, null, { default: () => 'Hello & <Ada> — Grüß dich' }),
             h(ELink, { href: 'https://example.com/?value="quoted"&mode=test' }, { default: () => 'Open account' }),
             h(EImg, { alt: 'Nuxt logo', height: '32', src: 'https://example.com/logo.png', width: '32' }),
@@ -65,7 +68,9 @@ const CompleteBasicEmail = defineComponent({
 })
 
 describe('document primitives', () => {
-  it('renders EHtml defaults, overrides, slots, and escaped attributes', async () => {
+  it('renders EHtml defaults, overrides, slots, and escaped attributes', {
+    tags: ['conformance:html-defaults'],
+  }, async () => {
     const defaults = await renderComponent(EHtml)
     const overrides = await renderComponent(EHtml, {
       'data-description': 'French & "quoted"',
@@ -79,7 +84,9 @@ describe('document primitives', () => {
     expect(overrides).toContain('Bonjour &amp; bienvenue')
   })
 
-  it('renders EHead metadata before user content and matches the oracle', async () => {
+  it('renders EHead metadata before user content and matches the oracle', {
+    tags: ['conformance:head-content'],
+  }, async () => {
     const html = await renderComponent(
       EHead,
       { id: 'head-test' },
@@ -98,7 +105,9 @@ describe('document primitives', () => {
     expect(html).not.toContain('<!---->')
   })
 
-  it('renders EBody with the presentation table and exact style placement', async () => {
+  it('renders EBody with the presentation table and exact style placement', {
+    tags: ['conformance:body-reset'],
+  }, async () => {
     const html = await renderComponent(EBody, {
       id: 'body-test',
       style: { backgroundColor: 'pink', color: 'navy', marginInlineStart: '12px', padding: '20px' },
@@ -169,7 +178,9 @@ describe('content primitives', () => {
     expect(html).toContain('<p style="font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px;"></p>')
   })
 
-  it('matches EText typography and ordered margin behavior', async () => {
+  it('matches EText typography and ordered margin behavior', {
+    tags: ['conformance:text-margins'],
+  }, async () => {
     const html = await renderComponent(EText, {
       id: 'text-test',
       style: { color: 'red', margin: '12px', marginTop: '0px' },
@@ -186,11 +197,14 @@ describe('content primitives', () => {
     expect(html).toContain('style="font-size:14px;line-height:24px;color:red;margin:12px;margin-top:0px;margin-bottom:12px;margin-left:12px;margin-right:12px;"')
   })
 
-  it('renders every EHeading tag without forwarding spacing props', async () => {
+  it('renders every EHeading tag with ordinary Vue styles', async () => {
     for (const tag of ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const) {
-      const html = await renderComponent(EHeading, { as: tag, mx: 4 }, tag)
+      const html = await renderComponent(EHeading, {
+        as: tag,
+        style: { marginLeft: '4px', marginRight: '4px' },
+      }, tag)
       expect(html).toContain(`<${tag} style="margin-left:4px;margin-right:4px;">${tag}</${tag}>`)
-      expect(html).not.toMatch(/\s(?:as|mx)=/)
+      expect(html).not.toMatch(/\sas=/)
     }
   })
 
@@ -203,19 +217,21 @@ describe('content primitives', () => {
       .rejects.toThrow('EHeading as must be one of h1, h2, h3, h4, h5, h6; received script')
   })
 
-  it('matches EHeading spacing and user override precedence', async () => {
+  it('matches EHeading tag selection and Vue style forwarding', {
+    tags: ['conformance:heading-style'],
+  }, async () => {
     const html = await renderComponent(EHeading, {
       id: 'heading-test',
       as: 'h2',
-      mx: 4,
-      mt: '5',
-      style: { color: 'red', marginRight: '9px' },
+      style: { color: 'red', marginLeft: '4px', marginRight: '9px', marginTop: '5px' },
     }, 'Heading content')
 
-    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['heading-spacing'].html))
+    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['heading-style'].html))
   })
 
-  it('renders ELink defaults, overrides, forwarding, and escaped content', async () => {
+  it('renders ELink defaults, overrides, forwarding, and escaped content', {
+    tags: ['conformance:link-overrides'],
+  }, async () => {
     const defaults = await renderComponent(ELink, { href: 'https://example.com' }, 'Example')
     const overrides = await renderComponent(ELink, {
       'aria-label': 'Open & inspect',
@@ -235,15 +251,17 @@ describe('content primitives', () => {
     expect(overrides).toContain('>Link &amp; content</a>')
   })
 
-  it('renders an empty ELink without inventing a destination', async () => {
-    const html = await renderComponent(ELink)
-
-    expect(html).toContain('<a style="color:#067df7;text-decoration-line:none;" target="_blank"></a>')
-    expect(html).not.toContain('href=')
+  it('rejects a missing or empty ELink destination', async () => {
+    await expect(renderComponent(ELink))
+      .rejects.toThrow('ELink href must be a non-empty string')
+    await expect(renderComponent(ELink, { href: '' }))
+      .rejects.toThrow('ELink href must be a non-empty string')
   })
 
-  it('renders EImg attributes, empty alt semantics, and client-safe styles', async () => {
-    const emptyAlt = await renderComponent(EImg, { src: 'logo.png' })
+  it('renders EImg attributes, explicit decorative alt text, and client-safe styles', {
+    tags: ['conformance:image-overrides'],
+  }, async () => {
+    const emptyAlt = await renderComponent(EImg, { alt: '', src: 'logo.png' })
     const html = await renderComponent(EImg, {
       id: 'img-test',
       alt: 'Logo & mark',
@@ -262,7 +280,18 @@ describe('content primitives', () => {
     expect(html).toContain('style="display:block;outline:none;border:1px solid black;text-decoration:none;"')
   })
 
-  it('renders EHr defaults and user style precedence', async () => {
+  it('rejects missing image accessibility and source props', async () => {
+    await expect(renderComponent(EImg, { src: 'logo.png' }))
+      .rejects.toThrow('EImg alt must be a string')
+    await expect(renderComponent(EImg, { alt: 'Logo' }))
+      .rejects.toThrow('EImg src must be a non-empty string')
+    await expect(renderComponent(EImg, { alt: 'Logo', src: '' }))
+      .rejects.toThrow('EImg src must be a non-empty string')
+  })
+
+  it('renders EHr defaults and user style precedence', {
+    tags: ['conformance:horizontal-rule-overrides'],
+  }, async () => {
     const defaults = await renderComponent(EHr)
     const overrides = await renderComponent(EHr, {
       id: 'hr-test',
@@ -280,7 +309,12 @@ describe('content primitives', () => {
 })
 
 describe('complete Phase 1 email', () => {
-  it('renders deterministic server-only HTML and exact oracle plain text', async () => {
+  it('renders deterministic server-only HTML and exact oracle plain text', {
+    tags: [
+      'conformance:complete-basic-email',
+      'conformance:complete-basic-email-text',
+    ],
+  }, async () => {
     const first = await renderEmailComponent(CompleteBasicEmail)
     const second = await renderEmailComponent(CompleteBasicEmail)
 

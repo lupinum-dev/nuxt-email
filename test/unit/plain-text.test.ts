@@ -39,6 +39,22 @@ describe('plain-text rendering', () => {
     expect(renderPlainText(html)).toBe(longText)
   })
 
+  it('excludes skipped, script, style, head, and image content without executing or fetching anything', () => {
+    const html = [
+      '<html><head><style>secret-style</style><script>secret-head-script()</script></head><body>',
+      '<p>Visible</p>',
+      '<span data-skip-in-text="true"><script>secret-skipped-script()</script>Hidden</span>',
+      '<img alt="Remote secret" src="https://unreachable.invalid/tracker.png">',
+      '<style>secret-body-style</style><script>secret-body-script()</script>',
+      '<p>Also visible</p>',
+      '</body></html>',
+    ].join('')
+    const text = renderPlainText(html)
+
+    expect(text).toBe('Visible\n\nAlso visible')
+    expect(text).not.toMatch(/secret|Hidden|Remote/)
+  })
+
   it('is deterministic for empty and repeated conversions', () => {
     expect(renderPlainText('')).toBe('')
     expect(renderPlainText(completeHtml)).toBe(renderPlainText(completeHtml))

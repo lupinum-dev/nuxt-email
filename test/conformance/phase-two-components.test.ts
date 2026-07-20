@@ -10,6 +10,7 @@ import {
   ERow,
   ESection,
 } from '../../src/runtime/components'
+import { PREVIEW_WHITESPACE } from '../../src/runtime/components/EPreview'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
 import { normalizeEmailHtml } from './normalize'
@@ -38,7 +39,9 @@ async function renderComponent(
 }
 
 describe('EPreview', () => {
-  it('renders exact hidden preview filler without React title leakage', async () => {
+  it('renders exact hidden preview filler without React title leakage', {
+    tags: ['conformance:preview-short'],
+  }, async () => {
     const html = await renderComponent(EPreview, {}, 'Inbox preview')
 
     expect(html).toContain('style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0;"')
@@ -48,7 +51,9 @@ describe('EPreview', () => {
     expect(renderPlainText(html)).toBe('')
   })
 
-  it('uses one filler sequence at 199 characters and none at 200', async () => {
+  it('uses one filler sequence at 199 characters and none at 200', {
+    tags: ['conformance:preview-max-length'],
+  }, async () => {
     const belowMaximum = await renderComponent(EPreview, {}, 'x'.repeat(199))
     const atMaximum = await renderComponent(EPreview, {}, 'x'.repeat(200))
 
@@ -57,7 +62,20 @@ describe('EPreview', () => {
     expect(atMaximum).toContain(`>${'x'.repeat(200)}</div>`)
   })
 
-  it('forwards safe attributes while keeping plain-text exclusion fixed', async () => {
+  it('drops a boundary emoji instead of emitting React Email\'s split surrogate', {
+    tags: ['conformance:preview-unicode-boundary'],
+  }, async () => {
+    const html = await renderComponent(EPreview, {}, `${'x'.repeat(199)}😀`)
+
+    expect(html).toContain(`>${'x'.repeat(199)}<div>${PREVIEW_WHITESPACE}</div>`)
+    expect(html).not.toContain('😀')
+    expect(html).not.toContain('\uFFFD')
+    expect(oracle.cases['preview-unicode-boundary'].html).toContain('\uFFFD')
+  })
+
+  it('forwards safe attributes while keeping plain-text exclusion fixed', {
+    tags: ['conformance:preview-style-override'],
+  }, async () => {
     const html = await renderComponent(EPreview, {
       'class': 'preview',
       'data-skip-in-text': 'false',
@@ -83,7 +101,9 @@ describe('EPreview', () => {
 })
 
 describe('table layout primitives', () => {
-  it('matches EContainer centering, maximum width, and padding placement', async () => {
+  it('matches EContainer centering, maximum width, and padding placement', {
+    tags: ['conformance:container-padding'],
+  }, async () => {
     const html = await renderComponent(EContainer, {
       id: 'container-test',
       style: { backgroundColor: 'white', maxWidth: '600px', padding: '24px' },
@@ -102,7 +122,9 @@ describe('table layout primitives', () => {
     expect(html).toContain('<td style="padding:12px;">Content</td>')
   })
 
-  it('matches ESection structure and padding placement', async () => {
+  it('matches ESection structure and padding placement', {
+    tags: ['conformance:section-padding'],
+  }, async () => {
     const html = await renderComponent(ESection, {
       id: 'section-test',
       style: { backgroundColor: '#f4f4f4', padding: '16px 20px' },
@@ -112,7 +134,9 @@ describe('table layout primitives', () => {
     expect(html).toContain('<tbody><tr><td style="padding:16px 20px;">Section content</td></tr></tbody>')
   })
 
-  it('renders ESection, ERow, and two direct EColumn cells as valid table layout', async () => {
+  it('renders ESection, ERow, and two direct EColumn cells as valid table layout', {
+    tags: ['conformance:row-columns'],
+  }, async () => {
     const row = h(ERow, { id: 'row-test' }, {
       default: () => [
         h(EColumn, { style: { color: 'red' }, width: '50%' }, { default: () => h('strong', 'Left') }),
@@ -141,10 +165,28 @@ describe('table layout primitives', () => {
     expect(column).toContain('width="300"')
     expect(column).toContain('Column &amp; content')
   })
+
+  it.each([EContainer, ESection, ERow])('keeps presentation-table invariants fixed for %s', async (component) => {
+    const html = await renderComponent(component, {
+      border: 9,
+      cellpadding: 9,
+      cellspacing: 9,
+      role: 'grid',
+    })
+    const table = html.match(/<table[^>]*>/)?.[0]
+
+    expect(table).toContain('border="0"')
+    expect(table).toContain('cellpadding="0"')
+    expect(table).toContain('cellspacing="0"')
+    expect(table).toContain('role="presentation"')
+    expect(table).not.toMatch(/(?:border|cellpadding|cellspacing)="9"|role="grid"/)
+  })
 })
 
 describe('EButton', () => {
-  it('matches the padded React oracle including exact Outlook fragments', async () => {
+  it('matches the padded React oracle including exact Outlook fragments', {
+    tags: ['conformance:button-padding'],
+  }, async () => {
     const html = await renderComponent(EButton, {
       href: 'https://example.com',
       style: { padding: '12px 20px' },
@@ -156,7 +198,9 @@ describe('EButton', () => {
     }
   })
 
-  it('matches the no-padding React oracle and exact zero-width fragments', async () => {
+  it('matches the no-padding React oracle and exact zero-width fragments', {
+    tags: ['conformance:button-no-padding'],
+  }, async () => {
     const html = await renderComponent(EButton, { href: 'https://example.com' })
 
     expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['button-no-padding'].html))
@@ -165,7 +209,12 @@ describe('EButton', () => {
     }
   })
 
-  it('preserves user styles, native attributes, target, and escaping', async () => {
+  it('preserves user styles, native attributes, target, and escaping', {
+    tags: [
+      'conformance:button-asymmetric',
+      'conformance:button-asymmetric-text',
+    ],
+  }, async () => {
     const html = await renderComponent(EButton, {
       'aria-label': 'Activate & continue',
       'class': 'primary',
@@ -205,7 +254,7 @@ describe('EButton', () => {
     const fragments: string[] = []
 
     for (const style of styles) {
-      const html = await renderComponent(EButton, { style }, 'Button')
+      const html = await renderComponent(EButton, { href: 'https://example.com', style }, 'Button')
       fragments.push(html.match(/<!--\[if mso\]>.*?<!\[endif\]-->/)?.[0] ?? '')
     }
 
@@ -215,8 +264,23 @@ describe('EButton', () => {
   it('rejects unsafe attributes and non-finite padding', async () => {
     await expect(renderComponent(EButton, { onclick: 'unsafe()' }))
       .rejects.toThrow('EButton does not support unsafe HTML attribute: onclick')
-    await expect(renderComponent(EButton, { style: { padding: Number.POSITIVE_INFINITY } }))
-      .rejects.toThrow('EButton padding must resolve to finite pixels; received Infinity')
+    await expect(renderComponent(EButton, {
+      href: 'https://example.com',
+      style: { padding: Number.POSITIVE_INFINITY },
+    }))
+      .rejects.toThrow('EButton padding must be a finite non-negative value; received Infinity')
+  })
+
+  it('rejects missing destinations and unsupported padding instead of emitting corrupted CSS', async () => {
+    await expect(renderComponent(EButton))
+      .rejects.toThrow('EButton href must be a non-empty string')
+    await expect(renderComponent(EButton, { href: '' }))
+      .rejects.toThrow('EButton href must be a non-empty string')
+    await expect(renderComponent(EButton, {
+      href: 'https://example.com',
+      style: { padding: '10pt' },
+    }))
+      .rejects.toThrow('EButton padding supports only non-negative px, em, rem, and % values; received 10pt')
   })
 
   it('renders byte-identically on repeated runs', async () => {

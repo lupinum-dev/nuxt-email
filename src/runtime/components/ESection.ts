@@ -4,7 +4,10 @@ import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { splitTablePadding } from './table-padding'
 
-export type ESectionProps = SafeEmailAttributes<TableHTMLAttributes>
+export type ESectionProps = Omit<
+  SafeEmailAttributes<TableHTMLAttributes>,
+  'border' | 'cellpadding' | 'cellspacing' | 'role'
+>
 
 export const ESection = defineComponent({
   name: 'ESection',
@@ -12,7 +15,14 @@ export const ESection = defineComponent({
   setup(_props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('ESection', attrs)
-      const { style, ...attributes } = attrs
+      const {
+        border: _border,
+        cellpadding: _cellpadding,
+        cellspacing: _cellspacing,
+        role: _role,
+        style,
+        ...attributes
+      } = attrs
       const { tableStyle, cellStyle } = splitTablePadding(style)
 
       return h('table', {

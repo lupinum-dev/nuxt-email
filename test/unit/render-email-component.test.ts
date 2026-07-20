@@ -42,7 +42,7 @@ describe('component rendering', () => {
   it('returns only deterministic HTML and text', async () => {
     const Email = defineComponent({
       name: 'DeterministicEmail',
-      setup: () => () => h('p', 'Hello'),
+      setup: () => () => h('html', [h('body', [h('p', 'Hello')])]),
     })
 
     const first = await renderEmailComponent(Email)
@@ -51,6 +51,43 @@ describe('component rendering', () => {
     expect(first).toEqual(second)
     expect(Object.keys(first)).toEqual(['html', 'text'])
     expect(first.text).toBe('Hello')
+  })
+
+  it.each([
+    { name: 'empty', render: () => null },
+    { name: 'text', render: () => 'text only' },
+    { name: 'body-only', render: () => h('body', 'Body') },
+    { name: 'fragment', render: () => h(Fragment, [h('html', [h('body')]), h('p', 'Outside')]) },
+    { name: 'missing-body', render: () => h('html', [h('head')]) },
+  ])('wraps an invalid $name template root with component context', async ({ render }) => {
+    const InvalidEmail = defineComponent({
+      name: 'InvalidEmail',
+      setup: () => render,
+    })
+
+    const error = await renderEmailComponent(InvalidEmail).catch(value => value)
+
+    expect(error).toBeInstanceOf(EmailRenderError)
+    expect(error).toMatchObject({ componentName: 'InvalidEmail' })
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toContain('exactly one <html> root containing exactly one <body>')
+  })
+
+  it('rejects missing required props in stable name order before rendering', async () => {
+    const RequiredPropsEmail = defineComponent({
+      name: 'RequiredPropsEmail',
+      props: {
+        second: { type: String, required: true },
+        first: { type: String, required: true },
+      },
+      setup: () => () => h('html', [h('body')]),
+    })
+
+    const error = await renderEmailComponent(RequiredPropsEmail).catch(value => value)
+
+    expect(error).toBeInstanceOf(EmailRenderError)
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('Missing required email component props: first, second')
   })
 })
 

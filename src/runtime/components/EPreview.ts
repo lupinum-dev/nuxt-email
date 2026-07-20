@@ -18,22 +18,24 @@ const DEFAULT_PREVIEW_STYLE = {
   maxWidth: 0,
 }
 
+const PREVIEW_READ_LIMIT = PREVIEW_MAX_LENGTH + 1
+
 function appendPreviewText(child: VNodeChild, text: { value: string }): void {
-  if (text.value.length >= PREVIEW_MAX_LENGTH) {
+  if (text.value.length >= PREVIEW_READ_LIMIT) {
     return
   }
   if (child === null || child === undefined || typeof child === 'boolean') {
     return
   }
   if (typeof child === 'string' || typeof child === 'number') {
-    const remainingLength = PREVIEW_MAX_LENGTH - text.value.length
+    const remainingLength = PREVIEW_READ_LIMIT - text.value.length
     text.value += String(child).substring(0, remainingLength)
     return
   }
   if (Array.isArray(child)) {
     for (const nestedChild of child) {
       appendPreviewText(nestedChild, text)
-      if (text.value.length >= PREVIEW_MAX_LENGTH) {
+      if (text.value.length >= PREVIEW_READ_LIMIT) {
         break
       }
     }
@@ -59,7 +61,12 @@ function appendPreviewText(child: VNodeChild, text: { value: string }): void {
 export function previewText(children: VNodeChild): string {
   const text = { value: '' }
   appendPreviewText(children, text)
-  return text.value
+  const truncated = text.value.substring(0, PREVIEW_MAX_LENGTH)
+  const finalCodeUnit = truncated.charCodeAt(truncated.length - 1)
+
+  return finalCodeUnit >= 0xD800 && finalCodeUnit <= 0xDBFF
+    ? truncated.slice(0, -1)
+    : truncated
 }
 
 export function previewWhitespace(text: string): string | undefined {

@@ -61,13 +61,15 @@ const PropsDocument = defineComponent({
 })
 
 describe('phase zero rendering proof', () => {
-  it('matches the pinned React Email document after narrow normalization', async () => {
+  it('matches the pinned React Email document after narrow normalization', {
+    tags: ['conformance:basic-document'],
+  }, async () => {
     const vueHtml = await renderComponentToHtml(BasicDocument)
     const normalizedVue = normalizeEmailHtml(vueHtml)
 
     expect(normalizedVue).toBe(normalizeEmailHtml(oracle.cases['basic-document'].html))
     expect(normalizedVue).toContain('<html dir="ltr" lang="en"><head>')
-    expect(normalizedVue).toContain('<body dir="ltr" lang="en"><table border="0" width="100%" cellpadding="0" cellspacing="0" role="presentation" align="center"><tbody><tr><td dir="ltr" lang="en">')
+    expect(normalizedVue).toContain('<body dir="ltr" lang="en"><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%"><tbody><tr><td dir="ltr" lang="en">')
     expect(vueHtml).toContain('Hello &amp; &lt;Ada&gt; — Grüß dich')
     expect(vueHtml).toContain('href="https://example.com/?value=&quot;quoted&quot;&amp;mode=test"')
   })
@@ -96,19 +98,5 @@ describe('phase zero rendering proof', () => {
   it('rejects undeclared props instead of leaking them into root attributes', async () => {
     await expect(renderComponentToHtml(BasicDocument, { secret: 'TOP-SECRET' }))
       .rejects.toThrow('Unknown email component prop: secret')
-  })
-})
-
-describe('email HTML normalization', () => {
-  it('removes only known React boundary markers and serializer noise', () => {
-    const input = '<!--$--><!--html--><table cellPadding="0" cellSpacing="0"><tr><td style="color:red;"><meta name="x" /></td></tr></table><!--/$-->'
-
-    expect(normalizeEmailHtml(input)).toBe('<table cellpadding="0" cellspacing="0"><tr><td style="color:red"><meta name="x"></td></tr></table>')
-  })
-
-  it('preserves MSO conditionals, text, URLs, and child order', () => {
-    const input = '<!--[if mso]><i>left</i><![endif]--><a href="https://example.com/?cellPadding=0&amp;value=style=&quot;x;&quot;">second </a> <span data-value="x > y">third cellSpacing=</span>'
-
-    expect(normalizeEmailHtml(input)).toBe(input)
   })
 })

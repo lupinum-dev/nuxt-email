@@ -1,45 +1,86 @@
 const REACT_BOUNDARY_MARKERS = /<!--(?:\$|\/\$|html|head|body)-->/g
 
 function normalizeTag(tag: string): string {
-  if (tag.startsWith('<!--') || tag.startsWith('<!DOCTYPE')) {
+  if (tag.startsWith('<!--') || tag.startsWith('<!DOCTYPE') || tag.startsWith('</')) {
     return tag
   }
 
-  let result = ''
+  let nameEnd = 1
+  while (nameEnd < tag.length && !/[\s/>]/.test(tag.charAt(nameEnd))) {
+    nameEnd++
+  }
+  if (nameEnd === 1) {
+    return tag
+  }
+
+  const attributes: Array<{ name: string, value: string }> = []
+  const tagName = tag.slice(1, nameEnd)
+  const sourceEnd = tag.endsWith('/>') ? tag.length - 2 : tag.length - 1
+  const source = tag.slice(nameEnd, sourceEnd)
   let cursor = 0
 
-  while (cursor < tag.length) {
-    const attributeMatch = tag.slice(cursor).match(/^([a-z][\w:-]*)(=)(["'])/i)
-    if (!attributeMatch || (cursor > 0 && !/\s/.test(tag.charAt(cursor - 1)))) {
-      result += tag.charAt(cursor)
+  while (cursor < source.length) {
+    while (/\s/.test(source.charAt(cursor))) {
       cursor++
-      continue
+    }
+    if (cursor >= source.length) {
+      break
     }
 
-    const originalName = attributeMatch[1]!
-    const equals = attributeMatch[2]!
-    const quote = attributeMatch[3]!
-    const normalizedName = originalName === 'cellPadding'
+    const nameMatch = /^[^\s=/>]+/.exec(source.slice(cursor))
+    if (!nameMatch) {
+      return tag.replace(/\s*\/>$/, '>')
+    }
+
+    const originalName = nameMatch[0]
+    const name = originalName === 'cellPadding'
       ? 'cellpadding'
       : originalName === 'cellSpacing'
         ? 'cellspacing'
         : originalName
-    const valueStart = cursor + attributeMatch[0].length
-    const valueEnd = tag.indexOf(quote, valueStart)
-    if (valueEnd === -1) {
-      return result + tag.slice(cursor)
+    cursor += originalName.length
+
+    while (/\s/.test(source.charAt(cursor))) {
+      cursor++
     }
 
-    const value = tag.slice(valueStart, valueEnd)
-    const normalizedValue = normalizedName === 'style' && value.endsWith(';')
+    if (source.charAt(cursor) !== '=') {
+      attributes.push({ name, value: name })
+      continue
+    }
+
+    cursor++
+    while (/\s/.test(source.charAt(cursor))) {
+      cursor++
+    }
+
+    const quote = source.charAt(cursor)
+    if (quote !== '"' && quote !== '\'') {
+      const valueMatch = /^[^\s>]+/.exec(source.slice(cursor))
+      if (!valueMatch) {
+        return tag.replace(/\s*\/>$/, '>')
+      }
+      attributes.push({ name, value: `${name}=${valueMatch[0]}` })
+      cursor += valueMatch[0].length
+      continue
+    }
+
+    const valueStart = cursor + 1
+    const valueEnd = source.indexOf(quote, valueStart)
+    if (valueEnd === -1) {
+      return tag.replace(/\s*\/>$/, '>')
+    }
+
+    const value = source.slice(valueStart, valueEnd)
+    const normalizedValue = name === 'style' && value.endsWith(';')
       ? value.slice(0, -1)
       : value
-
-    result += `${normalizedName}${equals}${quote}${normalizedValue}${quote}`
+    attributes.push({ name, value: `${name}=${quote}${normalizedValue}${quote}` })
     cursor = valueEnd + 1
   }
 
-  return result.replace(/\s*\/>$/, '>')
+  attributes.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0)
+  return `<${tagName}${attributes.length > 0 ? ` ${attributes.map(attribute => attribute.value).join(' ')}` : ''}>`
 }
 
 function normalizeTags(html: string): string {

@@ -1,6 +1,6 @@
 import { normalizeEmailStyle } from './style'
 
-type PaddingValue = string | number | undefined
+type PaddingValue = unknown
 
 export interface ParsedPadding {
   paddingTop: number | undefined
@@ -17,22 +17,33 @@ interface ExpandedPadding {
 }
 
 export function convertToPixels(value: PaddingValue): number {
-  if (!value) {
-    return 0
-  }
   if (typeof value === 'number') {
-    if (!Number.isFinite(value)) {
-      throw new TypeError(`EButton padding must resolve to finite pixels; received ${String(value)}`)
+    if (!Number.isFinite(value) || value < 0) {
+      throw new TypeError(`EButton padding must be a finite non-negative value; received ${String(value)}`)
     }
     return value
   }
 
-  const matches = /^([\d.]+)(px|em|rem|%)$/.exec(value)
-  if (!matches) {
+  if (typeof value !== 'string') {
+    throw new TypeError(`EButton padding must be a number or CSS length string; received ${String(value)}`)
+  }
+
+  const normalizedValue = value.trim()
+  if (normalizedValue === '0') {
     return 0
   }
 
+  const matches = /^(\d+(?:\.\d+)?|\.\d+)(px|em|rem|%)$/.exec(normalizedValue)
+  if (!matches) {
+    throw new TypeError(
+      `EButton padding supports only non-negative px, em, rem, and % values; received ${value}`,
+    )
+  }
+
   const amount = Number.parseFloat(matches[1]!)
+  if (!Number.isFinite(amount)) {
+    throw new TypeError(`EButton padding must resolve to finite pixels; received ${value}`)
+  }
   switch (matches[2]) {
     case 'em':
     case 'rem':
@@ -89,12 +100,11 @@ function expandPadding(value: PaddingValue): ExpandedPadding {
     }
   }
 
-  return {
-    paddingTop: undefined,
-    paddingRight: undefined,
-    paddingBottom: undefined,
-    paddingLeft: undefined,
-  }
+  throw new TypeError(`EButton padding shorthand must contain one to four values; received ${String(value)}`)
+}
+
+function convertOptionalPadding(value: PaddingValue): number | undefined {
+  return value === undefined ? undefined : convertToPixels(value)
 }
 
 export function parseButtonPadding(style: unknown): ParsedPadding {
@@ -122,10 +132,10 @@ export function parseButtonPadding(style: unknown): ParsedPadding {
   }
 
   return {
-    paddingTop: paddingTop ? convertToPixels(paddingTop) : undefined,
-    paddingRight: paddingRight ? convertToPixels(paddingRight) : undefined,
-    paddingBottom: paddingBottom ? convertToPixels(paddingBottom) : undefined,
-    paddingLeft: paddingLeft ? convertToPixels(paddingLeft) : undefined,
+    paddingTop: convertOptionalPadding(paddingTop),
+    paddingRight: convertOptionalPadding(paddingRight),
+    paddingBottom: convertOptionalPadding(paddingBottom),
+    paddingLeft: convertOptionalPadding(paddingLeft),
   }
 }
 

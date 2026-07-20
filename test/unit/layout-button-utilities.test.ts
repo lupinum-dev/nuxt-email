@@ -32,6 +32,16 @@ describe('preview text', () => {
       .toThrow('EPreview default slot must contain text only')
   })
 
+  it('does not split an emoji at the preview boundary', () => {
+    const safeBoundary = previewText(`${'x'.repeat(198)}😀`)
+    const splitBoundary = previewText([`${'x'.repeat(199)}\uD83D`, '\uDE00tail'])
+
+    expect(safeBoundary).toBe(`${'x'.repeat(198)}😀`)
+    expect(safeBoundary).toHaveLength(200)
+    expect(splitBoundary).toBe('x'.repeat(199))
+    expect(splitBoundary).not.toContain('\uFFFD')
+  })
+
   it('matches the exact filler boundaries', () => {
     expect(previewWhitespace('')).toBe(PREVIEW_WHITESPACE.repeat(200))
     expect(previewWhitespace('x'.repeat(199))).toBe(PREVIEW_WHITESPACE)
@@ -67,9 +77,7 @@ describe('button padding conversion', () => {
     ['2em', 32],
     ['1.5rem', 24],
     ['50%', 300],
-    ['15cm', 0],
-    ['invalid', 0],
-    ['', 0],
+    ['0', 0],
   ])('converts %j to pixels', (input, expected) => {
     expect(convertToPixels(input)).toBe(expected)
   })
@@ -98,12 +106,12 @@ describe('button padding conversion', () => {
     })
   })
 
-  it('preserves the pinned numeric-zero and string-zero distinction', () => {
+  it('treats numeric and CSS zero consistently', () => {
     expect(parseButtonPadding({ padding: 0 })).toEqual({
-      paddingTop: undefined,
-      paddingRight: undefined,
-      paddingBottom: undefined,
-      paddingLeft: undefined,
+      paddingTop: 0,
+      paddingRight: 0,
+      paddingBottom: 0,
+      paddingLeft: 0,
     })
     expect(parseButtonPadding({ padding: '0px' })).toEqual({
       paddingTop: 0,
@@ -121,9 +129,18 @@ describe('button padding conversion', () => {
     expect(parseButtonPadding([{ padding: '1px 2px' }, { paddingBottom: '3px', paddingLeft: '4px' }])).toEqual(expected)
   })
 
-  it('rejects non-finite numeric padding', () => {
-    expect(() => parseButtonPadding({ padding: Number.POSITIVE_INFINITY }))
-      .toThrow('EButton padding must resolve to finite pixels; received Infinity')
+  it.each([
+    Number.POSITIVE_INFINITY,
+    Number.NaN,
+    -1,
+    '-1px',
+    '15cm',
+    'calc(10px + 1em)',
+    'invalid',
+    '',
+  ])('rejects padding that cannot produce safe Outlook spacing: %j', (padding) => {
+    expect(() => parseButtonPadding({ padding }))
+      .toThrow(/EButton padding/)
   })
 
   it('converts pixels to points and explicit CSS pixel values', () => {
@@ -153,6 +170,11 @@ describe('Outlook spacer calculation', () => {
   it('rejects non-finite widths without entering an unbounded calculation', () => {
     expect(() => computeMsoFontWidthAndSpaceCount(Number.POSITIVE_INFINITY))
       .toThrow('EButton padding must resolve to finite pixels; received Infinity')
+  })
+
+  it('rejects negative widths', () => {
+    expect(() => computeMsoFontWidthAndSpaceCount(-1))
+      .toThrow('EButton padding must be a finite non-negative value; received -1')
   })
 
   it('rejects Outlook spacer output large enough to inflate the email', () => {

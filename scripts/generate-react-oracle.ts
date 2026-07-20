@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFile, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { render } from '@react-email/render'
+import { render, toPlainText } from '@react-email/render'
 import React from 'react'
 import {
   Body,
@@ -19,6 +19,7 @@ import {
   Section,
   Text,
 } from 'react-email'
+import { plainTextCorpus } from '../test/conformance/plain-text-corpus'
 
 const ORACLE_PATH = fileURLToPath(new URL('../test/conformance/oracle/react-email-6.9.0.json', import.meta.url))
 const REACT_EMAIL_CHECKOUT = fileURLToPath(new URL('../../react-email', import.meta.url))
@@ -67,6 +68,13 @@ async function renderTextCase(definition: OracleCaseDefinition, node: React.Reac
   }
 }
 
+function convertTextCase(definition: OracleCaseDefinition, html: string) {
+  return {
+    ...definition,
+    text: toPlainText(html),
+  }
+}
+
 function verifyPinnedSource(): void {
   const checkoutCommit = execFileSync('git', ['-C', REACT_EMAIL_CHECKOUT, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
   if (checkoutCommit !== SOURCE_CHECKOUT_COMMIT) {
@@ -112,7 +120,10 @@ async function generateOracle() {
     React.createElement(
       Body,
       { style: { backgroundColor: '#f4f4f4', padding: '20px' } },
-      React.createElement(Heading, { as: 'h2', mx: 4 }, 'Welcome Ada'),
+      React.createElement(Heading, {
+        as: 'h2',
+        style: { marginLeft: '4px', marginRight: '4px' },
+      }, 'Welcome Ada'),
       React.createElement(Text, null, 'Hello & <Ada> — Grüß dich'),
       React.createElement(Link, { href: 'https://example.com/?value="quoted"&mode=test' }, 'Open account'),
       React.createElement(Img, { alt: 'Nuxt logo', height: '32', src: 'https://example.com/logo.png', width: '32' }),
@@ -174,6 +185,62 @@ async function generateOracle() {
       input: { fixture: 'complete basic email HTML' },
       semanticAssertions: ['head and images excluded', 'links and horizontal rules represented'],
     }, completeBasicEmail),
+    'plain-text-nested-lists': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'nested unordered list' },
+      semanticAssertions: ['nested list indentation', 'list item separation'],
+    }, plainTextCorpus['plain-text-nested-lists']),
+    'plain-text-ordered-start': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'ordered list starting at five' },
+      semanticAssertions: ['ordered list numbering', 'start attribute'],
+    }, plainTextCorpus['plain-text-ordered-start']),
+    'plain-text-blockquote': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'multiline blockquote' },
+      semanticAssertions: ['quote prefix on every line'],
+    }, plainTextCorpus['plain-text-blockquote']),
+    'plain-text-breaks': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'additive hard breaks' },
+      semanticAssertions: ['single hard break', 'consecutive hard breaks'],
+    }, plainTextCorpus['plain-text-breaks']),
+    'plain-text-tables': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/to-plain-text.spec.ts and unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'ordinary, nested, and data table HTML' },
+      semanticAssertions: ['ordinary cell flattening', 'nested table separation', 'aligned data table'],
+    }, plainTextCorpus['plain-text-tables']),
+    'plain-text-preformatted': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'preformatted whitespace' },
+      semanticAssertions: ['spaces and line breaks preserved'],
+    }, plainTextCorpus['plain-text-preformatted']),
+    'plain-text-links': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/unstable-to-plain-text.spec.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'fragment, mailto, and bare links' },
+      semanticAssertions: ['fragment href suppressed', 'mailto scheme stripped', 'bare anchor text'],
+    }, plainTextCorpus['plain-text-links']),
+    'plain-text-unicode': convertTextCase({
+      reactReference: 'packages/render/src/shared/utils/to-plain-text.ts',
+      nuxtComponent: 'renderPlainText',
+      classification: 'exact',
+      input: { fixture: 'Unicode and combining marks' },
+      semanticAssertions: ['Unicode preserved without normalization or wrapping'],
+    }, plainTextCorpus['plain-text-unicode']),
     'html-defaults': await renderCase({
       reactReference: 'packages/react-email/src/components/html/html.spec.tsx',
       nuxtComponent: 'EHtml',
@@ -214,18 +281,16 @@ async function generateOracle() {
       id: 'text-test',
       style: { color: 'red', margin: '12px', marginTop: '0px' },
     }, 'Text content')),
-    'heading-spacing': await renderCase({
+    'heading-style': await renderCase({
       reactReference: 'packages/react-email/src/components/heading/heading.spec.tsx',
       nuxtComponent: 'EHeading',
       classification: 'normalized',
-      input: { as: 'h2', mx: 4, mt: '5', style: { color: 'red', marginRight: '9px' } },
-      semanticAssertions: ['selected heading tag', 'spacing conversion', 'user style precedence'],
+      input: { as: 'h2', style: { color: 'red', marginLeft: '4px', marginRight: '9px', marginTop: '5px' } },
+      semanticAssertions: ['selected heading tag', 'ordinary style forwarding'],
     }, React.createElement(Heading, {
       id: 'heading-test',
       as: 'h2',
-      mx: 4,
-      mt: '5',
-      style: { color: 'red', marginRight: '9px' },
+      style: { color: 'red', marginLeft: '4px', marginRight: '9px', marginTop: '5px' },
     }, 'Heading content')),
     'link-overrides': await renderCase({
       reactReference: 'packages/react-email/src/components/link/link.spec.tsx',
@@ -293,6 +358,14 @@ async function generateOracle() {
       children: 'Styled preview',
       style: { color: 'red' },
     })),
+    'preview-unicode-boundary': await renderCase({
+      reactReference: 'packages/react-email/src/components/preview/preview.tsx',
+      nuxtComponent: 'EPreview',
+      classification: 'intentional-divergence',
+      input: { text: '199 ASCII code units followed by an emoji' },
+      semanticAssertions: ['preview truncation never emits an unpaired surrogate'],
+      intentionalDivergence: 'React truncates at 200 UTF-16 code units and can split a surrogate pair; EPreview drops the whole boundary code point and fills the remaining preview position.',
+    }, React.createElement(Preview, null, `${'x'.repeat(199)}😀`)),
     'container-padding': await renderCase({
       reactReference: 'packages/react-email/src/components/container/container.tsx',
       nuxtComponent: 'EContainer',
@@ -378,6 +451,38 @@ async function generateOracle() {
   return {
     oracle: oracleMetadata,
     cases,
+    unsupported: [
+      {
+        id: 'code-block',
+        reactComponent: 'CodeBlock',
+        reactReference: 'packages/react-email/src/components/code-block',
+        reason: 'Syntax-highlighted code output is outside the focused v0.1 primitive set.',
+      },
+      {
+        id: 'code-inline',
+        reactComponent: 'CodeInline',
+        reactReference: 'packages/react-email/src/components/code-inline',
+        reason: 'Inline code styling is outside the focused v0.1 primitive set.',
+      },
+      {
+        id: 'font',
+        reactComponent: 'Font',
+        reactReference: 'packages/react-email/src/components/font',
+        reason: 'Font loading behavior requires separate email-client evidence after v0.1.',
+      },
+      {
+        id: 'markdown',
+        reactComponent: 'Markdown',
+        reactReference: 'packages/react-email/src/components/markdown',
+        reason: 'Markdown parsing is not required for ordinary Vue SFC authoring in v0.1.',
+      },
+      {
+        id: 'tailwind',
+        reactComponent: 'Tailwind',
+        reactReference: 'packages/react-email/src/components/tailwind',
+        reason: 'Tailwind is deferred until the post-v0.1 entry gate in the implementation plan is met.',
+      },
+    ],
   }
 }
 

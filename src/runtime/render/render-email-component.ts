@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { RenderedEmail } from './types'
+import { assertCompleteEmailDocument } from './document'
 import { EmailRenderError } from './errors'
 import { renderPlainText } from './plain-text'
 import { renderComponentToHtml } from './render-component'
@@ -23,6 +24,7 @@ export async function renderEmailComponent(
 ): Promise<RenderedEmail> {
   try {
     const html = await renderComponentToHtml(component, props)
+    assertCompleteEmailDocument(html)
     return {
       html,
       text: renderPlainText(html),

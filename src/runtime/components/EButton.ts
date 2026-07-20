@@ -5,7 +5,9 @@ import { assertSafeEmailAttributes } from './attributes'
 import { parseButtonPadding, pixelsToPoints, pixelStyle } from './button-padding'
 import { normalizeEmailStyle } from './style'
 
-export type EButtonProps = SafeEmailAttributes<AnchorHTMLAttributes>
+export type EButtonProps = Omit<SafeEmailAttributes<AnchorHTMLAttributes>, 'href'> & {
+  href: string
+}
 
 const MAX_MSO_FONT_WIDTH = 5
 const MAX_MSO_SPACE_COUNT = 1000
@@ -22,7 +24,7 @@ export function computeMsoFontWidthAndSpaceCount(expectedWidth: number): readonl
     return [0, 0]
   }
   if (expectedWidth < 0) {
-    return [expectedWidth / 2, 1]
+    throw new TypeError(`EButton padding must be a finite non-negative value; received ${String(expectedWidth)}`)
   }
 
   const spaceCount = Math.max(1, Math.ceil(expectedWidth / (MAX_MSO_FONT_WIDTH * 2)))
@@ -37,9 +39,18 @@ export function computeMsoFontWidthAndSpaceCount(expectedWidth: number): readonl
 export const EButton = defineComponent({
   name: 'EButton',
   inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
+  props: {
+    href: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('EButton', attrs)
+      if (typeof props.href !== 'string' || props.href.length === 0) {
+        throw new TypeError('EButton href must be a non-empty string')
+      }
       const { style, target: requestedTarget, ...attributes } = attrs
       const normalizedStyle = normalizeEmailStyle(style) ?? {}
       const { paddingTop, paddingRight, paddingBottom, paddingLeft } = parseButtonPadding(normalizedStyle)
@@ -50,6 +61,7 @@ export const EButton = defineComponent({
 
       return h('a', {
         ...attributes,
+        href: props.href,
         style: {
           lineHeight: '100%',
           textDecoration: 'none',

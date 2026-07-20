@@ -3,7 +3,10 @@ import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 
-export type ERowProps = SafeEmailAttributes<TableHTMLAttributes>
+export type ERowProps = Omit<
+  SafeEmailAttributes<TableHTMLAttributes>,
+  'border' | 'cellpadding' | 'cellspacing' | 'role'
+>
 
 export const ERow = defineComponent({
   name: 'ERow',
@@ -11,6 +14,13 @@ export const ERow = defineComponent({
   setup(_props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('ERow', attrs)
+      const {
+        border: _border,
+        cellpadding: _cellpadding,
+        cellspacing: _cellspacing,
+        role: _role,
+        ...attributes
+      } = attrs
 
       return h('table', {
         align: 'center',
@@ -19,7 +29,7 @@ export const ERow = defineComponent({
         cellpadding: '0',
         cellspacing: '0',
         role: 'presentation',
-        ...attrs,
+        ...attributes,
       }, [
         h('tbody', { style: { width: '100%' } }, [
           h('tr', { style: { width: '100%' } }, slots.default?.()),

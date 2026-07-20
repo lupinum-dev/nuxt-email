@@ -29,4 +29,18 @@ describe('ssr', async () => {
     expect(result.text).toContain('Activate account https://example.com/activate?token=fixture&source=email')
     expect(result.text).not.toContain('Your account is ready — activate it now.')
   })
+
+  it('rejects a missing required prop declared by a compiled Vue SFC', async () => {
+    const result = await $fetch<{
+      cause: string
+      componentName: string
+      name: string
+    }>('/api/render-transactional-missing')
+
+    expect(result).toEqual({
+      cause: 'Missing required email component prop: firstName',
+      componentName: 'TransactionalEmail',
+      name: 'EmailRenderError',
+    })
+  })
 })

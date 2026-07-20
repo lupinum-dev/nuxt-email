@@ -39,9 +39,7 @@ defineProps<{
         />
         <EHeading
           as="h1"
-          :mt="24"
-          :mb="12"
-          style="color:#111827;font-size:28px;line-height:34px"
+          style="color:#111827;font-size:28px;line-height:34px;margin-top:24px;margin-bottom:12px"
         >
           Welcome, {{ firstName }}
         </EHeading>
