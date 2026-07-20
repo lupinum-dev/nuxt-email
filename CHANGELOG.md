@@ -37,4 +37,4 @@ Status: not approved for publication. `nuxt-email` is the working package name; 
 - Nuxt `^4.4.8`.
 - Vue `^3.5.0`.
 
-See the [release-candidate record](./docs/release/v0.1-release-candidate.md) for verification evidence and the remaining approval gates.
+See the [release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) for verification evidence and the remaining approval gates.

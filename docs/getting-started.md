@@ -2,6 +2,8 @@
 
 This path mirrors the automated fresh-install fixture: it installs one packed release candidate, registers the module, creates one typed Vue email and sibling preview fixture, renders it from Nitro, type-checks the generated API, and builds production output. On a normal development machine it is designed to finish in under ten minutes.
 
+The release verifier starts its timer before materializing these fixed application files and stops after installation, prepare, type checks, production build, and deterministic server render. The development-preview routes and interactions are exercised by the separate module end-to-end suite. These automated measurements prove the tool path; they do not claim to measure a person's reading or typing speed.
+
 ## 1. Check the prerequisites
 
 Use one of the supported Node ranges:
@@ -193,4 +195,4 @@ Through Nuxt Email's canonical generated API, the production server contains the
 - Read the [component reference](./components.md) before translating a larger design.
 - Read the [renderer contract](./renderer.md) before connecting a provider SDK.
 - Use the [React Email migration guide](./migration-from-react-email.md) for an existing JSX template.
-- Check the [release-candidate record](./release/v0.1-release-candidate.md) before treating a tarball as publishable.
+- Check the [release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) before treating a tarball as publishable.

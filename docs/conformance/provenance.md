@@ -17,6 +17,8 @@ Nuxt Email is an independent Vue and Nuxt implementation tested against a pinned
 
 The committed oracle manifest at `test/conformance/oracle/react-email-6.9.0.json` and its SHA-256 in the generated report make this baseline reproducible.
 
+CI checks out the source commit above with full history before running `pnpm oracle:check`. Local development defaults to a sibling `../react-email` checkout; set `NUXT_EMAIL_REACT_EMAIL_CHECKOUT` to an explicit checkout path when using a different location. The checkout must have the pinned source commit at `HEAD` and contain the published-package commit in its history.
+
 ## Closely translated behavior
 
 These local implementations are close enough to nontrivial upstream algorithms or markup strategies that their provenance must remain visible even though they were adapted to Vue and hardened locally.

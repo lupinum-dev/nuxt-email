@@ -14,7 +14,7 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { arch, platform, release, tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
@@ -31,6 +31,9 @@ interface PackageManifest {
   packageManager?: unknown
   files?: unknown
   engines?: Record<string, unknown>
+  bugs?: Record<string, unknown>
+  homepage?: unknown
+  repository?: Record<string, unknown>
   exports?: Record<string, unknown>
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
@@ -68,6 +71,12 @@ const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const fixtureRoot = fileURLToPath(new URL('../test/fixtures/fresh-install', import.meta.url))
 const maximumFreshInstallMilliseconds = 10 * 60 * 1_000
 const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
+const releaseContract = {
+  node: '^22.12.0 || ^24.11.0',
+  nuxt: '^4.4.8',
+  repository: 'git+https://github.com/Mat4m0/nuxt-email.git',
+  vue: '^3.5.0',
+} as const
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -180,14 +189,21 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.types === './dist/types.d.mts', 'Packed package types entry must be ./dist/types.d.mts')
   invariant(
     Array.isArray(packed.files)
-    && packed.files.length === 4
+    && packed.files.length === 7
     && packed.files.includes('CHANGELOG.md')
-    && packed.files.includes('docs')
+    && packed.files.includes('docs/*.md')
+    && packed.files.includes('docs/conformance')
+    && packed.files.includes('docs/performance')
+    && packed.files.includes('docs/testing')
     && packed.files.includes('dist')
     && packed.files.includes('THIRD_PARTY_NOTICES'),
-    'Packed files allowlist must contain exactly CHANGELOG.md, docs, dist, and THIRD_PARTY_NOTICES',
+    'Packed files allowlist differs from the frozen v0.1 package surface',
   )
-  invariant(typeof packed.engines?.node === 'string' && packed.engines.node.length > 0, 'Packed package must declare its supported Node range')
+  invariant(packed.engines?.node === releaseContract.node, `Packed Node range must be ${releaseContract.node}`)
+  invariant(packed.repository?.type === 'git', 'Packed package repository type must be git')
+  invariant(packed.repository?.url === releaseContract.repository, 'Packed package repository URL differs from the v0.1 repository')
+  invariant(packed.homepage === 'https://github.com/Mat4m0/nuxt-email#readme', 'Packed package homepage differs from the v0.1 homepage')
+  invariant(packed.bugs?.url === 'https://github.com/Mat4m0/nuxt-email/issues', 'Packed package issue URL differs from the v0.1 issue tracker')
 
   const rootExport = packed.exports?.['.']
   invariant(typeof rootExport === 'object' && rootExport !== null, 'Packed package must export its module root')
@@ -195,8 +211,8 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant('types' in rootExport && rootExport.types === './dist/types.d.mts', 'Packed type export must point to ./dist/types.d.mts')
 
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
-  invariant(typeof packed.peerDependencies?.nuxt === 'string', 'Packed module must declare Nuxt as a peer dependency')
-  invariant(typeof packed.peerDependencies?.vue === 'string', 'Packed renderer must declare Vue as a peer dependency')
+  invariant(packed.peerDependencies?.nuxt === releaseContract.nuxt, `Packed Nuxt peer range must be ${releaseContract.nuxt}`)
+  invariant(packed.peerDependencies?.vue === releaseContract.vue, `Packed Vue peer range must be ${releaseContract.vue}`)
 
   for (const [name, specifier] of Object.entries({
     ...packed.dependencies,
@@ -224,9 +240,12 @@ async function verifyFreshConsumer(
   workspaceStore: string,
   packedManifest: PackageManifest,
 ): Promise<FreshConsumerResult> {
+  const freshInstallStartedAt = performance.now()
   const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}`)
   const timingsMilliseconds: Record<string, number> = {}
+  const fixtureMaterializationStartedAt = performance.now()
   await cp(fixtureRoot, consumerDirectory, { recursive: true })
+  timingsMilliseconds.fixtureMaterialization = performance.now() - fixtureMaterializationStartedAt
 
   const consumerManifestPath = join(consumerDirectory, 'package.json')
   const consumerManifest = await readJson<PackageManifest & { dependencies: Record<string, string> }>(consumerManifestPath)
@@ -235,7 +254,6 @@ async function verifyFreshConsumer(
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
   process.stdout.write(`\n=== Fresh consumer ${runNumber} of 2 ===\n`)
-  const freshInstallStartedAt = performance.now()
   const installStartedAt = performance.now()
   const installArguments = [
     'install',
@@ -282,8 +300,15 @@ async function verifyFreshConsumer(
   invariant(isInside(temporaryRoot, vueServerRendererResolution), `Packed vue/server-renderer import escaped the isolated consumer: ${vueServerRendererResolution}`)
   const h3Module = await import(pathToFileURL(h3Resolution).href)
   const vueServerRendererModule = await import(pathToFileURL(vueServerRendererResolution).href)
+  const previewPageModule = await import(pathToFileURL(previewHandlerPath).href)
   invariant(typeof h3Module.defineEventHandler === 'function', 'Installed h3 runtime does not export defineEventHandler')
   invariant(typeof vueServerRendererModule.renderToString === 'function', 'Vue peer does not provide vue/server-renderer')
+  invariant(typeof previewPageModule.default === 'function', 'Packed development preview page is not importable')
+  invariant(
+    typeof previewPageModule.PREVIEW_PAGE_HTML === 'string'
+    && previewPageModule.PREVIEW_PAGE_HTML.includes('NUXT_EMAIL_PREVIEW_PAGE_V01'),
+    'Packed development preview page omitted its CSS, script, or stable page marker',
+  )
 
   const prepare = await run('pnpm', ['exec', 'nuxt', 'prepare'], consumerDirectory)
   timingsMilliseconds.prepare = prepare.durationMilliseconds
@@ -373,7 +398,23 @@ async function verifyFreshConsumer(
 
 async function verifyRelease(): Promise<void> {
   const artifactOutputPath = requestedArtifactPath(process.argv.slice(2))
+  const sourceCommit = (await run('git', ['rev-parse', 'HEAD'], packageRoot)).stdout.trim()
+  invariant(/^[0-9a-f]{40}$/.test(sourceCommit), 'Release verification could not resolve a full source commit')
+  if (artifactOutputPath) {
+    const worktreeStatus = (await run('git', [
+      'status',
+      '--porcelain=v1',
+      '--untracked-files=all',
+    ], packageRoot)).stdout.trim()
+    invariant(worktreeStatus.length === 0, 'Refusing to create a release artifact from a dirty worktree')
+  }
+
   const sourceManifest = await readJson<PackageManifest>(join(packageRoot, 'package.json'))
+  const freshFixtureManifest = await readJson<{ dependencies?: Record<string, string> }>(
+    join(fixtureRoot, 'package.json'),
+  )
+  invariant(freshFixtureManifest.dependencies?.nuxt === '4.4.8', 'Fresh-install fixture must pin Nuxt 4.4.8')
+  invariant(freshFixtureManifest.dependencies?.vue === '3.5.40', 'Fresh-install fixture must pin Vue 3.5.40')
   invariant(
     typeof sourceManifest.packageManager === 'string' && /^pnpm@\d+\.\d+\.\d+$/.test(sourceManifest.packageManager),
     'package.json must pin pnpm with packageManager before release verification',
@@ -415,17 +456,37 @@ async function verifyRelease(): Promise<void> {
       'docs/getting-started.md',
       'docs/migration-from-react-email.md',
       'docs/renderer.md',
+      'docs/runtime-dependencies.md',
       'dist/module.mjs',
       'dist/types.d.mts',
       'dist/runtime/render/render-component.js',
+      'dist/runtime/server/preview-page-script.js',
+      'dist/runtime/server/preview-page.css.js',
       'dist/runtime/server/preview-page.get.js',
+      'dist/runtime/server/preview-render.get.js',
+      'dist/runtime/server/preview-templates.get.js',
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }
-    const allowedPackageFile = /^(?:CHANGELOG\.md|LICENSE|README\.md|THIRD_PARTY_NOTICES|package\.json|docs\/|dist\/)/
+    const allowedTopLevelFiles = new Set([
+      'CHANGELOG.md',
+      'LICENSE',
+      'README.md',
+      'THIRD_PARTY_NOTICES',
+      'package.json',
+    ])
+    const allowedPackageFile = (path: string) => (
+      allowedTopLevelFiles.has(path)
+      || path.startsWith('docs/')
+      || path.startsWith('dist/')
+    )
     invariant(
-      packedFiles.every(path => allowedPackageFile.test(path)),
-      `Packed package contains files outside the release allowlist: ${packedFiles.filter(path => !allowedPackageFile.test(path)).join(', ')}`,
+      packedFiles.every(allowedPackageFile),
+      `Packed package contains files outside the release allowlist: ${packedFiles.filter(path => !allowedPackageFile(path)).join(', ')}`,
+    )
+    invariant(
+      packedFiles.every(path => !path.startsWith('docs/release/')),
+      'Packed package contains the live release ledger and would create a tarball-hash cycle',
     )
     invariant(
       packedFiles.every(path => !/(?:^|\/)(?:node_modules|playground|scripts|src|test)(?:\/|$)/.test(path)),
@@ -453,12 +514,19 @@ async function verifyRelease(): Promise<void> {
       invariant(packedFiles.includes(linkedPath), `Packed README links to a missing local file: ${linkedPath}`)
     }
 
+    const sourceLicense = await readFile(join(packageRoot, 'LICENSE'), 'utf8')
+    const packedLicense = await readFile(join(inspectedPackageRoot, 'LICENSE'), 'utf8')
+    invariant(packedLicense === sourceLicense, 'Packed LICENSE must preserve the workspace license byte-for-byte')
+
     const sourceThirdPartyNotices = await readFile(join(packageRoot, 'THIRD_PARTY_NOTICES'), 'utf8')
     const packedThirdPartyNotices = await readFile(join(inspectedPackageRoot, 'THIRD_PARTY_NOTICES'), 'utf8')
-    invariant(
-      sourceThirdPartyNotices.includes('Copyright 2024 Plus Five Five, Inc'),
-      'THIRD_PARTY_NOTICES is missing the React Email 2024 Plus Five Five copyright notice',
-    )
+    for (const noticeText of [
+      'Copyright 2024 Plus Five Five, Inc',
+      'Permission is hereby granted, free of charge',
+      'THE SOFTWARE IS PROVIDED "AS IS"',
+    ]) {
+      invariant(sourceThirdPartyNotices.includes(noticeText), `THIRD_PARTY_NOTICES is missing: ${noticeText}`)
+    }
     invariant(
       packedThirdPartyNotices === sourceThirdPartyNotices,
       'Packed THIRD_PARTY_NOTICES must preserve the complete workspace notice byte-for-byte',
@@ -500,6 +568,15 @@ async function verifyRelease(): Promise<void> {
 
     process.stdout.write(`\n${JSON.stringify({
       package: `${packedManifest.name}@${packedManifest.version}`,
+      source: {
+        commit: sourceCommit,
+        node: process.version,
+        operatingSystem: `${platform()} ${release()}`,
+        architecture: arch(),
+        pnpm: pnpmVersion,
+        nuxt: freshFixtureManifest.dependencies.nuxt,
+        vue: freshFixtureManifest.dependencies.vue,
+      },
       tarball: {
         bytes: tarballBytes,
         files: packedFiles.length,

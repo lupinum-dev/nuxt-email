@@ -10,6 +10,14 @@
     "vue"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mat4m0/nuxt-email.git"
+  },
+  "homepage": "https://github.com/Mat4m0/nuxt-email#readme",
+  "bugs": {
+    "url": "https://github.com/Mat4m0/nuxt-email/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "engines": {
@@ -23,16 +31,12 @@
   },
   "main": "./dist/module.mjs",
   "types": "./dist/types.d.mts",
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/types.d.mts"
-      ]
-    }
-  },
   "files": [
     "CHANGELOG.md",
-    "docs",
+    "docs/*.md",
+    "docs/conformance",
+    "docs/performance",
+    "docs/testing",
     "dist",
     "THIRD_PARTY_NOTICES"
   ],

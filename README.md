@@ -6,7 +6,7 @@ Nuxt Email is a Nuxt module for authoring transactional emails as ordinary Vue S
 
 `0.1.0` is the current release-candidate version, not an approved public release. `nuxt-email` is the working package name; npm name ownership and publishing access still need confirmation. Until that is resolved, install the exact verified release-candidate tarball supplied by the maintainer rather than assuming the npm name is available.
 
-Final publication is also blocked on freezing the candidate commit and tarball checksum, the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](./docs/release/v0.1-release-candidate.md) for the live gate status.
+Final publication is also blocked on freezing the candidate commit and tarball checksum, the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) for the live gate status.
 
 ## Supported environment
 
@@ -130,6 +130,7 @@ The v0.1 surface intentionally excludes Tailwind, Markdown, font loading, code c
 - [Getting started](./docs/getting-started.md)
 - [Component reference](./docs/components.md)
 - [Renderer, plain-text, error, and security contracts](./docs/renderer.md)
+- [Runtime dependency and license review](./docs/runtime-dependencies.md)
 - [Development preview](./docs/preview.md)
 - [React Email migration](./docs/migration-from-react-email.md)
 - [Generated conformance report](./docs/conformance/report.md)
@@ -154,4 +155,4 @@ pnpm dev:build
 pnpm release:verify
 ```
 
-`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then runs the release-tested fresh-install path twice in isolated applications. Publication remains blocked until the external gates in the release-candidate record are complete.
+`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders the fixed fresh application twice in isolation. The development-preview interaction is covered separately by `pnpm test`; the automated fresh-install timing does not claim to measure a person's reading or typing time. Publication remains blocked until the external gates in the release-candidate record are complete.

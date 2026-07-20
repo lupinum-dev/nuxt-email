@@ -56,8 +56,18 @@ jobs:
       - name: Conformance report reproducibility
         run: pnpm conformance:check
 
+      - name: Check out the pinned React Email oracle source
+        uses: actions/checkout@v6
+        with:
+          repository: resend/react-email
+          ref: 6eb428924c4c2774228a07cbec1977ad8898f143
+          fetch-depth: 0
+          path: .oracle/react-email
+
       - name: React Email oracle reproducibility
         run: pnpm oracle:check
+        env:
+          NUXT_EMAIL_REACT_EMAIL_CHECKOUT: ${{ github.workspace }}/.oracle/react-email
 
       - name: Package build, contents, and fresh-install smoke test
         run: pnpm release:verify

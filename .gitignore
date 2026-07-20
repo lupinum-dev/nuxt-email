@@ -37,6 +37,9 @@ coverage
 # Verified release artifacts
 release-artifacts
 
+# Explicitly checked out React Email oracle source
+.oracle
+
 # VSCode
 .vscode/*
 !.vscode/settings.json
