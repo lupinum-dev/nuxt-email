@@ -38,7 +38,46 @@ Only `.fixtures.ts` is recognized. v0.1 intentionally supports one fixed scenari
 - **Copy** copies the active exact representation.
 - **Open** opens the raw development render in a separate tab.
 
+The representation tabs are reachable with `1`/`2`/`3`, or with the arrow keys inside the tab list.
+
 Render failures include the template name, the wrapped `EmailRenderError` stack, and its original cause. A template without a fixture remains visible in the list but cannot be rendered until its sibling fixture is added.
+
+## Subject
+
+When a template declares its subject with `defineEmail`, the computed subject line is shown above the preview. `defineEmail` is auto-imported by the module and receives the same typed props passed to `renderEmail()`:
+
+```vue
+<script setup lang="ts">
+const props = defineProps<{ productName: string, version: string }>()
+
+defineEmail<typeof props>({
+  subject: p => `${p.productName} ${p.version} — what's new`,
+})
+</script>
+```
+
+The subject surfaces on the render result as `subject`. Templates that do not call `defineEmail` show a subtle "No subject defined" hint instead.
+
+## Preview controls
+
+- **Viewport width** renders the preview iframe at **600px** (the email standard), **375px** (mobile), or **Full** available width.
+- **Dark** simulates a dark email client. It reloads the iframe with `?scheme=dark`, and the render endpoint injects `<style>:root{color-scheme:dark}</style>` into the email's `<head>`. This flips the iframe's user-agent canvas and default form-control colors, approximating how a dark client frames the message. It is a visual approximation, not a full dark render: it deliberately cannot re-trigger an email's own `@media (prefers-color-scheme: dark)` rules, which would require browser-level media emulation. The unmodified HTML is always what the byte budget, **Copy**, and **Open** report.
+
+## Gmail clipping budget
+
+The badge above the preview shows the exact UTF-8 byte size of the rendered HTML. Gmail clips messages larger than **102,400 bytes**; the badge turns amber from **81,920 bytes** and red once the limit is exceeded. The size is reported as `bytes` on the JSON render response and always reflects the true output, independent of the dark-mode simulation.
+
+## Endpoints
+
+All routes are registered with `env: 'dev'` and never emitted in a production build.
+
+| Route | Query | Returns |
+| --- | --- | --- |
+| `GET /__email` | — | The standalone preview page. |
+| `GET /__email/api/templates` | — | `{ templates: [{ name, hasFixture }] }`. |
+| `GET /__email/render` | `name`, `format=html\|json`, `scheme=light\|dark` | Raw HTML (default) or `{ name, html, text, subject?, bytes }`. |
+
+`format=json` includes `bytes` (the exact UTF-8 length of `html`) and `subject` when the template declared one. `scheme=dark` applies to the raw HTML view only. Invalid `format` or `scheme` values return `400`.
 
 ## Security and production boundary
 

@@ -243,8 +243,10 @@ export const PREVIEW_PAGE_CSS: string = `
     .viewer-toolbar {
       display: flex;
       min-width: 0;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
+      row-gap: 8px;
     }
 
     .viewer-title {
@@ -263,6 +265,129 @@ export const PREVIEW_PAGE_CSS: string = `
       flex: none;
       gap: 8px;
       margin-left: auto;
+    }
+
+    .preview-controls {
+      display: flex;
+      flex: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-controls[hidden] {
+      display: none;
+    }
+
+    .viewport-toggle {
+      display: inline-flex;
+      padding: 2px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .segment {
+      min-height: 28px;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 620;
+      font-variant-numeric: tabular-nums;
+      transition: background-color 160ms ease, color 160ms ease;
+    }
+
+    .segment:hover:not([aria-pressed="true"]) {
+      color: var(--ink);
+    }
+
+    .segment[aria-pressed="true"] {
+      background: var(--primary-soft);
+      color: var(--primary-hover);
+    }
+
+    .toggle[aria-pressed="true"] {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary-hover);
+    }
+
+    .meta-bar {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .subject {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .subject-label {
+      flex: none;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--primary-soft);
+      color: var(--primary-hover);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .subject-value {
+      min-width: 0;
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .subject[data-state="none"] .subject-label {
+      background: var(--surface-subtle);
+      color: var(--muted);
+    }
+
+    .subject[data-state="none"] .subject-value {
+      color: var(--muted);
+      font-weight: 500;
+      font-style: italic;
+    }
+
+    .size-badge {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      margin: 0 0 0 auto;
+      padding: 3px 9px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .size-badge[data-level="warn"] {
+      border-color: oklch(0.78 0.1 85);
+      background: oklch(0.96 0.05 85);
+      color: oklch(0.42 0.1 75);
+    }
+
+    .size-badge[data-level="over"] {
+      border-color: oklch(0.75 0.09 28);
+      background: var(--danger-soft);
+      color: oklch(0.4 0.13 28);
+    }
+
+    .size-badge[hidden] {
+      display: none;
     }
 
     .action {
@@ -298,12 +423,14 @@ export const PREVIEW_PAGE_CSS: string = `
 
     .viewer {
       position: relative;
+      display: flex;
+      justify-content: center;
       min-width: 0;
       min-height: 460px;
       overflow: hidden;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--surface);
+      background: var(--surface-subtle);
     }
 
     .panel {
@@ -322,10 +449,27 @@ export const PREVIEW_PAGE_CSS: string = `
       background: var(--surface);
     }
 
+    iframe.panel[data-width="600"] {
+      width: 600px;
+      max-width: 100%;
+      border-inline: 1px solid var(--line);
+    }
+
+    iframe.panel[data-width="375"] {
+      width: 375px;
+      max-width: 100%;
+      border-inline: 1px solid var(--line);
+    }
+
+    iframe.panel[data-width="full"] {
+      width: 100%;
+    }
+
     pre.panel {
       margin: 0;
       overflow: auto;
       padding: 22px;
+      background: var(--surface);
       color: oklch(0.26 0.03 160);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;

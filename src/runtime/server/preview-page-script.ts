@@ -11,22 +11,31 @@ export const PREVIEW_PAGE_CLIENT: string = `
         selectedName: '',
         signature: '',
         revision: 0,
-        refreshing: false
+        refreshing: false,
+        viewport: '600',
+        dark: false
       }
       var elements = {
         copy: document.getElementById('copy-button'),
+        dark: document.getElementById('dark-toggle'),
         empty: document.getElementById('empty'),
         error: document.getElementById('error'),
         fixtureNote: document.getElementById('fixture-note'),
         html: document.getElementById('panel-html'),
         iframe: document.getElementById('panel-preview'),
         open: document.getElementById('open-link'),
+        previewControls: document.getElementById('preview-controls'),
         select: document.getElementById('template-select'),
+        sizeBadge: document.getElementById('size-badge'),
+        sizeValue: document.getElementById('size-value'),
         status: document.getElementById('status'),
         statusText: document.getElementById('status-text'),
+        subject: document.getElementById('subject'),
+        subjectValue: document.getElementById('subject-value'),
         tabs: Array.from(document.querySelectorAll('[role="tab"]')),
         text: document.getElementById('panel-text'),
-        title: document.getElementById('viewer-title')
+        title: document.getElementById('viewer-title'),
+        viewportButtons: Array.from(document.querySelectorAll('.viewport-toggle .segment'))
       }
 
       function setStatus(message, statusState) {
@@ -42,9 +51,64 @@ export const PREVIEW_PAGE_CLIENT: string = `
         return '/__email/render?' + query.toString()
       }
 
+      function previewFrameUrl(name) {
+        var query = new URLSearchParams({ name: name, revision: String(state.revision) })
+        if (state.dark) {
+          query.set('scheme', 'dark')
+        }
+        return '/__email/render?' + query.toString()
+      }
+
       function jsonRenderUrl(name) {
         var query = new URLSearchParams({ name: name, format: 'json' })
         return '/__email/render?' + query.toString()
+      }
+
+      function updatePreviewFrame() {
+        if (!state.selectedName || !state.html || state.failed) {
+          return
+        }
+        var next = previewFrameUrl(state.selectedName)
+        if (elements.iframe.getAttribute('src') !== next) {
+          elements.iframe.src = next
+        }
+      }
+
+      function applyViewport(width) {
+        state.viewport = width
+        elements.iframe.dataset.width = width
+        elements.viewportButtons.forEach(function (button) {
+          button.setAttribute('aria-pressed', String(button.dataset.width === width))
+        })
+      }
+
+      function updateSubject(subject) {
+        var hasSubject = typeof subject === 'string' && subject.length > 0
+        elements.subject.dataset.state = hasSubject ? 'set' : 'none'
+        elements.subjectValue.textContent = hasSubject ? subject : 'No subject defined'
+        elements.subjectValue.title = hasSubject ? subject : ''
+      }
+
+      function formatKilobytes(bytes) {
+        if (bytes < 1024) {
+          return bytes + ' B'
+        }
+        return (bytes / 1024).toFixed(bytes < 102400 ? 1 : 0) + ' KB'
+      }
+
+      function updateSize(bytes) {
+        if (typeof bytes !== 'number' || !Number.isFinite(bytes)) {
+          elements.sizeBadge.hidden = true
+          return
+        }
+        elements.sizeBadge.hidden = false
+        var level = bytes > 102400 ? 'over' : bytes >= 81920 ? 'warn' : 'ok'
+        elements.sizeBadge.dataset.level = level
+        var suffix = level === 'over'
+          ? ' · Gmail will clip'
+          : level === 'warn' ? ' · near Gmail limit' : ''
+        elements.sizeValue.textContent = formatKilobytes(bytes) + suffix
+        elements.sizeBadge.title = bytes.toLocaleString() + ' bytes (UTF-8). Gmail clips messages larger than 102,400 bytes; warnings begin at 81,920 bytes.'
       }
 
       async function fetchJson(url) {
@@ -114,6 +178,7 @@ export const PREVIEW_PAGE_CLIENT: string = `
         elements.iframe.hidden = view !== 'preview'
         elements.html.hidden = view !== 'html'
         elements.text.hidden = view !== 'text'
+        elements.previewControls.hidden = view !== 'preview'
         updateActions()
       }
 
@@ -159,6 +224,9 @@ export const PREVIEW_PAGE_CLIENT: string = `
             state.text = ''
             elements.title.textContent = 'No fixture-backed templates'
             elements.empty.hidden = false
+            updateSubject(undefined)
+            elements.subjectValue.textContent = 'No template selected'
+            updateSize(undefined)
             clearError()
             updateActions()
             setStatus('Waiting for fixture', 'ready')
@@ -170,7 +238,7 @@ export const PREVIEW_PAGE_CLIENT: string = `
           if (requestedName !== state.selectedName) {
             return
           }
-          var nextSignature = JSON.stringify([output.name, output.html, output.text])
+          var nextSignature = JSON.stringify([output.name, output.html, output.text, output.subject || null])
           var outputChanged = nextSignature !== state.signature
           if (outputChanged) {
             state.signature = nextSignature
@@ -180,8 +248,10 @@ export const PREVIEW_PAGE_CLIENT: string = `
             elements.html.textContent = output.html
             elements.text.textContent = output.text
             elements.iframe.title = 'Email preview: ' + output.name
-            elements.iframe.src = rawRenderUrl(output.name)
+            updatePreviewFrame()
           }
+          updateSubject(output.subject)
+          updateSize(output.bytes)
 
           elements.title.textContent = output.name
           elements.empty.hidden = true
@@ -273,12 +343,25 @@ export const PREVIEW_PAGE_CLIENT: string = `
         }
       })
 
+      elements.viewportButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          applyViewport(button.dataset.width)
+        })
+      })
+
+      elements.dark.addEventListener('click', function () {
+        state.dark = !state.dark
+        elements.dark.setAttribute('aria-pressed', String(state.dark))
+        updatePreviewFrame()
+      })
+
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
           void refresh(false)
         }
       })
 
+      applyViewport(state.viewport)
       showView('preview')
       void refresh(true)
       window.setInterval(function () { void refresh(false) }, 1000)

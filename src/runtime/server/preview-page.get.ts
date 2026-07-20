@@ -68,14 +68,32 @@ ${PREVIEW_PAGE_CSS}
       <main class="main">
         <div class="viewer-toolbar">
           <h2 id="viewer-title" class="viewer-title">No template selected</h2>
+          <div id="preview-controls" class="preview-controls" data-active="true">
+            <div class="viewport-toggle" role="group" aria-label="Preview viewport width">
+              <button id="viewport-600" class="segment" type="button" data-width="600" aria-pressed="true" title="Standard email width">600</button>
+              <button id="viewport-375" class="segment" type="button" data-width="375" aria-pressed="false" title="Mobile width">375</button>
+              <button id="viewport-full" class="segment" type="button" data-width="full" aria-pressed="false" title="Full available width">Full</button>
+            </div>
+            <button id="dark-toggle" class="action toggle" type="button" aria-pressed="false" aria-label="Simulate a dark email client">Dark</button>
+          </div>
           <div class="viewer-actions">
             <button id="copy-button" class="action" type="button" disabled>Copy HTML</button>
             <a id="open-link" class="action" aria-disabled="true" aria-label="Open rendered email in a new tab" rel="noopener noreferrer" target="_blank">Open</a>
           </div>
         </div>
 
+        <div class="meta-bar">
+          <p id="subject" class="subject" data-state="none" aria-live="polite">
+            <span class="subject-label" aria-hidden="true">Subject</span>
+            <span id="subject-value" class="subject-value">No template selected</span>
+          </p>
+          <p id="size-badge" class="size-badge" data-level="ok" role="status" aria-live="polite" title="Rendered HTML size. Gmail clips messages larger than 102 KB.">
+            <span id="size-value" class="size-value">—</span>
+          </p>
+        </div>
+
         <section class="viewer" aria-label="Selected email output">
-          <iframe id="panel-preview" class="panel" role="tabpanel" aria-labelledby="tab-preview" sandbox title="Email preview"></iframe>
+          <iframe id="panel-preview" class="panel" role="tabpanel" aria-labelledby="tab-preview" sandbox data-width="600" title="Email preview"></iframe>
           <pre id="panel-html" class="panel" role="tabpanel" aria-labelledby="tab-html" hidden></pre>
           <pre id="panel-text" class="panel" role="tabpanel" aria-labelledby="tab-text" hidden></pre>
           <div id="empty" class="empty">

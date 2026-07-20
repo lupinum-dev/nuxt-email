@@ -18,6 +18,22 @@ export const PREVIEW_RENDER_CSP = [
   'form-action \'none\'',
 ].join('; ')
 
+// Dark-mode simulation: inject `color-scheme: dark` into the rendered document's
+// <head>. This flips the iframe's UA canvas and default form-control colors to dark,
+// approximating how a dark email client frames the message. It deliberately cannot
+// re-trigger the email's own `@media (prefers-color-scheme: dark)` rules — doing that
+// requires browser-level media emulation (the DevTools protocol), which a dev handler
+// injecting CSS has no way to reach. It is a visual approximation of the client chrome,
+// not a full dark render. The unmodified html is what `bytes`/`Copy`/`Open` report.
+const DARK_SIMULATION_STYLE = '<style data-nuxt-email-dark-simulation>:root{color-scheme:dark}</style>'
+
+function injectDarkSchemeSimulation(html: string): string {
+  const headClose = html.indexOf('</head>')
+  return headClose === -1
+    ? DARK_SIMULATION_STYLE + html
+    : html.slice(0, headClose) + DARK_SIMULATION_STYLE + html.slice(headClose)
+}
+
 class PreviewRequestError extends Error {
   readonly statusCode: number
 
@@ -109,6 +125,10 @@ export default defineEventHandler(async (event) => {
     if (format !== 'html' && format !== 'json') {
       throw new PreviewRequestError(400, 'Query parameter "format" must be "html" or "json"')
     }
+    const scheme = query.scheme === undefined ? 'light' : requiredString(query.scheme, 'scheme')
+    if (scheme !== 'light' && scheme !== 'dark') {
+      throw new PreviewRequestError(400, 'Query parameter "scheme" must be "light" or "dark"')
+    }
 
     const template = Object.hasOwn(emailTemplates, name)
       ? emailTemplates[name]
@@ -127,14 +147,16 @@ export default defineEventHandler(async (event) => {
     const output = await renderEmail(name, fixtureProps(fixtureModule.default, name))
     if (format === 'json') {
       setHeaders(event, { 'content-type': 'application/json; charset=utf-8' })
-      return { name, ...output }
+      // `bytes` is the exact UTF-8 length of the unmodified html — the Gmail clipping
+      // budget the client warns against (dark simulation never changes it).
+      return { name, ...output, bytes: Buffer.byteLength(output.html, 'utf8') }
     }
 
     setHeaders(event, {
       'content-security-policy': PREVIEW_RENDER_CSP,
       'content-type': 'text/html; charset=utf-8',
     })
-    return output.html
+    return scheme === 'dark' ? injectDarkSchemeSimulation(output.html) : output.html
   }
   catch (error) {
     const statusCode = error instanceof PreviewRequestError ? error.statusCode : 500
