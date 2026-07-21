@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { defineEmail } from '@lupinum/nuxt-email/define-email'
+
 defineOptions({ name: 'PlaygroundReleaseNotesEmail' })
 
 interface ReleaseNotesProps {
@@ -9,13 +11,10 @@ interface ReleaseNotesProps {
   version: string
 }
 
-defineProps<ReleaseNotesProps>()
+const props = defineProps<ReleaseNotesProps>()
 
-// `defineEmail` is auto-imported by the module. The subject is computed from the
-// same typed props `renderEmail('release-notes', props)` receives, and surfaces in
-// the preview's subject bar and on the render result.
-defineEmail<ReleaseNotesProps>({
-  subject: props => `${props.productName} ${props.version} — what's new`,
+defineEmail({
+  subject: () => `${props.productName} ${props.version} — what's new`,
 })
 
 // ECodeBlock's `theme` is a plain style map; a template can define one inline

@@ -31,10 +31,32 @@ describe('development preview page', () => {
   })
 
   it('supports automatic refresh, exact copying, and fixture-preserving selection', () => {
-    expect(PREVIEW_PAGE_HTML).toContain('window.setInterval(function () { void refresh(false) }, 1000)')
+    expect(PREVIEW_PAGE_HTML).toContain('document.visibilityState === \'visible\'')
     expect(PREVIEW_PAGE_HTML).toContain('navigator.clipboard.writeText(value)')
+    expect(PREVIEW_PAGE_HTML).toContain('document.execCommand(\'copy\')')
     expect(PREVIEW_PAGE_HTML).toContain('previousStillExists')
     expect(PREVIEW_PAGE_HTML).toContain('new URLSearchParams({ name: name, format: \'json\' })')
     expect(PREVIEW_PAGE_HTML).toContain('return \'/__email/render?\' + query.toString()')
+  })
+
+  it('restores the preview iframe after a failed render recovers', () => {
+    expect(PREVIEW_PAGE_HTML).toContain(`
+          var recoveredFromError = state.failed
+          clearError()
+          if (outputChanged) {
+            updatePreviewFrame()
+          }
+          showView(state.activeView)`)
+  })
+
+  it('keeps every client-script element lookup synchronized with the page markup', () => {
+    const referencedIds = [...PREVIEW_PAGE_HTML.matchAll(/getElementById\('([^']+)'\)/g)]
+      .map(match => match[1])
+
+    expect(referencedIds.length).toBeGreaterThan(0)
+    expect(new Set(referencedIds).size).toBe(referencedIds.length)
+    for (const id of referencedIds) {
+      expect(PREVIEW_PAGE_HTML, `missing #${id}`).toContain(`id="${id}"`)
+    }
   })
 })

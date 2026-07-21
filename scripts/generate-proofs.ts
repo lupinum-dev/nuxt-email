@@ -235,8 +235,8 @@ export function buildEml(options: BuildEmlOptions): string {
 /**
  * Compile a `.vue` email template to an SSR component through `vue/compiler-sfc`.
  * The compiled module is written next to the repo (so bare `vue` imports resolve) and
- * deleted once imported. Templates whose `<script setup>` uses only compiler macros
- * (defineProps/defineOptions/defineEmail) need no extra module resolution.
+ * deleted once imported. Templates whose `<script setup>` uses only Vue compiler
+ * macros (such as defineProps and defineOptions) need no extra module resolution.
  */
 async function loadSfcComponent(vuePath: string, id: string): Promise<Component> {
   const source = await readFile(vuePath, 'utf8')
@@ -273,9 +273,9 @@ const ProofKitEmail = defineComponent({
     dashboardUrl: { type: String, required: true },
   },
   setup(props) {
-    defineEmail<{ firstName: string, dashboardUrl: string }>({
+    defineEmail({
       // Em dash is non-ASCII -> exercises the RFC 2047 encoded-word subject path.
-      subject: p => `Proof kit — every client-risk area (${p.firstName})`,
+      subject: () => `Proof kit — every client-risk area (${props.firstName})`,
     })
 
     return () => {

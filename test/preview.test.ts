@@ -26,9 +26,8 @@ describe('development email preview', async () => {
 
     expect(html).toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
     expect(html).toContain('role="tabpanel" aria-labelledby="tab-preview" sandbox')
-    // New surface controls ship with accessible labelling.
+    // Surface controls ship with accessible labelling.
     expect(html).toContain('role="group" aria-label="Preview viewport width"')
-    expect(html).toContain('aria-label="Simulate a dark email client"')
     expect(html).toContain('id="subject"')
     expect(html).toContain('id="size-badge"')
     expect(response.headers.get('cache-control')).toBe('no-store')
@@ -81,20 +80,6 @@ describe('development email preview', async () => {
     )
 
     expect(welcome).not.toHaveProperty('subject')
-  })
-
-  it('injects a dark-scheme simulation into the raw preview only when requested', async () => {
-    const light = await testFetch('/__email/render?name=welcome')
-    const lightHtml = await light.text()
-    const dark = await testFetch('/__email/render?name=welcome&scheme=dark')
-    const darkHtml = await dark.text()
-    const invalid = await testFetch('/__email/render?name=welcome&scheme=sepia')
-
-    expect(lightHtml).not.toContain('data-nuxt-email-dark-simulation')
-    expect(darkHtml).toContain('<style data-nuxt-email-dark-simulation>:root{color-scheme:dark}</style></head>')
-    // Simulation is additive: the rendered document is otherwise unchanged.
-    expect(darkHtml.replace('<style data-nuxt-email-dark-simulation>:root{color-scheme:dark}</style>', '')).toBe(lightHtml)
-    expect(invalid.status).toBe(400)
   })
 
   it('returns actionable development errors and rejects fixtureless templates', async () => {

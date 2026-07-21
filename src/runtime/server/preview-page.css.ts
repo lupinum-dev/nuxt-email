@@ -233,7 +233,7 @@ export const PREVIEW_PAGE_CSS: string = `
 
     .main {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
       min-width: 0;
       min-height: 0;
       padding: 18px;
@@ -304,12 +304,6 @@ export const PREVIEW_PAGE_CSS: string = `
     }
 
     .segment[aria-pressed="true"] {
-      background: var(--primary-soft);
-      color: var(--primary-hover);
-    }
-
-    .toggle[aria-pressed="true"] {
-      border-color: var(--primary);
       background: var(--primary-soft);
       color: var(--primary-hover);
     }

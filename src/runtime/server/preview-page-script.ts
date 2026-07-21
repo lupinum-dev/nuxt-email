@@ -12,12 +12,10 @@ export const PREVIEW_PAGE_CLIENT: string = `
         signature: '',
         revision: 0,
         refreshing: false,
-        viewport: '600',
-        dark: false
+        viewport: '600'
       }
       var elements = {
         copy: document.getElementById('copy-button'),
-        dark: document.getElementById('dark-toggle'),
         empty: document.getElementById('empty'),
         error: document.getElementById('error'),
         fixtureNote: document.getElementById('fixture-note'),
@@ -51,14 +49,6 @@ export const PREVIEW_PAGE_CLIENT: string = `
         return '/__email/render?' + query.toString()
       }
 
-      function previewFrameUrl(name) {
-        var query = new URLSearchParams({ name: name, revision: String(state.revision) })
-        if (state.dark) {
-          query.set('scheme', 'dark')
-        }
-        return '/__email/render?' + query.toString()
-      }
-
       function jsonRenderUrl(name) {
         var query = new URLSearchParams({ name: name, format: 'json' })
         return '/__email/render?' + query.toString()
@@ -68,7 +58,7 @@ export const PREVIEW_PAGE_CLIENT: string = `
         if (!state.selectedName || !state.html || state.failed) {
           return
         }
-        var next = previewFrameUrl(state.selectedName)
+        var next = rawRenderUrl(state.selectedName)
         if (elements.iframe.getAttribute('src') !== next) {
           elements.iframe.src = next
         }
@@ -120,6 +110,33 @@ export const PREVIEW_PAGE_CLIENT: string = `
           throw error
         }
         return payload
+      }
+
+      async function writeClipboard(value) {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try {
+            await navigator.clipboard.writeText(value)
+            return
+          }
+          catch {
+            // LAN preview URLs are not secure contexts. Fall through to the
+            // selection-based browser API so copying still works on dev Wi-Fi.
+          }
+        }
+
+        var textarea = document.createElement('textarea')
+        textarea.value = value
+        textarea.setAttribute('readonly', '')
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.select()
+        textarea.setSelectionRange(0, value.length)
+        var copied = document.execCommand('copy')
+        textarea.remove()
+        if (!copied) {
+          throw new Error('Clipboard unavailable')
+        }
       }
 
       function updateTemplateOptions(templates) {
@@ -188,6 +205,15 @@ export const PREVIEW_PAGE_CLIENT: string = `
         elements.error.hidden = false
         elements.empty.hidden = true
         state.failed = true
+        state.html = ''
+        state.text = ''
+        state.signature = ''
+        elements.iframe.hidden = true
+        elements.iframe.removeAttribute('src')
+        elements.html.hidden = true
+        elements.html.textContent = ''
+        elements.text.hidden = true
+        elements.text.textContent = ''
         updateActions()
         setStatus('Render failed', 'error')
       }
@@ -248,7 +274,6 @@ export const PREVIEW_PAGE_CLIENT: string = `
             elements.html.textContent = output.html
             elements.text.textContent = output.text
             elements.iframe.title = 'Email preview: ' + output.name
-            updatePreviewFrame()
           }
           updateSubject(output.subject)
           updateSize(output.bytes)
@@ -257,7 +282,10 @@ export const PREVIEW_PAGE_CLIENT: string = `
           elements.empty.hidden = true
           var recoveredFromError = state.failed
           clearError()
-          updateActions()
+          if (outputChanged) {
+            updatePreviewFrame()
+          }
+          showView(state.activeView)
           if (announceActivity || recoveredFromError) {
             setStatus('Up to date', 'ready')
           }
@@ -323,7 +351,7 @@ export const PREVIEW_PAGE_CLIENT: string = `
       elements.copy.addEventListener('click', async function () {
         var value = state.activeView === 'text' ? state.text : state.html
         try {
-          await navigator.clipboard.writeText(value)
+          await writeClipboard(value)
           var copiedMessage = state.activeView === 'text' ? 'Text copied' : 'HTML copied'
           setStatus(copiedMessage, 'ready')
           window.setTimeout(function () {
@@ -349,12 +377,6 @@ export const PREVIEW_PAGE_CLIENT: string = `
         })
       })
 
-      elements.dark.addEventListener('click', function () {
-        state.dark = !state.dark
-        elements.dark.setAttribute('aria-pressed', String(state.dark))
-        updatePreviewFrame()
-      })
-
       document.addEventListener('visibilitychange', function () {
         if (document.visibilityState === 'visible') {
           void refresh(false)
@@ -364,6 +386,10 @@ export const PREVIEW_PAGE_CLIENT: string = `
       applyViewport(state.viewport)
       showView('preview')
       void refresh(true)
-      window.setInterval(function () { void refresh(false) }, 1000)
+      window.setInterval(function () {
+        if (document.visibilityState === 'visible') {
+          void refresh(false)
+        }
+      }, 1000)
     })()
 `

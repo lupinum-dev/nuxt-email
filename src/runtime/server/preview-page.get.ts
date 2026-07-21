@@ -74,7 +74,6 @@ ${PREVIEW_PAGE_CSS}
               <button id="viewport-375" class="segment" type="button" data-width="375" aria-pressed="false" title="Mobile width">375</button>
               <button id="viewport-full" class="segment" type="button" data-width="full" aria-pressed="false" title="Full available width">Full</button>
             </div>
-            <button id="dark-toggle" class="action toggle" type="button" aria-pressed="false" aria-label="Simulate a dark email client">Dark</button>
           </div>
           <div class="viewer-actions">
             <button id="copy-button" class="action" type="button" disabled>Copy HTML</button>
