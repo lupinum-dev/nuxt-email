@@ -26,6 +26,17 @@ const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
 const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
 const executeFile = promisify(execFile)
+const childOutputStart = 'NUXT_EMAIL_PRODUCTION_RESULT_START'
+const childOutputEnd = 'NUXT_EMAIL_PRODUCTION_RESULT_END'
+
+function parseChildOutput<T>(output: string): T {
+  const start = output.indexOf(childOutputStart)
+  const end = output.indexOf(childOutputEnd, start + childOutputStart.length)
+  if (start < 0 || end < 0) {
+    throw new Error(`Production render returned no framed result: ${output}`)
+  }
+  return JSON.parse(output.slice(start + childOutputStart.length, end)) as T
+}
 
 async function collectFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -127,9 +138,15 @@ describe('production server boundary', () => {
       expect(result.clientModuleIds.length).toBeGreaterThan(0)
       expect(result.clientModuleIds.filter(id => (
         id.includes('/app/emails/')
+        || id.includes('/src/runtime/components/')
         || id.includes('/src/runtime/render/')
         || id.includes('/src/runtime/server/')
+        || id.includes('/css-tree/')
         || id.includes('/html-to-text/')
+        || id.includes('/htmlparser2/')
+        || id.includes('/marked/')
+        || id.includes('/prismjs/')
+        || id.includes('/tailwindcss/')
         || id.includes('/@vue/server-renderer/')
         || id.includes('/@vue+server-renderer@')
       ))).toEqual([])
@@ -142,8 +159,11 @@ describe('production server boundary', () => {
 
       expect(clientOutput).not.toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(clientOutput).not.toContain('/app/emails/')
+      expect(clientOutput).not.toContain('/src/runtime/components/')
       expect(clientOutput).not.toContain('/src/runtime/render/')
+      expect(clientOutput).not.toContain('css-tree')
       expect(clientOutput).not.toContain('html-to-text')
+      expect(clientOutput).not.toContain('tailwindcss')
 
       const serverFiles = (await collectFiles(join(result.outputDir, 'server')))
         .filter(path => /\.(?:js|json|map|mjs)$/.test(path))
@@ -163,15 +183,15 @@ describe('production server boundary', () => {
       const { stdout } = await executeFile(process.execPath, [
         '--input-type=module',
         '--eval',
-        `const routes = await Promise.all(${JSON.stringify(routeUrls)}.map(url => import(url))); console.log(JSON.stringify(await Promise.all(routes.map(route => route.default()))))`,
+        `const routes = await Promise.all(${JSON.stringify(routeUrls)}.map(url => import(url))); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await Promise.all(routes.map(route => route.default()))) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const [rendered, reset, unknown] = JSON.parse(stdout) as [
+      const [rendered, reset, unknown] = parseChildOutput<[
         { html: string, text: string },
         { html: string, text: string },
         { knownNames: string[], name: string, requestedName: string },
-      ]
+      ]>(stdout)
 
       expect(rendered.html).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(rendered.html).toContain('Welcome, Ada')
@@ -237,11 +257,11 @@ describe('production server boundary', () => {
       const { stdout } = await executeFile(process.execPath, [
         '--input-type=module',
         '--eval',
-        `const route = await import(${JSON.stringify(pathToFileURL(directRenderRoute).href)}); console.log(JSON.stringify(await route.default()))`,
+        `const route = await import(${JSON.stringify(pathToFileURL(directRenderRoute).href)}); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await route.default()) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const rendered = JSON.parse(stdout) as { html: string, text: string }
+      const rendered = parseChildOutput<{ html: string, text: string }>(stdout)
 
       expect(rendered.html).toContain('Welcome, Ada')
       expect(rendered.html).toContain('PREVIEW_VERSION_ONE')

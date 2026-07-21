@@ -10,6 +10,7 @@ import {
   readFile,
   readdir,
   realpath,
+  rename,
   rm,
   stat,
   writeFile,
@@ -27,8 +28,10 @@ interface PackageManifest {
   license?: unknown
   type?: unknown
   main?: unknown
+  private?: unknown
   types?: unknown
   packageManager?: unknown
+  publishConfig?: Record<string, unknown>
   files?: unknown
   engines?: Record<string, unknown>
   bugs?: Record<string, unknown>
@@ -49,9 +52,15 @@ interface PnpmModulesState {
   storeDir?: unknown
 }
 
+interface PublicModuleProbe {
+  checks: Record<string, boolean>
+  resolved: Record<string, string>
+}
+
 interface RenderedEmail {
   html: string
   text: string
+  subject?: string
 }
 
 interface FreshConsumerResult {
@@ -61,6 +70,7 @@ interface FreshConsumerResult {
   packageResolution: string
   requiredNetworkFallback: boolean
   run: number
+  nuxtVersion: string
   textBytes: number
   timingsMilliseconds: Record<string, number>
   vueServerRendererResolution: string
@@ -72,10 +82,12 @@ const fixtureRoot = fileURLToPath(new URL('../test/fixtures/fresh-install', impo
 const maximumFreshInstallMilliseconds = 10 * 60 * 1_000
 const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
 const releaseContract = {
-  node: '^22.12.0 || ^24.11.0',
+  name: '@lupinum/nuxt-email',
+  releaseCandidateNuxt: '4.5.0',
+  node: '^22.18.0 || ^24.11.0 || ^26.0.0',
   nuxt: '^4.4.8',
   repository: 'git+https://github.com/Mat4m0/nuxt-email.git',
-  vue: '^3.5.0',
+  vue: '^3.5.35',
 } as const
 
 function invariant(condition: unknown, message: string): asserts condition {
@@ -180,13 +192,20 @@ function assertSafeArchiveEntries(entries: readonly string[]): void {
 }
 
 function assertPackedMetadata(source: PackageManifest, packed: PackageManifest): void {
-  invariant(packed.name === source.name && typeof packed.name === 'string', 'Packed package name differs from package.json')
-  invariant(packed.version === source.version && typeof packed.version === 'string', 'Packed package version differs from package.json')
+  invariant(source.name === releaseContract.name, `Source package name must be ${releaseContract.name}`)
+  invariant(packed.name === source.name, 'Packed package name differs from package.json')
+  invariant(
+    packed.version === source.version
+    && typeof packed.version === 'string'
+    && /^\d+\.\d+\.\d+(?:-[\dA-Z.-]+)?$/i.test(packed.version),
+    'Packed package version must be a publishable semantic version matching package.json',
+  )
+  invariant(packed.private !== true, 'Packed release package cannot be private')
   invariant(typeof packed.description === 'string' && packed.description.trim().length > 0, 'Packed package needs a description')
   invariant(packed.license === 'MIT', 'Packed package license must be MIT')
   invariant(packed.type === 'module', 'Packed package must declare ESM with type="module"')
   invariant(packed.main === './dist/module.mjs', 'Packed package main entry must be ./dist/module.mjs')
-  invariant(packed.types === './dist/types.d.mts', 'Packed package types entry must be ./dist/types.d.mts')
+  invariant(packed.types === './dist/module.d.mts', 'Packed package types entry must be ./dist/module.d.mts')
   invariant(
     Array.isArray(packed.files)
     && packed.files.length === 7
@@ -197,23 +216,41 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
     && packed.files.includes('docs/testing')
     && packed.files.includes('dist')
     && packed.files.includes('THIRD_PARTY_NOTICES'),
-    'Packed files allowlist differs from the frozen v0.1 package surface',
+    'Packed files allowlist differs from the release package surface',
   )
   invariant(packed.engines?.node === releaseContract.node, `Packed Node range must be ${releaseContract.node}`)
   invariant(packed.repository?.type === 'git', 'Packed package repository type must be git')
-  invariant(packed.repository?.url === releaseContract.repository, 'Packed package repository URL differs from the v0.1 repository')
-  invariant(packed.homepage === 'https://github.com/Mat4m0/nuxt-email#readme', 'Packed package homepage differs from the v0.1 homepage')
-  invariant(packed.bugs?.url === 'https://github.com/Mat4m0/nuxt-email/issues', 'Packed package issue URL differs from the v0.1 issue tracker')
+  invariant(packed.repository?.url === releaseContract.repository, 'Packed package repository URL differs from the release repository')
+  invariant(packed.publishConfig?.access === 'public', 'Packed scoped package must publish with public access')
+  invariant(packed.homepage === 'https://github.com/Mat4m0/nuxt-email#readme', 'Packed package homepage differs from the release homepage')
+  invariant(packed.bugs?.url === 'https://github.com/Mat4m0/nuxt-email/issues', 'Packed package issue URL differs from the release issue tracker')
+
+  invariant(
+    JSON.stringify(Object.keys(packed.exports ?? {}).sort())
+    === JSON.stringify(['.', './define-email', './errors', './testing', './themes']),
+    'Packed package exports differ from the intentional public surface',
+  )
 
   const rootExport = packed.exports?.['.']
   invariant(typeof rootExport === 'object' && rootExport !== null, 'Packed package must export its module root')
   invariant('import' in rootExport && rootExport.import === './dist/module.mjs', 'Packed import export must point to ./dist/module.mjs')
-  invariant('types' in rootExport && rootExport.types === './dist/types.d.mts', 'Packed type export must point to ./dist/types.d.mts')
+  invariant('types' in rootExport && rootExport.types === './dist/module.d.mts', 'Packed type export must point to ./dist/module.d.mts')
 
   const testingExport = packed.exports?.['./testing']
   invariant(typeof testingExport === 'object' && testingExport !== null, 'Packed package must export its ./testing subpath')
   invariant('import' in testingExport && testingExport.import === './dist/runtime/testing/index.js', 'Packed ./testing import export must point to ./dist/runtime/testing/index.js')
   invariant('types' in testingExport && testingExport.types === './dist/runtime/testing/index.d.ts', 'Packed ./testing type export must point to ./dist/runtime/testing/index.d.ts')
+
+  for (const [subpath, importPath, typePath] of [
+    ['./define-email', './dist/runtime/define-email.js', './dist/runtime/define-email.d.ts'],
+    ['./errors', './dist/runtime/errors.js', './dist/runtime/errors.d.ts'],
+    ['./themes', './dist/runtime/themes.js', './dist/runtime/themes.d.ts'],
+  ] as const) {
+    const packageExport = packed.exports?.[subpath]
+    invariant(typeof packageExport === 'object' && packageExport !== null, `Packed package must export its ${subpath} subpath`)
+    invariant('import' in packageExport && packageExport.import === importPath, `Packed ${subpath} import export must point to ${importPath}`)
+    invariant('types' in packageExport && packageExport.types === typePath, `Packed ${subpath} type export must point to ${typePath}`)
+  }
 
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
   invariant(packed.peerDependencies?.nuxt === releaseContract.nuxt, `Packed Nuxt peer range must be ${releaseContract.nuxt}`)
@@ -254,8 +291,11 @@ async function verifyFreshConsumer(
 
   const consumerManifestPath = join(consumerDirectory, 'package.json')
   const consumerManifest = await readJson<PackageManifest & { dependencies: Record<string, string> }>(consumerManifestPath)
-  invariant(consumerManifest.dependencies['nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
-  consumerManifest.dependencies['nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
+  invariant(consumerManifest.dependencies['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
+  consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
+  if (runNumber === 2) {
+    consumerManifest.dependencies.nuxt = releaseContract.releaseCandidateNuxt
+  }
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
   process.stdout.write(`\n=== Fresh consumer ${runNumber} of 2 ===\n`)
@@ -274,14 +314,18 @@ async function verifyFreshConsumer(
   }
   catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    if (!message.includes('ERR_PNPM_NO_OFFLINE_TARBALL')) {
+    const offlineDataIsIncomplete = [
+      'ERR_PNPM_NO_MATCHING_VERSION',
+      'ERR_PNPM_NO_OFFLINE_TARBALL',
+    ].some(code => message.includes(code))
+    if (!offlineDataIsIncomplete) {
       throw error
     }
 
     requiredNetworkFallback = true
     const missingTarball = message.match(/missing package may be downloaded from (https?:\/\/\S+)/i)?.[1]?.replace(/\.$/, '')
     process.stdout.write(
-      `  local pnpm store is incomplete${missingTarball ? `; missing ${missingTarball}` : ''}; retrying with prefer-offline\n`,
+      `  local pnpm store or metadata is incomplete${missingTarball ? `; missing ${missingTarball}` : ''}; retrying with prefer-offline\n`,
     )
     await rm(join(consumerDirectory, 'node_modules'), { recursive: true, force: true })
     await rm(join(consumerDirectory, 'pnpm-lock.yaml'), { force: true })
@@ -289,14 +333,65 @@ async function verifyFreshConsumer(
   }
   timingsMilliseconds.install = performance.now() - installStartedAt
 
-  const installedPackageRoot = await realpath(join(consumerDirectory, 'node_modules/nuxt-email'))
-  invariant(isInside(temporaryRoot, installedPackageRoot), `Fresh install resolved nuxt-email outside its temporary app: ${installedPackageRoot}`)
-  invariant(!isInside(packageRoot, installedPackageRoot), 'Fresh install resolved nuxt-email from the source checkout')
+  const installedPackageRoot = await realpath(join(consumerDirectory, 'node_modules/@lupinum/nuxt-email'))
+  invariant(isInside(temporaryRoot, installedPackageRoot), `Fresh install resolved @lupinum/nuxt-email outside its temporary app: ${installedPackageRoot}`)
+  invariant(!isInside(packageRoot, installedPackageRoot), 'Fresh install resolved @lupinum/nuxt-email from the source checkout')
   invariant(!(await collectFiles(installedPackageRoot)).some(path => relative(installedPackageRoot, path).startsWith('src/')), 'Installed package contains source files')
 
   const installedManifest = await readJson<PackageManifest>(join(installedPackageRoot, 'package.json'))
+  invariant(installedManifest.name === releaseContract.name, 'Installed package name differs from the release contract')
   invariant(installedManifest.version === packedManifest.version, 'Installed package version differs from the packed tarball')
 
+  const publicProbeMarker = 'NUXT_EMAIL_PUBLIC_MODULE_PROBE:'
+  const publicProbe = await run(process.execPath, [
+    '--input-type=module',
+    '--eval',
+    `const specifiers = ${JSON.stringify([
+      '@lupinum/nuxt-email/define-email',
+      '@lupinum/nuxt-email/errors',
+      '@lupinum/nuxt-email/testing',
+      '@lupinum/nuxt-email/themes',
+    ])};`
+    + ` const resolved = Object.fromEntries(specifiers.map(specifier => [specifier, import.meta.resolve(specifier)]));`
+    + ` const [defineEmail, errors, testing, themes] = await Promise.all(specifiers.map(specifier => import(specifier)));`
+    + ` const checks = {`
+    + ` defineEmail: typeof defineEmail.defineEmail === 'function',`
+    + ` defineEmailOutside: typeof defineEmail.DefineEmailOutsideRenderError === 'function',`
+    + ` duplicateDefinition: typeof defineEmail.DuplicateEmailDefinitionError === 'function',`
+    + ` defineEmailSurface: JSON.stringify(Object.keys(defineEmail).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'defineEmail']),`
+    + ` noCreateRenderContext: !('createEmailRenderContext' in defineEmail),`
+    + ` noGetRenderContext: !('getEmailRenderContext' in defineEmail),`
+    + ` noRunRenderContext: !('runWithEmailRenderContext' in defineEmail),`
+    + ` errorsDefineEmailOutside: typeof errors.DefineEmailOutsideRenderError === 'function',`
+    + ` errorsDuplicateDefinition: typeof errors.DuplicateEmailDefinitionError === 'function',`
+    + ` emailRenderError: typeof errors.EmailRenderError === 'function',`
+    + ` tailwindMissingHeadError: typeof errors.TailwindMissingHeadError === 'function',`
+    + ` unknownTemplateError: typeof errors.UnknownEmailTemplateError === 'function',`
+    + ` errorsSurface: JSON.stringify(Object.keys(errors).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'EmailRenderError', 'TailwindMissingHeadError', 'UnknownEmailTemplateError']),`
+    + ` defineEmailErrorIdentity: defineEmail.DefineEmailOutsideRenderError === errors.DefineEmailOutsideRenderError && defineEmail.DuplicateEmailDefinitionError === errors.DuplicateEmailDefinitionError,`
+    + ` renderEmailComponent: typeof testing.renderEmailComponent === 'function',`
+    + ` normalizeEmailHtml: typeof testing.normalizeEmailHtml === 'function',`
+    + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'normalizeEmailHtml', 'renderEmailComponent']),`
+    + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError,`
+    + ` dracula: typeof themes.dracula === 'object',`
+    + ` oneDark: typeof themes.oneDark === 'object' } ;`
+    + ` process.stdout.write(${JSON.stringify(publicProbeMarker)} + JSON.stringify({ checks, resolved }));`,
+  ], consumerDirectory)
+  const publicProbeStart = publicProbe.stdout.indexOf(publicProbeMarker)
+  invariant(publicProbeStart >= 0, 'Packed public-subpath probe did not emit its result marker')
+  const publicModules = JSON.parse(
+    publicProbe.stdout.slice(publicProbeStart + publicProbeMarker.length),
+  ) as PublicModuleProbe
+  for (const [check, passed] of Object.entries(publicModules.checks)) {
+    invariant(passed, `Packed public-subpath probe failed: ${check}`)
+  }
+  for (const [specifier, resolvedUrl] of Object.entries(publicModules.resolved)) {
+    invariant(resolvedUrl.startsWith('file:'), `Packed ${specifier} resolved to a non-file URL: ${resolvedUrl}`)
+    const resolvedPath = fileURLToPath(resolvedUrl)
+    invariant(isInside(installedPackageRoot, resolvedPath), `Packed ${specifier} resolved outside the installed package: ${resolvedPath}`)
+  }
+
+  const consumerRequire = createRequire(join(consumerDirectory, 'package.json'))
   const previewHandlerPath = join(installedPackageRoot, 'dist/runtime/server/preview-page.get.js')
   const renderComponentPath = join(installedPackageRoot, 'dist/runtime/render/render-component.js')
   const h3Resolution = await realpath(createRequire(pathToFileURL(previewHandlerPath)).resolve('h3'))
@@ -336,6 +431,15 @@ async function verifyFreshConsumer(
   const build = await run('pnpm', ['exec', 'nuxt', 'build'], consumerDirectory, { NODE_ENV: 'production' })
   timingsMilliseconds.build = build.durationMilliseconds
 
+  const installedNuxtManifest = await readJson<{ version?: unknown }>(
+    consumerRequire.resolve('nuxt/package.json'),
+  )
+  invariant(
+    typeof installedNuxtManifest.version === 'string'
+    && installedNuxtManifest.version === consumerManifest.dependencies.nuxt,
+    `Fresh consumer ${runNumber} installed Nuxt ${String(installedNuxtManifest.version)} instead of ${consumerManifest.dependencies.nuxt}`,
+  )
+
   const outputDirectory = join(consumerDirectory, '.output')
   const publicOutput = await readTextOutput(join(outputDirectory, 'public'))
   const serverOutput = await readTextOutput(join(outputDirectory, 'server'))
@@ -351,7 +455,9 @@ async function verifyFreshConsumer(
   invariant(!serverOutput.paths.some(path => path.includes('/__email')), 'Production output emitted a preview route file')
   invariant(!serverOutput.paths.some(path => path.includes('.fixtures.')), 'Production output emitted a fixture module')
 
-  const renderRoutes = (await collectFiles(join(outputDirectory, 'server')))
+  const deployedOutputDirectory = join(temporaryRoot, `deployed-output-${runNumber}`)
+  await cp(outputDirectory, deployedOutputDirectory, { recursive: true })
+  const renderRoutes = (await collectFiles(join(deployedOutputDirectory, 'server')))
     .filter(path => path.replaceAll('\\', '/').endsWith('/chunks/routes/api/email.get.mjs'))
   invariant(renderRoutes.length === 1, `Expected one built email route, received ${renderRoutes.length}`)
   const routeUrl = pathToFileURL(renderRoutes[0]!).href
@@ -369,11 +475,20 @@ async function verifyFreshConsumer(
       + ` const handler = ns && ns.default;`
       + ` if (typeof handler !== 'function') { process.stderr.write('Built email route exposed no callable handler; exports: ' + Object.keys(route).join(', ')); process.exit(3); }`
       + ` return handler; }`
-  const productionRender = await run(process.execPath, [
-    '--input-type=module',
-    '--eval',
-    `const route = await import(${JSON.stringify(routeUrl)}); const handler = (${resolveHandler})(route); const first = await handler(); const second = await handler(); const payload = ${JSON.stringify(productionResultStart)} + JSON.stringify({ first, second }) + ${JSON.stringify(productionResultEnd)}; process.stdout.write(payload, () => process.exit(0))`,
-  ], consumerDirectory, { NODE_ENV: 'production' }, 30_000)
+  const consumerNodeModules = join(consumerDirectory, 'node_modules')
+  const hiddenConsumerNodeModules = join(consumerDirectory, '.node_modules-release-verifier-hidden')
+  await rename(consumerNodeModules, hiddenConsumerNodeModules)
+  let productionRender: CommandResult
+  try {
+    productionRender = await run(process.execPath, [
+      '--input-type=module',
+      '--eval',
+      `try { const route = await import(${JSON.stringify(routeUrl)}); const handler = (${resolveHandler})(route); const first = await handler(); const second = await handler(); const payload = ${JSON.stringify(productionResultStart)} + JSON.stringify({ first, second }) + ${JSON.stringify(productionResultEnd)}; process.stdout.write(payload, () => process.exit(0)); } catch (error) { console.error(error); if (error && typeof error === 'object' && 'cause' in error) console.error('Caused by:', error.cause); process.exit(2); }`,
+    ], deployedOutputDirectory, { NODE_ENV: 'production' }, 30_000)
+  }
+  finally {
+    await rename(hiddenConsumerNodeModules, consumerNodeModules)
+  }
   timingsMilliseconds.productionRender = productionRender.durationMilliseconds
   const resultStart = productionRender.stdout.indexOf(productionResultStart)
   const resultEnd = productionRender.stdout.indexOf(
@@ -400,8 +515,10 @@ async function verifyFreshConsumer(
   invariant(rendered.first.html.startsWith('<!DOCTYPE html'), 'Production render did not return a complete HTML document')
   invariant(rendered.first.html.includes('NUXT_EMAIL_FRESH_TEMPLATE_4D91'), 'Production render omitted the email template sentinel')
   invariant(rendered.first.html.includes('Order 7319 for Ada &amp; Lin'), 'Production render did not escape and render typed props')
+  invariant(rendered.first.html.includes('background:hsl(220, 13%, 18%)'), 'Production render did not execute the oneDark theme imported from the public themes subpath')
   invariant(rendered.first.text.includes('ORDER 7319 FOR ADA & LIN'), 'Production plain text did not preserve the rendered content')
   invariant(rendered.first.text.includes('View order https://example.com/orders/7319'), 'Production plain text did not preserve the email link')
+  invariant(rendered.first.subject === 'Order 7319 confirmed', 'Production render did not preserve the computed subject')
 
   const freshInstallMilliseconds = performance.now() - freshInstallStartedAt
   invariant(
@@ -416,6 +533,7 @@ async function verifyFreshConsumer(
     packageResolution: relative(consumerDirectory, installedPackageRoot).replaceAll('\\', '/'),
     requiredNetworkFallback,
     run: runNumber,
+    nuxtVersion: installedNuxtManifest.version,
     textBytes: Buffer.byteLength(rendered.first.text),
     timingsMilliseconds,
     vueServerRendererResolution: relative(consumerDirectory, vueServerRendererResolution).replaceAll('\\', '/'),
@@ -440,6 +558,10 @@ async function verifyRelease(): Promise<void> {
     join(fixtureRoot, 'package.json'),
   )
   invariant(freshFixtureManifest.dependencies?.nuxt === '4.4.8', 'Fresh-install fixture must pin Nuxt 4.4.8')
+  invariant(
+    freshFixtureManifest.dependencies?.['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__',
+    'Fresh-install fixture must consume the scoped release tarball placeholder',
+  )
   invariant(freshFixtureManifest.dependencies?.vue === '3.5.40', 'Fresh-install fixture must pin Vue 3.5.40')
   invariant(
     typeof sourceManifest.packageManager === 'string' && /^pnpm@\d+\.\d+\.\d+$/.test(sourceManifest.packageManager),
@@ -451,7 +573,7 @@ async function verifyRelease(): Promise<void> {
 
   const temporaryRoot = await realpath(await mkdtemp(join(tmpdir(), 'nuxt-email-release-verify-')))
   const artifactDirectory = join(temporaryRoot, 'artifacts')
-  const tarballPath = join(artifactDirectory, 'nuxt-email.tgz')
+  const tarballPath = join(artifactDirectory, 'lupinum-nuxt-email.tgz')
   const inspectionDirectory = join(temporaryRoot, 'package-inspection')
 
   try {
@@ -484,8 +606,15 @@ async function verifyRelease(): Promise<void> {
       'docs/renderer.md',
       'docs/runtime-dependencies.md',
       'dist/module.mjs',
+      'dist/module.d.mts',
       'dist/types.d.mts',
       'dist/runtime/render/render-component.js',
+      'dist/runtime/define-email.js',
+      'dist/runtime/define-email.d.ts',
+      'dist/runtime/errors.js',
+      'dist/runtime/errors.d.ts',
+      'dist/runtime/themes.js',
+      'dist/runtime/themes.d.ts',
       'dist/runtime/testing/index.js',
       'dist/runtime/testing/index.d.ts',
       'dist/runtime/server/preview-page-script.js',
@@ -523,7 +652,7 @@ async function verifyRelease(): Promise<void> {
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
-    for (const requiredText of ['# Nuxt Email', 'nuxt-email', 'renderEmail']) {
+    for (const requiredText of ['# Nuxt Email', '@lupinum/nuxt-email', 'renderEmail']) {
       invariant(packedReadme.includes(requiredText), `Packed README is missing required text: ${requiredText}`)
     }
     for (const scaffoldText of [
@@ -615,6 +744,7 @@ async function verifyRelease(): Promise<void> {
       packSeconds: Number((pack.durationMilliseconds / 1_000).toFixed(3)),
       consumers: consumers.map(consumer => ({
         run: consumer.run,
+        nuxt: consumer.nuxtVersion,
         requiredNetworkFallback: consumer.requiredNetworkFallback,
         isolatedResolution: {
           h3: consumer.h3Resolution,
@@ -624,6 +754,8 @@ async function verifyRelease(): Promise<void> {
         production: {
           htmlBytes: consumer.htmlBytes,
           previewAndFixturesExcluded: true,
+          publicErrorIdentityPreserved: true,
+          publicThemeRendered: true,
           textBytes: consumer.textBytes,
           twoRendersByteIdentical: true,
         },
