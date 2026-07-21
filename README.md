@@ -1,43 +1,55 @@
 # Nuxt Email
 
-Nuxt Email is a Nuxt module for authoring transactional emails as ordinary Vue SFCs and rendering deterministic HTML and plain text from Nitro server code. Its email-safe primitives are tested against a pinned React Email behavioral oracle, while discovery, typing, preview, and rendering follow Vue and Nuxt conventions.
+Typed transactional email for Nuxt, with email-safe Tailwind v4.
+
+Nuxt Email turns `app/emails/` into a typed, Nitro-native email renderer. Author ordinary Vue SFCs, style them with Tailwind v4 or Vue styles, preview the exact server output, and call `renderEmail('welcome', props)` from Nitro. The module owns rendering; your application keeps control of delivery.
+
+## Why Nuxt Email
+
+- **Nuxt-native and typed.** Template names and props are generated from the SFCs in your application. There is no sidecar build or second template registry.
+- **Tailwind v4 built for email output.** `ETailwind` inlines compatible utilities, keeps author styles authoritative, and moves media-query and pseudo-class rules into the document head.
+- **One production rendering path.** Development preview, unit-test helpers, and Nitro rendering use the same isolated Vue SSR renderer.
+- **Email-safe primitives.** Nineteen server components cover documents, table layout, content, Outlook-safe buttons, Markdown, code, fonts, previews, and Tailwind.
+- **Behavior is verified, not hand-waved.** Covered primitives are compared case by case with a pinned React Email oracle. The generated conformance report records exact matches and intentional divergences; it does not claim universal email-client parity.
+
+## Is it the right tool?
+
+Choose Nuxt Email for **transactional email that belongs to a Nuxt application**: account messages, receipts, alerts, and other request- or job-time output that benefits from generated template/prop types and direct Nitro integration.
+
+[Maizzle](https://maizzle.com/) is the stronger choice when you want a standalone email framework, static or marketing-email builds, a broader transformation pipeline, or a workflow shared across non-Nuxt applications. Nuxt Email is deliberately not trying to reproduce Maizzle's CLI, configuration system, or campaign-oriented build pipeline.
 
 ## Release status
 
-`0.1.0` is the current release-candidate version, not an approved public release.
-
-The unscoped npm name `nuxt-email` is **already owned by an unrelated package** (`nuxt-email@1.2.2`, a Nodemailer-based module by a different author), so this project cannot publish under it. The scoped name `@lupinum/nuxt-email` is currently unregistered and is the likely publish name, but the final name, ownership, and access are a maintainer decision and remain a release blocker. Until that is resolved, use only the exact candidate tarball and SHA-256 named in the release record rather than assuming any npm name.
-
-Final publication is also blocked on the recorded manual checks in Gmail web, Apple Mail, and Outlook for Windows, and evidence from an external transactional-email beta. See the [v0.1 release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) for the live gate status.
+The package identity is **`@lupinum/nuxt-email`**. The repository is still pre-1.0 while its automated release checks, real-client QA, and external transactional beta are completed. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Supported environment
 
-- Node.js `^22.12.0 || ^24.11.0` — Node 22 from 22.12 onward, or Node 24 from 24.11 onward.
+- Node.js `^22.18.0 || ^24.11.0 || ^26.0.0` — the supported even-numbered Node 22, 24, and 26 lines.
 - Nuxt `^4.4.8` — Nuxt 4.4.8 or a later Nuxt 4 release.
-- Vue `^3.5.0`.
+- Vue `^3.5.35`.
 
-The CI matrix runs lint, type checks, and the full test suite on Linux, macOS, and Windows across Node `22.12.0` and the current Node `24.x`. The runtime-heavy oracle, conformance-report, and package/fresh-install verifications run once on the Linux Node `22.12.0` runner. Node 20, Node 23, Node 25, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the v0.1 support contract.
+Nuxt `4.4.8` is the verified compatibility baseline. The release gate also tests the current Nuxt 4 release; as of 2026-07-21, a clean Nuxt `4.5.0` production build is blocked before this module loads because `@nuxt/vite-builder@4.5.0` imports an undeclared `unplugin` dependency. v1 remains gated until the current Nuxt release passes that isolated build. CI covers Node 22, 24, and 26. Other Node majors, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the support contract.
 
 ## Install and configure
 
-In an existing supported Nuxt application, install the candidate tarball identified in the release record:
+In an existing supported Nuxt application:
 
 ```bash
-pnpm add /absolute/path/to/nuxt-email-0.1.0.tgz
+pnpm add @lupinum/nuxt-email
 ```
 
 Register the module:
 
 ```ts
 // nuxt.config.ts
-import NuxtEmail from 'nuxt-email'
+import NuxtEmail from '@lupinum/nuxt-email'
 
 export default defineNuxtConfig({
   modules: [NuxtEmail],
 })
 ```
 
-There are no v0.1 module options. Follow the [complete fresh-install guide](./docs/getting-started.md) for the release-tested setup.
+There are no module options. Follow the [complete fresh-install guide](./docs/getting-started.md) for the release-tested setup.
 
 ## Author a Vue email
 
@@ -46,33 +58,39 @@ Every `.vue` file under `app/emails/` is a template. Nested paths become slash-s
 ```vue
 <!-- app/emails/welcome.vue -->
 <script setup lang="ts">
+import { defineEmail } from '@lupinum/nuxt-email/define-email'
+
 const props = defineProps<{
   activationUrl: string
   firstName: string
 }>()
 
 // Optional: declare the subject line from the same typed props.
-defineEmail<typeof props>({
-  subject: p => `Welcome, ${p.firstName}`,
+defineEmail({
+  subject: () => `Welcome, ${props.firstName}`,
 })
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EHead>
-      <title>Activate your account</title>
-    </EHead>
-    <EBody>
-      <EPreview>Your account is ready.</EPreview>
-      <EContainer>
-        <EHeading>Welcome, {{ firstName }}</EHeading>
-        <EText>Finish setting up your account.</EText>
-        <EButton :href="activationUrl" :style="{ padding: '12px 20px' }">
-          Activate account
-        </EButton>
-      </EContainer>
-    </EBody>
-  </EHtml>
+  <ETailwind>
+    <EHtml lang="en">
+      <EHead>
+        <title>Activate your account</title>
+      </EHead>
+      <EBody class="m-0 bg-slate-100 p-6">
+        <EPreview>Your account is ready.</EPreview>
+        <EContainer class="rounded-lg bg-white p-6">
+          <EHeading class="m-0 text-2xl text-slate-900">
+            Welcome, {{ firstName }}
+          </EHeading>
+          <EText class="text-slate-600">Finish setting up your account.</EText>
+          <EButton class="rounded-md bg-blue-600 px-5 py-3 text-white" :href="activationUrl">
+            Activate account
+          </EButton>
+        </EContainer>
+      </EBody>
+    </EHtml>
+  </ETailwind>
 </template>
 ```
 
@@ -83,7 +101,9 @@ The nineteen `E*` components are auto-registered for email rendering; templates 
 - **Typography and code** — `EFont` (`@font-face` loading), `ECodeInline`, and `ECodeBlock` (Prism syntax highlighting).
 - **Authoring helpers** — `EMarkdown` (Markdown to email-safe HTML) and `ETailwind` (render-time Tailwind class inlining, including utilities emitted inside nested components, with non-inlinable rules downleveled into a `<head>` `<style>`).
 
-Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, and Vue style bindings. `defineEmail({ subject })` is an optional server-side auto-import that computes a subject line from the template's typed props. The [component reference](./docs/components.md) records every component's important props, fixed semantics, and defaults.
+Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, Tailwind classes, and Vue style bindings. Import `defineEmail` from `@lupinum/nuxt-email/define-email` when the template owns its subject line; its zero-argument closure captures the template's actual props, so there is no separate metadata prop type to drift. The [component reference](./docs/components.md) records every component's important props, fixed semantics, and defaults.
+
+`ETailwind` does not automatically load the Nuxt app stylesheet or inherit browser CSS variables. To make utilities such as `text-primary` share application colors, pass a concrete Tailwind v4 `theme` string or `config` sourced from your application's canonical design-token module. Render-time filesystem CSS imports and CSS `@plugin` imports are intentionally not resolved; executable plugins belong in `config`.
 
 ## Render from Nitro
 
@@ -114,10 +134,10 @@ Do not import `renderEmail` into Vue components or other client code. Nuxt Email
 
 ## Test your emails
 
-Render any email component to `{ html, text, subject? }` in a unit test without booting Nuxt, using the `nuxt-email/testing` subpath:
+Render any email component to `{ html, text, subject? }` in a unit test without booting Nuxt, using the stable testing subpath:
 
 ```ts
-import { normalizeEmailHtml, renderEmailComponent } from 'nuxt-email/testing'
+import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
 import Welcome from './app/emails/welcome.vue'
 
 const { html, text } = await renderEmailComponent(Welcome, {
@@ -151,8 +171,9 @@ Run `pnpm exec nuxt dev` and open `/__email`. The page provides the sandboxed em
 
 - the computed **subject** line (or a "No subject defined" hint),
 - a **viewport** toggle — 600px, 375px, or full width,
-- a **dark**-client simulation, and
-- a **Gmail clipping budget** badge showing the exact UTF-8 byte size, amber past 80 KiB and red past Gmail's 100 KiB clip limit.
+- a **rendered-size** badge showing the exact UTF-8 byte count, with an approximate Gmail clipping-budget warning.
+
+The byte count is exact; Gmail clipping behavior is not a cross-account or cross-client guarantee. The preview does not simulate dark mode. Test dark-mode behavior and final rendering in real target clients.
 
 Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and preview UI are excluded from production builds; do not import fixtures into production application code. Read the [preview guide](./docs/preview.md) for the exact security and fixture contract.
 
@@ -171,16 +192,25 @@ Delivering that batch and completing the [client QA checklist](https://github.co
 
 Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for supported behavior, intentional Vue/email-safety divergences, and unsupported components. It currently records **61 of 61 runnable behaviors passing**: 10 exact, 40 normalized, 5 semantic, and 6 intentional divergences, against React Email `6.9.0`, `@react-email/render` `2.1.0`, and source commit `6eb428924c4c2774228a07cbec1977ad8898f143`; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
 
-The v0.1 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configuration options, and a public registry API. Sending and subject/recipient delivery remain application-owned.
+The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configuration options, and a public registry API. Sending and subject/recipient delivery remain application-owned.
+
+Stable package entry points are deliberately small:
+
+- `@lupinum/nuxt-email` — the Nuxt module.
+- `@lupinum/nuxt-email/define-email` — template metadata and its typed errors.
+- `@lupinum/nuxt-email/testing` — standalone component rendering and HTML normalization.
+- `@lupinum/nuxt-email/errors` — supported runtime error classes.
+- `@lupinum/nuxt-email/themes` — Prism code-block themes and their type.
 
 ## Documentation
 
 - [Getting started](./docs/getting-started.md)
 - [Component reference](./docs/components.md)
 - [Renderer, plain-text, error, and security contracts](./docs/renderer.md)
-- [Testing utilities (`nuxt-email/testing`)](./docs/testing.md)
+- [Testing utilities (`@lupinum/nuxt-email/testing`)](./docs/testing.md)
 - [Runtime dependency and license review](./docs/runtime-dependencies.md)
 - [Development preview](./docs/preview.md)
+- [Future feature roadmap](./docs/roadmap.md)
 - [Email-client proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/README-proofs.md)
 - [React Email migration](./docs/migration-from-react-email.md)
 - [Generated conformance report](./docs/conformance/report.md)
@@ -205,4 +235,4 @@ pnpm dev:build
 pnpm release:verify
 ```
 
-`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders the fixed fresh application twice in isolation. It refuses to run on a dirty worktree, so commit first. Publication remains blocked until the external gates in the release-candidate record are complete.
+`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders fixed fresh applications at the supported Nuxt floor and current Nuxt release candidate. Publication still requires that complete gate, the recorded real-client QA, and external beta sign-off.

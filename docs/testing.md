@@ -1,11 +1,11 @@
 # Testing your emails
 
-nuxt-email ships the same rendering and comparison tools it uses for its own
+Nuxt Email ships the same rendering and comparison tools it uses for its own
 React Email conformance suite, so you can test your templates as rigorously as
-the library tests itself. Import them from the `nuxt-email/testing` subpath:
+the library tests itself. Import them from the stable `@lupinum/nuxt-email/testing` subpath:
 
 ```ts
-import { renderEmailComponent, normalizeEmailHtml } from 'nuxt-email/testing'
+import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
 ```
 
 Nothing here needs a running Nuxt app or dev server — the helpers drive the
@@ -28,7 +28,7 @@ interface RenderedEmail {
 
 ```ts
 import { describe, expect, it } from 'vitest'
-import { renderEmailComponent } from 'nuxt-email/testing'
+import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
 import WelcomeEmail from '../emails/welcome.vue'
 
 describe('welcome email', () => {
@@ -54,9 +54,15 @@ it('computes the subject from props', async () => {
 })
 ```
 
-Missing or unknown props are rejected before rendering, and a template that
-fails to render throws an `EmailRenderError` naming the component — so a broken
-email fails your test loudly rather than shipping empty.
+The helper infers props directly from the imported Vue component: components with
+required props require the second argument, optional-only components make it
+optional, and prop-free components reject invented props. Runtime calls from
+untyped code reject unknown and declared-required props before rendering. A
+template that fails to render throws an `EmailRenderError` naming the component,
+so a broken email fails your test loudly rather than shipping empty.
+
+`EmailRenderError` is exported by this testing subpath for focused assertions. The
+same public class is also available from `@lupinum/nuxt-email/errors`.
 
 ## `normalizeEmailHtml(html)`
 
@@ -64,7 +70,7 @@ Canonicalizes rendered email HTML so two structurally equivalent documents
 compare equal despite insignificant serialization differences. It sorts each
 element's attributes, drops trailing `;` from `style` values, collapses `class`
 whitespace, normalizes self-closing tags, and strips framework boundary comment
-markers. This is the exact normalizer nuxt-email uses to compare Vue output
+markers. This is the exact normalizer Nuxt Email uses to compare Vue output
 against the React Email oracle.
 
 Use it for stable snapshot assertions that will not break on attribute ordering
@@ -72,7 +78,7 @@ or whitespace:
 
 ```ts
 import { expect, it } from 'vitest'
-import { normalizeEmailHtml, renderEmailComponent } from 'nuxt-email/testing'
+import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
 import ReceiptEmail from '../emails/receipt.vue'
 
 it('matches the approved receipt markup', async () => {

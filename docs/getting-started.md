@@ -1,6 +1,6 @@
 # Getting started from a fresh Nuxt application
 
-This path mirrors the automated fresh-install fixture: it installs one packed release candidate, registers the module, creates one typed Vue email and sibling preview fixture, renders it from Nitro, type-checks the generated API, and builds production output. On a normal development machine it is designed to finish in under ten minutes.
+This path mirrors the automated fresh-install fixture: it installs `@lupinum/nuxt-email`, registers the module, creates one typed Vue email and sibling preview fixture, renders it from Nitro, type-checks the generated API, and builds production output.
 
 The release verifier starts its timer before materializing these fixed application files and stops after installation, prepare, type checks, production build, and deterministic server render. The development-preview routes and interactions are exercised by the separate module end-to-end suite. These automated measurements prove the tool path; they do not claim to measure a person's reading or typing speed.
 
@@ -8,18 +8,17 @@ The release verifier starts its timer before materializing these fixed applicati
 
 Use one of the supported Node ranges:
 
-- Node `22.12.0` through the latest Node 22 release.
+- Node `22.18.0` through the latest Node 22 release.
 - Node `24.11.0` through the latest Node 24 release.
+- Node `26.0.0` through the latest Node 26 release.
 
-The release fixture uses Nuxt `4.4.8`, Vue `3.5.40`, TypeScript `5.9.3`, Vue TSC `3.3.7`, and the exact candidate `nuxt-email` tarball. The repository itself pins pnpm `11.13.1`.
+The supported Nuxt range starts at `4.4.8`, which is the verified compatibility baseline. The release gate also exercises the current Nuxt 4 release candidate. As of 2026-07-21, Nuxt `4.5.0` fails its own isolated Vite production build before Nuxt Email loads because `@nuxt/vite-builder` imports an undeclared `unplugin` dependency, so v1 remains gated on an upstream patch. The verified toolchain uses Vue `3.5.40`, TypeScript `5.9.3`, and the repository-pinned pnpm `11.13.1`.
 
-The release CI anchors that Nuxt version on Node `22.12.0` and the current Node `24.x` runner. The declared Nuxt peer range is `^4.4.8`; later Nuxt 4 releases are allowed but are not separate matrix anchors while `4.4.8` is current.
-
-`nuxt-email` is still a working package name whose publication ownership has not been approved. Obtain the candidate tarball and SHA-256 from the release record, and check that record's exact-artifact verification status before use. Do not substitute a registry package with the same name.
+The declared Nuxt peer range is `^4.4.8`. The unscoped `nuxt-email` package on npm is unrelated to this project; always use the scoped package name.
 
 ## 2. Create the application manifest
 
-Create an empty directory and add this `package.json`, replacing the tarball path with the absolute path to the recorded candidate artifact:
+Create an empty directory and add this `package.json`:
 
 ```json
 {
@@ -27,8 +26,8 @@ Create an empty directory and add this `package.json`, replacing the tarball pat
   "private": true,
   "type": "module",
   "dependencies": {
-    "nuxt": "4.4.8",
-    "nuxt-email": "file:/absolute/path/to/nuxt-email-0.1.0-rc.tgz",
+    "@lupinum/nuxt-email": "^1.0.0",
+    "nuxt": "^4.4.8",
     "typescript": "5.9.3",
     "vue": "3.5.40",
     "vue-tsc": "3.3.7"
@@ -57,7 +56,7 @@ pnpm install
 ```ts
 // nuxt.config.ts
 import type { NuxtConfig } from 'nuxt/schema'
-import NuxtEmail from 'nuxt-email'
+import NuxtEmail from '@lupinum/nuxt-email'
 
 export default {
   modules: [NuxtEmail],
@@ -90,37 +89,47 @@ Create `app/emails/welcome.vue`:
 
 ```vue
 <script setup lang="ts">
+import { defineEmail } from '@lupinum/nuxt-email/define-email'
+
 defineOptions({ name: 'WelcomeEmail' })
 
-defineProps<{
+const props = defineProps<{
   orderNumber: number
   recipientName: string
 }>()
+
+defineEmail({
+  subject: () => `Order ${props.orderNumber} confirmed`,
+})
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EHead>
-      <title>Order confirmation</title>
-    </EHead>
-    <EBody>
-      <EPreview>Your order is ready.</EPreview>
-      <EContainer>
-        <EHeading>Order {{ orderNumber }} for {{ recipientName }}</EHeading>
-        <EText>We have received your order.</EText>
-        <EButton
-          :href="`https://example.com/orders/${orderNumber}`"
-          :style="{ padding: '12px 20px' }"
-        >
-          View order
-        </EButton>
-      </EContainer>
-    </EBody>
-  </EHtml>
+  <ETailwind>
+    <EHtml lang="en">
+      <EHead>
+        <title>Order confirmation</title>
+      </EHead>
+      <EBody class="m-0 bg-slate-100 p-6">
+        <EPreview>Your order is ready.</EPreview>
+        <EContainer class="rounded-lg bg-white p-6">
+          <EHeading class="m-0 text-2xl text-slate-900">
+            Order {{ orderNumber }} for {{ recipientName }}
+          </EHeading>
+          <EText class="text-slate-600">We have received your order.</EText>
+          <EButton
+            class="rounded-md bg-blue-600 px-5 py-3 text-white"
+            :href="`https://example.com/orders/${orderNumber}`"
+          >
+            View order
+          </EButton>
+        </EContainer>
+      </EBody>
+    </EHtml>
+  </ETailwind>
 </template>
 ```
 
-No component imports are needed. The module registers all fourteen email primitives inside the isolated server renderer.
+No component imports are needed. The module registers exactly nineteen email primitives inside the isolated server renderer. Tailwind v4 is opt-in per template through `ETailwind`; emails without that boundary are not rewritten by the Tailwind engine.
 
 ## 5. Add the development fixture
 
@@ -155,7 +164,7 @@ export default defineEventHandler(() => {
 })
 ```
 
-`renderEmail` is a generated Nitro auto-import. Do not import it from `nuxt-email` or `#imports`, and do not call it from client code. TypeScript checks both the name `welcome` and its exact props.
+`renderEmail` is a generated Nitro auto-import. Do not import it from `@lupinum/nuxt-email` or `#imports`, and do not call it from client code. TypeScript checks both the name `welcome` and its exact props. It returns `{ html, text, subject? }`; `subject` is present because this template called `defineEmail`.
 
 ## 7. Generate types and verify them
 
@@ -178,7 +187,7 @@ pnpm exec nuxt dev
 Open these local routes:
 
 - `/__email` — choose `welcome`, then inspect Preview, HTML, and Plain text.
-- `/api/email` — receive the production API contract with the rendered `html` and `text` strings from the Nitro handler.
+- `/api/email` — receive the production API contract with rendered `html`, `text`, and optional `subject` from the Nitro handler.
 
 Saving `welcome.vue` or its sibling fixture refreshes the preview without a full server restart. Stop the development server before the production check.
 
@@ -195,4 +204,4 @@ Through Nuxt Email's canonical generated API, the production server contains the
 - Read the [component reference](./components.md) before translating a larger design.
 - Read the [renderer contract](./renderer.md) before connecting a provider SDK.
 - Use the [React Email migration guide](./migration-from-react-email.md) for an existing JSX template.
-- Check the [release-candidate record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/v0.1-release-candidate.md) before treating a tarball as publishable.
+- Inspect the [Tailwind contract](./components.md#tailwind) before translating application utility classes directly into email markup.

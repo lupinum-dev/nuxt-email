@@ -7,7 +7,7 @@ Nuxt Email provides nineteen E-prefixed components. They are auto-registered ins
 - Native attributes and `class` are forwarded unless a component fixes an email-safety invariant.
 - `style` accepts the normal Vue object, string, or array forms. Object keys may be camelCase or kebab-case.
 - Vue interpolation and attribute serialization escape text by default.
-- Every component rejects `innerHTML`, `textContent`, and attribute names beginning with `on`, case-insensitively. There is no raw-HTML primitive in v0.1.
+- Every component rejects `innerHTML`, `textContent`, and attribute names beginning with `on`, case-insensitively. There is no raw-HTML primitive.
 - Event handlers have no place in rendered email and are not supported.
 - Required strings such as `href` and `src` must be non-empty at runtime.
 - React Email shorthand props such as `mx` are not supported; use ordinary CSS in `style`.
@@ -70,12 +70,14 @@ Use an explicit `<title>` inside `EHead`; `EPreview` does not generate or hoist 
 | --- | --- | --- |
 | `EContainer` | Centered presentation table for bounded content; accepts safe table attributes except the fixed semantics. | `width="100%"`, `max-width: 37.5em`; physical padding moves to the inner cell. `border`, `cellpadding`, `cellspacing`, and `role` are fixed and cannot be overridden. |
 | `ESection` | Full-width presentation table with one inner cell. | Physical padding moves to the inner cell. Presentation-table attributes are fixed and cannot be overridden. |
-| `ERow` | Full-width presentation table whose row receives slot content. | Place `EColumn` components directly in the slot. Presentation-table attributes are fixed and cannot be overridden. |
+| `ERow` | Full-width presentation table whose row receives slot content. | Place `EColumn` components directly in the slot. Physical padding is carried by an outer presentation-table cell so clients that force `border-collapse: collapse` still honor it. Presentation-table attributes are fixed and cannot be overridden. |
 | `EColumn` | A `<td>` cell; accepts safe cell attributes such as `width`, `colspan`, alignment, and style. | No synthetic React marker and no default width. |
 
-For `EContainer` and `ESection`, physical `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, and `paddingLeft` are placed on the inner `<td>` for compatibility. Logical padding properties remain on the table.
+For `EContainer`, `ESection`, and `ERow`, physical `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, and `paddingLeft` are placed on a `<td>` for compatibility. `ERow` adds the wrapper only when physical padding is present, so an unpadded row keeps its compact markup. Logical padding properties remain on the table.
 
-`EContainer`, `ESection`, and `ERow` fix `border`, `cellpadding`, `cellspacing`, and `role` to preserve the email-client-safe table layout. Unlike React Email, which silently discards overrides for these attributes, nuxt-email throws a `TypeError` when any of them is supplied (case-insensitive, so `cellPadding` and `cellSpacing` are caught too). Set these presentation properties through `style` if you need to adjust them.
+This relocation applies to padding known at render time: author `style` and non-variant Tailwind utilities such as `p-4`. Responsive or pseudo-class utilities such as `md:p-4` remain CSS rules on the presentation table because they have no single inline value to move. Clients that force `table { border-collapse: collapse }` may ignore that table padding. When responsive padding is required, put the utility on an inner `EColumn` (a real `<td>`) and verify the target clients.
+
+`EContainer`, `ESection`, and `ERow` fix `border`, `cellpadding`, `cellspacing`, and `role` to preserve the email-client-safe table layout. Unlike React Email, which silently discards overrides for these attributes, Nuxt Email throws a `TypeError` when any of them is supplied (case-insensitive, so `cellPadding` and `cellSpacing` are caught too). Set these presentation properties through `style` if you need to adjust them.
 
 ```vue
 <EContainer :style="{ maxWidth: '600px', padding: '24px' }">
@@ -173,7 +175,7 @@ Source spaces are encoded as no-break space plus zero-width joiner plus zero-wid
 
 ```vue
 <script setup lang="ts">
-import { dracula } from 'nuxt-email'
+import { dracula } from '@lupinum/nuxt-email/themes'
 </script>
 
 <template>
@@ -190,6 +192,8 @@ import { dracula } from 'nuxt-email'
 
 `EMarkdown` renders Markdown to email-safe HTML with inline styles.
 
+Raw HTML is rejected, including HTML comments. Links and images accept relative URLs plus `http`, `https`, `mailto`, `tel`, and `cid`; other schemes are rejected after HTML-entity and control-character normalization. HTML-looking text inside code spans and fences is escaped. This keeps Markdown from becoming the raw-HTML escape hatch that the component API otherwise excludes.
+
 | Prop | Contract |
 | --- | --- |
 | `source` | Optional Markdown string. When it is a string it wins; otherwise the text-only default slot is used. |
@@ -204,7 +208,7 @@ The default slot must contain text only; an element child throws a `TypeError` r
 
 ## Tailwind
 
-`ETailwind` is a server-only boundary that inlines Tailwind utility classes used by its subtree. Wrap the whole document so a `<head>` is available inside the boundary.
+`ETailwind` is the server-only Tailwind v4 boundary. It compiles the utilities used by its subtree into email-safe output at render time. Wrap the whole document so a `<head>` is available inside the boundary.
 
 | Prop | Contract |
 | --- | --- |
@@ -213,6 +217,29 @@ The default slot must contain text only; an element child throws a `TypeError` r
 | `utility` | Optional raw CSS appended to the utilities layer. |
 
 Utility classes on descendant elements are inlined into each element's `style`, with precedence `component defaults < Tailwind utilities < author style`. Rules that cannot be inlined (media queries, pseudo-classes) are collected into a `<style>` in the `<head>`, residual class names are sanitized, and `mso-*` properties survive inlining. If a class needs a `<head>` and none is present inside the boundary, rendering throws with a message naming the offending classes.
+
+`ETailwind` does **not** load your Nuxt application's stylesheet or inherit browser CSS variables. Email utilities must compile to concrete values. Pass a Tailwind v4 `theme` string (or `config`) to the boundary, ideally generated from the same application-owned design-token module used by your web stylesheet:
+
+```vue
+<script setup lang="ts">
+const emailTheme = '@theme { --color-primary: #2563eb; }'
+</script>
+
+<template>
+  <ETailwind :theme="emailTheme">
+    <EHtml>
+      <EHead />
+      <EBody>
+        <EText class="text-primary">Concrete email color</EText>
+      </EBody>
+    </EHtml>
+  </ETailwind>
+</template>
+```
+
+Sharing the token source keeps web and email colors aligned without coupling server email rendering to the Nuxt CSS build.
+
+The render path is filesystem-free: `ETailwind` accepts `config`, `theme`, and `utility` values, but it does not resolve arbitrary CSS file imports or CSS `@plugin` module imports while rendering. Supply executable Tailwind plugins through `config`.
 
 ```vue
 <ETailwind>
@@ -253,9 +280,9 @@ Classes on elements written directly in the email template are inlined by a rend
 </ETailwind>
 ```
 
-E* primitives with style logic (`EText`, `EButton`, `ESection`, `EContainer`, `ELink`, `EImg`, `EHr`) resolve their own Tailwind classes before running their margin/padding/Outlook derivation, so utilities behave identically whether the primitive is written inline or produced by a nested component. Plain HTML elements and structural primitives (`EHtml`, `EHeading`, `ERow`, `EColumn`) are inlined after render. Non-inlinable rules from nested classes (e.g. the `md:text-lg` above) still reach the `<head>` `<style>`, and the missing-`<head>` error still fires when such a class has nowhere to go.
+E* primitives with style logic (`EBody`, `EText`, `EButton`, `ESection`, `EContainer`, `ERow`, `ELink`, `EImg`, `EHr`) resolve their own Tailwind classes before running their margin/padding/Outlook derivation, so utilities behave identically whether the primitive is written inline or produced by a nested component. Plain HTML elements and structural primitives (`EHtml`, `EHeading`, `EColumn`) are inlined after render. Non-inlinable rules from nested classes (e.g. the `md:text-lg` above) still reach the `<head>` `<style>`, and the missing-`<head>` error still fires when such a class has nowhere to go.
 
-Limitations: `ECodeInline`, `ECodeBlock`, `EMarkdown`, `EPreview`, and `EFont` do not treat a nested `class` as a Tailwind style target (their `class`/head semantics differ), and nested `<ETailwind>` boundaries are not supported. Emails that do not use `<ETailwind>` are entirely unaffected — the nested support adds zero cost to them.
+Limitations: `ECodeInline`, `ECodeBlock`, `EMarkdown`, `EPreview`, and `EFont` do not treat a nested `class` as a Tailwind style target (their `class`/head semantics differ), nested `<ETailwind>` boundaries are not supported, and render-time CSS/`@plugin` filesystem imports are not resolved. Emails that do not use `<ETailwind>` are entirely unaffected — the nested support adds zero cost to them.
 
 ## Complete-document requirement
 

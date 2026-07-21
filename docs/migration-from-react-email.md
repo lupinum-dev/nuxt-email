@@ -55,10 +55,16 @@ Place the Vue version at `app/emails/order-confirmation.vue`:
 
 ```vue
 <script setup lang="ts">
-defineProps<{
+import { defineEmail } from '@lupinum/nuxt-email/define-email'
+
+const props = defineProps<{
   orderNumber: number
   recipientName: string
 }>()
+
+defineEmail({
+  subject: () => `Order ${props.orderNumber} confirmed`,
+})
 </script>
 
 <template>
@@ -127,6 +133,7 @@ Do not import a component renderer into application code. The public application
 | `{condition && <Text />}` | `<EText v-if="condition">` |
 | `{items.map(item => <Text key={item.id} />)}` | `<EText v-for="item in items" :key="item.id">` |
 | `style={{ backgroundColor: '#fff' }}` | `:style="{ backgroundColor: '#fff' }"` |
+| `<Tailwind>` | Auto-registered `ETailwind` using Tailwind v4 |
 | React renderer receives an element | Nuxt renderer receives a generated template name and typed props |
 | Preview-specific React application | Exact sibling fixture plus development-only `/__email` |
 
@@ -150,7 +157,7 @@ export default {
 } satisfies OrderConfirmationProps
 ```
 
-Start Nuxt and open `/__email`. v0.1 supports one fixed scenario per template; it does not generate a form or accept arbitrary request props.
+Start Nuxt and open `/__email`. The preview supports one fixed scenario per template; it does not generate a form or accept arbitrary request props.
 
 ## Behavioral differences to review
 
@@ -158,10 +165,28 @@ Start Nuxt and open `/__email`. v0.1 supports one fixed scenario per template; i
 - The component names and authoring API are Vue-native and E-prefixed.
 - React streaming, Suspense behavior, generated React markers, JSX execution, and the React preview stack are not ported.
 - Some document, preview, and table-marker output intentionally differs where Vue authoring or email safety requires it.
-- Several React Email components, including Tailwind, remain outside the frozen v0.1 surface.
+
+## Migrating Tailwind templates
+
+Tailwind is a first-class part of Nuxt Email. Replace React Email's `<Tailwind>` boundary with `ETailwind` and keep the complete document, including `EHead`, inside it:
+
+```vue
+<ETailwind>
+  <EHtml>
+    <EHead />
+    <EBody class="m-0 bg-slate-100 p-6">
+      <EContainer class="rounded-lg bg-white p-6">
+        <EText class="m-0 text-slate-700">Tailwind v4 utilities are inlined.</EText>
+      </EContainer>
+    </EBody>
+  </EHtml>
+</ETailwind>
+```
+
+Compatible declarations become inline styles. Media queries and pseudo-classes stay as downleveled rules in the document head. Review the [Tailwind reference](./components.md#tailwind) for precedence, nested-component support, and the small set of primitives whose nested classes are not Tailwind targets.
 
 Do not use this summary as a parity matrix. Review the generated [conformance report](./conformance/report.md) for the authoritative cases, classifications, exact divergences, and complete unsupported-component list.
 
 ## Sending remains application-owned
 
-Nuxt Email stops at `{ html, text }`. Keep recipients, sender identity, subject, provider credentials, attachments, tags, scheduling, and delivery policy in your chosen provider SDK. v0.1 has no provider-neutral adapter or public send endpoint, so migration does not require giving up provider-specific features.
+Nuxt Email stops at `{ html, text, subject? }`. Keep recipients, sender identity, provider credentials, attachments, tags, scheduling, and delivery policy in your chosen provider SDK. The optional subject is only a value computed beside the template; your provider still sends it. Nuxt Email has no provider-neutral adapter or public send endpoint, so migration does not require giving up provider-specific features.
