@@ -2,7 +2,10 @@ packages:
   - playground
   - docs-site
 
+enableGlobalVirtualStore: false
+
 overrides:
+  h3: 1.15.11
   tailwindcss: 4.1.18
 
 allowBuilds:

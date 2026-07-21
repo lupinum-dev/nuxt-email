@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve } from 'node:path'
 import {
-  addComponentsDir,
+  addComponentExports,
   addServerImports,
   addServerHandler,
   addServerTemplate,
@@ -17,6 +17,10 @@ import { generateEmailRegistry, generateEmailTypes } from './template-generation
 
 type NitroRollupOptions = {
   nitro?: {
+    alias?: Record<string, string>
+    externals?: {
+      inline?: Array<string | RegExp | ((id: string, importer?: string) => boolean | Promise<boolean>)>
+    }
     rollupConfig?: {
       plugins?: unknown
     }
@@ -43,6 +47,8 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     const resolver = createResolver(import.meta.url)
+    const defineEmailPublicPath = await resolver.resolvePath('./runtime/define-email')
+    const errorsPublicPath = await resolver.resolvePath('./runtime/errors')
     const emailDirectory = resolve(nuxt.options.srcDir, 'emails')
     const loadTemplates = async () => {
       const discoveredTemplates = await discoverEmailTemplates(emailDirectory)
@@ -75,16 +81,10 @@ export default defineNuxtModule<ModuleOptions>({
         name: 'renderEmail',
         from: registryId,
       },
-      {
-        name: 'defineEmail',
-        from: resolver.resolve('./runtime/render/define-email'),
-      },
     ])
-    addComponentsDir({
-      path: resolver.resolve('./runtime/components'),
-      pattern: ['E*.ts', 'E*.js'],
-      ignore: ['**/*.d.ts'],
-      pathPrefix: false,
+    addComponentExports({
+      filePath: resolver.resolve('./runtime/components/email-components'),
+      mode: 'server',
     })
 
     if (nuxt.options.dev) {
@@ -137,6 +137,16 @@ export default defineNuxtModule<ModuleOptions>({
 
     const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions
     const nitro = (nuxtOptions.nitro ??= {})
+    const alias = (nitro.alias ??= {})
+    alias['@lupinum/nuxt-email/define-email'] = defineEmailPublicPath
+    alias['@lupinum/nuxt-email/errors'] = errorsPublicPath
+    const externals = (nitro.externals ??= {})
+    const inline = (externals.inline ??= [])
+    for (const publicRuntimePath of [defineEmailPublicPath, errorsPublicPath]) {
+      if (!inline.includes(publicRuntimePath)) {
+        inline.push(publicRuntimePath)
+      }
+    }
     const typescript = (nitro.typescript ??= {})
     const tsConfig = (typescript.tsConfig ??= {})
     const compilerOptions = (tsConfig.compilerOptions ??= {})

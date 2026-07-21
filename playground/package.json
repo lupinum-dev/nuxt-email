@@ -8,7 +8,7 @@
     "generate": "nuxt generate"
   },
   "dependencies": {
-    "nuxt-email": "workspace:*",
+    "@lupinum/nuxt-email": "workspace:*",
     "nuxt": "^4.4.8"
   }
 }

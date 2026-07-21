@@ -20,8 +20,8 @@ export const DefineEmailWelcome = defineComponent({
     },
   },
   setup(props: DefineEmailWelcomeProps) {
-    defineEmail<DefineEmailWelcomeProps>({
-      subject: emailProps => `Welcome aboard, ${emailProps.firstName}`,
+    defineEmail({
+      subject: () => `Welcome aboard, ${props.firstName}`,
     })
 
     return () => h(EHtml, { lang: 'en' }, {

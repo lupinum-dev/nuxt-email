@@ -1,11 +1,11 @@
 {
-  "name": "nuxt-email",
+  "name": "@lupinum/nuxt-email",
   "version": "0.1.0",
-  "description": "Typed Vue email authoring and server-side rendering for Nuxt",
+  "description": "Typed transactional email for Nuxt with email-safe Tailwind v4",
   "keywords": [
     "email",
     "nuxt",
-    "ssr",
+    "tailwindcss",
     "transactional-email",
     "vue"
   ],
@@ -14,6 +14,9 @@
     "type": "git",
     "url": "git+https://github.com/Mat4m0/nuxt-email.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/Mat4m0/nuxt-email#readme",
   "bugs": {
     "url": "https://github.com/Mat4m0/nuxt-email/issues"
@@ -21,20 +24,32 @@
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "engines": {
-    "node": "^22.12.0 || ^24.11.0"
+    "node": "^22.18.0 || ^24.11.0 || ^26.0.0"
   },
   "exports": {
     ".": {
-      "types": "./dist/types.d.mts",
+      "types": "./dist/module.d.mts",
       "import": "./dist/module.mjs"
     },
     "./testing": {
       "types": "./dist/runtime/testing/index.d.ts",
       "import": "./dist/runtime/testing/index.js"
+    },
+    "./define-email": {
+      "types": "./dist/runtime/define-email.d.ts",
+      "import": "./dist/runtime/define-email.js"
+    },
+    "./errors": {
+      "types": "./dist/runtime/errors.d.ts",
+      "import": "./dist/runtime/errors.js"
+    },
+    "./themes": {
+      "types": "./dist/runtime/themes.d.ts",
+      "import": "./dist/runtime/themes.js"
     }
   },
   "main": "./dist/module.mjs",
-  "types": "./dist/types.d.mts",
+  "types": "./dist/module.d.mts",
   "files": [
     "CHANGELOG.md",
     "docs/*.md",
@@ -61,17 +76,17 @@
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
+    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
     "nuxt": "^4.4.8",
-    "vue": "^3.5.0"
+    "vue": "^3.5.35"
   },
   "dependencies": {
     "@nuxt/kit": "^4.4.8",
     "@vitejs/plugin-vue": "6.0.8",
     "css-tree": "3.2.1",
-    "h3": "1.15.8",
+    "h3": "1.15.11",
     "html-to-text": "9.0.5",
     "htmlparser2": "^10.1.0",
     "marked": "15.0.12",

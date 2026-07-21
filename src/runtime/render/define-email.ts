@@ -4,11 +4,11 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 /**
  * Options declared by an email template via {@link defineEmail}.
  *
- * `subject` receives the SAME props object that `renderEmail(name, props)` was
- * called with and returns the computed subject line.
+ * `subject` is a zero-argument closure over the template's real `defineProps()`
+ * value and returns the computed subject line.
  */
-export interface DefineEmailOptions<TProps> {
-  subject: (props: TProps) => string
+export interface DefineEmailOptions {
+  subject: () => string
 }
 
 const EMAIL_RENDER_BRAND = Symbol('nuxt-email:render-context')
@@ -25,13 +25,13 @@ const EMAIL_RENDER_BRAND = Symbol('nuxt-email:render-context')
 const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
 
 /**
- * Per-render registry provided to the SSR app. A fresh instance is created for
+ * Per-render registry created by the renderer. A fresh instance is created for
  * every render, so concurrent renders never share mutable state. `defineEmail`
- * writes into the branded context that Vue exposes through `useSSRContext()`.
+ * reaches it through the async-local render scope.
  */
 export interface EmailRenderContext {
   readonly [EMAIL_RENDER_BRAND]: true
-  subject?: (props: Record<string, unknown>) => string
+  subject?: () => string
   /**
    * Tailwind regions registered by `<ETailwind>` boundaries during render, in
    * registration order. Consumed by the post-render pass to complete each head
@@ -44,6 +44,13 @@ export class DefineEmailOutsideRenderError extends Error {
   constructor() {
     super('defineEmail() must be called during an email render, from an email template rendered by renderEmail().')
     this.name = 'DefineEmailOutsideRenderError'
+  }
+}
+
+export class DuplicateEmailDefinitionError extends Error {
+  constructor() {
+    super('defineEmail() may only be called once during one email render.')
+    this.name = 'DuplicateEmailDefinitionError'
   }
 }
 
@@ -77,17 +84,26 @@ function isEmailRenderContext(value: unknown): value is EmailRenderContext {
 
 /**
  * Declare email metadata (currently the subject) from an email template's
- * `<script setup>`. The subject is computed from the same typed props passed to
- * `renderEmail`, and surfaces on the render result as `subject`.
+ * `<script setup>`. The zero-argument subject closure captures the template's
+ * real `defineProps()` value, so there is no separate generic that can lie about
+ * the template contract. The computed value surfaces as `subject`.
  *
  * Must run during an email render; calling it elsewhere throws
  * {@link DefineEmailOutsideRenderError}.
  */
-export function defineEmail<TProps = Record<string, unknown>>(options: DefineEmailOptions<TProps>): void {
+export function defineEmail(options: DefineEmailOptions): void {
   const context = renderContextStorage.getStore()
   if (!isEmailRenderContext(context)) {
     throw new DefineEmailOutsideRenderError()
   }
 
-  context.subject = options.subject as (props: Record<string, unknown>) => string
+  if (context.subject !== undefined) {
+    throw new DuplicateEmailDefinitionError()
+  }
+
+  if (!options || typeof options.subject !== 'function') {
+    throw new TypeError('defineEmail() subject must be a function returning a string.')
+  }
+
+  context.subject = options.subject
 }

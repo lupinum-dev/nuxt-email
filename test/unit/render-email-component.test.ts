@@ -1,11 +1,36 @@
-import type { Component } from 'vue'
+import type { Component, FunctionalComponent } from 'vue'
 import { createCommentVNode, defineComponent, Fragment, h, resolveComponent } from 'vue'
 import { describe, expect, it } from 'vitest'
+import * as emailComponents from '../../src/runtime/components/email-components'
 import { EmailRenderError } from '../../src/runtime/render/errors'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 
 describe('component rendering', () => {
+  it('registers only the nineteen curated email primitives', () => {
+    expect(Object.keys(emailComponents).sort()).toEqual([
+      'EBody',
+      'EButton',
+      'ECodeBlock',
+      'ECodeInline',
+      'EColumn',
+      'EContainer',
+      'EFont',
+      'EHead',
+      'EHeading',
+      'EHr',
+      'EHtml',
+      'EImg',
+      'ELink',
+      'EMarkdown',
+      'EPreview',
+      'ERow',
+      'ESection',
+      'ETailwind',
+      'EText',
+    ])
+  })
+
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {
     const FragmentEmail = defineComponent({
       name: 'FragmentEmail',
@@ -71,6 +96,15 @@ describe('component rendering', () => {
     expect(result.text).toBe('Global primitives work')
   })
 
+  it('accepts typed functional-component props when no runtime declaration exists', async () => {
+    const FunctionalEmail: FunctionalComponent<{ name: string }> = props =>
+      h('html', [h('body', [h('p', `Hi ${props.name}`)])])
+
+    const result = await renderEmailComponent(FunctionalEmail, { name: 'Ada' })
+
+    expect(result.text).toBe('Hi Ada')
+  })
+
   it.each([
     { name: 'empty', render: () => null },
     { name: 'text', render: () => 'text only' },
@@ -101,7 +135,7 @@ describe('component rendering', () => {
       setup: () => () => h('html', [h('body')]),
     })
 
-    const error = await renderEmailComponent(RequiredPropsEmail).catch(value => value)
+    const error = await renderEmailComponent(RequiredPropsEmail, {} as never).catch(value => value)
 
     expect(error).toBeInstanceOf(EmailRenderError)
     expect(error.cause).toBeInstanceOf(TypeError)

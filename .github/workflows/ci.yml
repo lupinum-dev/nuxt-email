@@ -29,11 +29,12 @@ jobs:
           - macos-latest
           - windows-latest
         # Node versions mirror the package `engines` contract
-        # (`^22.12.0 || ^24.11.0`): the 22.12 floor and the current 24 line.
-        # Node 20 is intentionally out of the v0.1 support contract.
+        # (`^22.18.0 || ^24.11.0 || ^26.0.0`): every supported major floor.
+        # Node 20 is intentionally out of the v1 support contract.
         node-version:
-          - 22.12.0
-          - 24.x
+          - 22.18.0
+          - 24.11.0
+          - 26.0.0
 
     steps:
       - uses: actions/checkout@v6
@@ -51,10 +52,7 @@ jobs:
       - name: Lint and formatting
         run: pnpm lint
 
-      - name: Prepare module and playground types
-        run: pnpm dev:prepare
-
-      - name: Type checks
+      - name: Prepare and type-check module, fixtures, and playground
         run: pnpm test:types
 
       - name: Unit, component, module, conformance, and production-bundle tests
@@ -64,11 +62,11 @@ jobs:
       # verifications are runtime-heavy and platform-independent. Run them once on the
       # primary Linux runner at the Node floor rather than across every matrix cell.
       - name: Conformance report reproducibility
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         run: pnpm conformance:check
 
       - name: Check out the pinned React Email oracle source
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         uses: actions/checkout@v6
         with:
           repository: resend/react-email
@@ -77,23 +75,23 @@ jobs:
           path: .oracle/react-email
 
       - name: React Email oracle reproducibility
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         run: pnpm oracle:check
         env:
           NUXT_EMAIL_REACT_EMAIL_CHECKOUT: ${{ github.workspace }}/.oracle/react-email
 
       - name: Package build, contents, and fresh-install smoke test
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.12.0'
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         run: pnpm release:verify
 
   # The documentation site is a separate workspace member with a heavy prerender
-  # (Sharp-backed OG images). It is not part of the release gate, so it runs once,
-  # ubuntu-only, and is allowed to fail without blocking CI.
+  # (Sharp-backed OG images), so it runs once on Linux with an explicit heap budget.
   docs-site:
-    name: Docs site build (optional)
+    name: Docs site build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
       - uses: actions/checkout@v6
@@ -108,8 +106,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Prepare and build the docs site
+      - name: Build the docs site
         working-directory: docs-site
-        run: |
-          pnpm exec nuxt prepare
-          pnpm exec nuxt build
+        run: pnpm exec nuxt build
