@@ -7,6 +7,7 @@ import {
   EBody,
   EButton,
   EColumn,
+  EContainer,
   EHeading,
   EHtml,
   ERow,
@@ -103,6 +104,30 @@ describe('eTailwind conformance', () => {
     }))
     expectMatches(html, 'tw-row-classes', stripColumnDataId)
     expect(html).toContain('style="width:100%;background-color:rgb(243,244,246);"')
+  })
+
+  it('moves Tailwind row padding to a presentation cell while retaining table styles', async () => {
+    const html = await render(undefined, h(ERow, { class: 'bg-gray-100 p-4' }, {
+      default: () => h(EColumn, null, { default: () => 'Cell' }),
+    }))
+
+    expect(html).toContain('style="background-color:rgb(243,244,246);"')
+    expect(html).toContain('<td style="padding:1rem;"><table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">')
+  })
+
+  it.each([
+    ['EContainer', EContainer],
+    ['ESection', ESection],
+    ['ERow', ERow],
+  ] as const)('keeps responsive %s padding as a documented table media rule', async (name, component) => {
+    const content = name === 'ERow'
+      ? h(EColumn, null, { default: () => 'Cell' })
+      : 'Content'
+    const html = await render(undefined, h(component, { class: 'md:p-4' }, { default: () => content }))
+
+    expect(html).toContain('class="md_p-4"')
+    expect(html).toContain('@media (min-width:48rem){.md_p-4{padding:1rem!important}}')
+    expect(html).not.toContain('<td style="padding:1rem;')
   })
 
   it('tw-column-classes: column cell padding and alignment', {

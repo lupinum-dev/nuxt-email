@@ -166,6 +166,18 @@ describe('table layout primitives', () => {
     expect(column).toContain('Column &amp; content')
   })
 
+  it.each([
+    [{ padding: '16px', backgroundColor: 'red' }, 'padding:16px;', 'background-color:red;'],
+    ['padding:12px 20px;background-color:blue', 'padding:12px 20px;', 'background-color:blue;'],
+    [{ 'padding-top': '4px', 'padding-left': '8px', 'width': '90%' }, 'padding-top:4px;padding-left:8px;', 'width:90%;'],
+  ])('moves ERow physical padding to a conditional presentation-cell wrapper', async (style, cellStyle, tableStyle) => {
+    const html = await renderComponent(ERow, { style }, h(EColumn, null, { default: () => 'Cell' }))
+
+    expect(html).toContain(`style="${tableStyle}"`)
+    expect(html).toContain(`<td style="${cellStyle}"><table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">`)
+    expect(html).not.toContain(`<table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="${cellStyle}">`)
+  })
+
   it.each([EContainer, ESection, ERow])('throws instead of overriding presentation-table invariants for %s', async (component) => {
     const componentName = (component as { name?: string }).name
 

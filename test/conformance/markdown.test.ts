@@ -172,4 +172,60 @@ describe('EMarkdown', () => {
     await expect(renderComponentToHtml(fixture))
       .rejects.toThrow('EMarkdown default slot must contain text only')
   })
+
+  it.each([
+    '<script>alert(1)</script>',
+    '<img src=x onerror="alert(1)">',
+    '<!-- hidden raw HTML -->',
+  ])('rejects raw HTML in Markdown source: %s', async (source) => {
+    await expect(renderComponentToHtml(markdownFixture({ source })))
+      .rejects.toThrow('EMarkdown does not support raw HTML')
+  })
+
+  it.each([
+    '[x](javascript:alert(1))',
+    '[x](javascript&#58;alert(1))',
+    '[x](&#106;avascript:alert(1))',
+    '[x](java&#10;script:alert(1))',
+    '[x](vbscript:msgbox(1))',
+    '![x](data:text/html;base64,PHNjcmlwdD4=)',
+  ])('rejects unsafe Markdown URL schemes: %s', async (source) => {
+    await expect(renderComponentToHtml(markdownFixture({ source })))
+      .rejects.toThrow(/EMarkdown (?:image|link) URL uses an unsupported scheme/)
+  })
+
+  it('escapes HTML-looking code spans and fences instead of activating them', async () => {
+    const source = [
+      '`<img src=x onerror=alert(1)>`',
+      '',
+      '```html',
+      '<script>alert(1)</script>',
+      '```',
+    ].join('\n')
+
+    const html = await renderComponentToHtml(markdownFixture({ source }))
+
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(html).not.toContain('<script>')
+    expect(html).not.toContain('<img src=x')
+  })
+
+  it('keeps common email-safe absolute and relative Markdown destinations', async () => {
+    const source = [
+      '[Web](https://example.com)',
+      '[Email](mailto:hello@example.com)',
+      '[Phone](tel:+431234)',
+      '[Relative](/account)',
+      '![Inline attachment](cid:logo)',
+    ].join(' ')
+
+    const html = await renderComponentToHtml(markdownFixture({ source }))
+
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('href="mailto:hello@example.com"')
+    expect(html).toContain('href="tel:+431234"')
+    expect(html).toContain('href="/account"')
+    expect(html).toContain('src="cid:logo"')
+  })
 })

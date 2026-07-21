@@ -1,7 +1,7 @@
 import type { TailwindConfig } from '../tailwind/engine/index'
 import type { NestedTailwindHolder } from '../tailwind/nested'
 import type { DefineComponent, PropType } from 'vue'
-import { createCommentVNode, defineComponent, provide } from 'vue'
+import { createCommentVNode, defineComponent, inject, provide } from 'vue'
 import { getEmailRenderContext } from '../render/define-email'
 import { createTailwindEngine } from '../tailwind/engine/index'
 import { createTailwindRegion, TAILWIND_NESTED_KEY } from '../tailwind/nested'
@@ -50,6 +50,10 @@ export const ETailwind = defineComponent({
     },
   },
   async setup(props, { slots }) {
+    if (inject(TAILWIND_NESTED_KEY, null)) {
+      throw new TypeError('ETailwind boundaries cannot be nested; wrap the email document in one ETailwind boundary.')
+    }
+
     // Provide the holder synchronously, before the first await: after an await the
     // active component instance is lost and provide() would no-op. The engine and
     // region are filled in below, before any child injects the holder (children
@@ -66,10 +70,10 @@ export const ETailwind = defineComponent({
 
     return () => {
       const children = slots.default?.() ?? []
-      const { classNames, hasHead } = scanTailwindTree(children)
+      const { classNames } = scanTailwindTree(children)
       const computed = engine.computeStyles(classNames)
 
-      const region = createTailwindRegion(engine, [...classNames], hasHead)
+      const region = createTailwindRegion(engine, [...classNames])
       holder.region = region
       const context = getEmailRenderContext()
       if (context) {

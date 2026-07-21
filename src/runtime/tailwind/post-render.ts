@@ -1,4 +1,6 @@
 import type { TailwindRegion } from './nested'
+import type { CssNode } from 'css-tree'
+import { generate, parse, walk } from 'css-tree'
 import { Parser } from 'htmlparser2'
 import { classTokens, mergeInlinableStyle, residualClasses } from './inline-utils'
 import { TailwindMissingHeadError } from './transform'
@@ -55,16 +57,23 @@ function collectElements(fragment: string): ElementHit[] {
 }
 
 /** Parse a serialized inline style into ordered kebab `property -> value` pairs. */
-function parseStylePairs(style: string | undefined): [string, string][] {
+function parseStylePairs(style: string | undefined): [string, string][] | null {
   if (!style) return []
   const pairs: [string, string][] = []
-  for (const part of style.split(';')) {
-    const separator = part.indexOf(':')
-    if (separator === -1) continue
-    const property = part.slice(0, separator).trim()
-    const value = part.slice(separator + 1).trim()
-    if (property.length === 0) continue
-    pairs.push([property, value])
+  try {
+    const declarations = parse(style, { context: 'declarationList' }) as CssNode
+    walk(declarations, {
+      visit: 'Declaration',
+      enter(declaration) {
+        pairs.push([
+          declaration.property,
+          generate(declaration.value).trim() + (declaration.important ? '!important' : ''),
+        ])
+      },
+    })
+  }
+  catch {
+    return null
   }
   return pairs
 }
@@ -80,19 +89,29 @@ function serializeStyle(style: Map<string, string>): string {
 const CLASS_ATTRIBUTE = /\s+class\s*=\s*("[^"]*"|'[^']*')/
 const STYLE_ATTRIBUTE = /\s+style\s*=\s*("[^"]*"|'[^']*')/
 
+function escapeAttributeValue(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('\'', '&#39;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
 /** Rewrite the `class` and `style` attributes of a single, isolated open tag. */
 function rewriteOpenTag(openTag: string, newClass: string | null, newStyle: string | null): string {
   let tag = newClass === null
     ? openTag.replace(CLASS_ATTRIBUTE, '')
-    : openTag.replace(CLASS_ATTRIBUTE, ` class="${newClass}"`)
+    : openTag.replace(CLASS_ATTRIBUTE, ` class="${escapeAttributeValue(newClass)}"`)
 
   if (newStyle !== null && newStyle.length > 0) {
+    const escapedStyle = escapeAttributeValue(newStyle)
     if (STYLE_ATTRIBUTE.test(tag)) {
-      tag = tag.replace(STYLE_ATTRIBUTE, ` style="${newStyle}"`)
+      tag = tag.replace(STYLE_ATTRIBUTE, ` style="${escapedStyle}"`)
     }
     else {
       const closeLength = tag.endsWith('/>') ? 2 : 1
-      tag = `${tag.slice(0, tag.length - closeLength)} style="${newStyle}"${tag.slice(tag.length - closeLength)}`
+      tag = `${tag.slice(0, tag.length - closeLength)} style="${escapedStyle}"${tag.slice(tag.length - closeLength)}`
     }
   }
 
@@ -125,14 +144,19 @@ function inlinePlainElements(fragment: string, region: TailwindRegion): string {
     const classUnchanged = residual.length === tokens.length && residual.every((name, index) => name === tokens[index])
     if (tw.size === 0 && classUnchanged) continue
 
+    const authorStyles = parseStylePairs(hit.styleValue)
     const merged = new Map(tw)
-    for (const [property, value] of parseStylePairs(hit.styleValue)) {
-      merged.set(property, value)
+    if (authorStyles !== null) {
+      for (const [property, value] of authorStyles) {
+        merged.set(property, value)
+      }
     }
 
     const openTag = fragment.slice(hit.openStart, hit.openEnd)
     const newClass = residual.length > 0 ? residual.join(' ') : null
-    const newStyle = merged.size > 0 ? serializeStyle(merged) : null
+    const newStyle = authorStyles === null
+      ? `${serializeStyle(merged)}${hit.styleValue ?? ''}`
+      : (merged.size > 0 ? serializeStyle(merged) : null)
     edits.push({ start: hit.openStart, end: hit.openEnd, text: rewriteOpenTag(openTag, newClass, newStyle) })
   }
 
@@ -142,6 +166,44 @@ function inlinePlainElements(fragment: string, region: TailwindRegion): string {
     out = out.slice(0, edit.start) + edit.text + out.slice(edit.end)
   }
   return out
+}
+
+function insertStyleIntoHead(html: string, css: string): string | null {
+  let depth = 0
+  let headDepth: number | undefined
+  let headCloseStart: number | undefined
+  let firstDirectStyleStart: number | undefined
+  const parser = new Parser({
+    onopentag(name) {
+      if (headDepth === undefined && name === 'head') {
+        headDepth = depth
+      }
+      else if (
+        headDepth !== undefined
+        && headCloseStart === undefined
+        && depth === headDepth + 1
+        && name === 'style'
+        && firstDirectStyleStart === undefined
+      ) {
+        firstDirectStyleStart = parser.startIndex
+      }
+      depth += 1
+    },
+    onclosetag(name) {
+      depth = Math.max(0, depth - 1)
+      if (name === 'head' && headDepth === depth && headCloseStart === undefined) {
+        headCloseStart = parser.startIndex
+      }
+    },
+  })
+  parser.write(html)
+  parser.end()
+
+  const insertionIndex = firstDirectStyleStart ?? headCloseStart
+  if (insertionIndex === undefined) return null
+
+  const style = `<style>${css}</style>`
+  return html.slice(0, insertionIndex) + style + html.slice(insertionIndex)
 }
 
 function processRegion(html: string, region: TailwindRegion): string {
@@ -157,12 +219,21 @@ function processRegion(html: string, region: TailwindRegion): string {
 
   // Full non-inlinable CSS from every class seen anywhere in the region.
   const computed = region.engine.computeStyles(region.classNames)
-  if (computed.nonInlinableCss !== '' && !region.hasHead) {
+  if (inlined.includes(region.placeholder)) {
+    const completed = inlined.replace(region.placeholder, computed.nonInlinableCss)
+    return html.slice(0, startIndex) + completed + html.slice(endIndex + endComment.length)
+  }
+
+  const withHeadStyle = insertStyleIntoHead(inlined, computed.nonInlinableCss)
+  if (withHeadStyle !== null) {
+    return html.slice(0, startIndex) + withHeadStyle + html.slice(endIndex + endComment.length)
+  }
+
+  if (computed.nonInlinableCss !== '') {
     throw new TailwindMissingHeadError(computed.nonInlinableClassNames)
   }
 
-  const out = html.slice(0, startIndex) + inlined + html.slice(endIndex + endComment.length)
-  return out.replace(region.placeholder, computed.nonInlinableCss)
+  return html.slice(0, startIndex) + inlined + html.slice(endIndex + endComment.length)
 }
 
 /**

@@ -60,9 +60,8 @@ function toArray(children: unknown): unknown[] {
  * order, duplicates kept — matching React's `classesUsed`) and recording whether a
  * `<head>` exists anywhere inside the region.
  */
-export function scanTailwindTree(children: unknown): { classNames: string[], hasHead: boolean } {
+export function scanTailwindTree(children: unknown): { classNames: string[] } {
   const classNames: string[] = []
-  let hasHead = false
 
   const visit = (nodes: unknown): void => {
     for (const node of toArray(nodes)) {
@@ -71,8 +70,6 @@ export function scanTailwindTree(children: unknown): { classNames: string[], has
         continue
       }
       if (!isVNode(node)) continue
-      if (isHeadVNode(node)) hasHead = true
-
       const props = (node.props ?? {}) as Props
       classNames.push(...classTokens(props.class))
 
@@ -91,7 +88,7 @@ export function scanTailwindTree(children: unknown): { classNames: string[], has
   }
 
   visit(children)
-  return { classNames, hasHead }
+  return { classNames }
 }
 
 /**

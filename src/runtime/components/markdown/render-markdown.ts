@@ -1,7 +1,47 @@
+import { parseDocument } from 'htmlparser2'
 import { marked, Renderer } from 'marked'
 import { parseCssInJsToInlineCss } from './parse-css-in-js-to-inline-css'
 import type { StylesType } from './styles'
 import { styles } from './styles'
+
+const SAFE_MARKDOWN_URL_SCHEMES = new Set(['cid', 'http', 'https', 'mailto', 'tel'])
+
+function escapeText(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function decodeAttributeEntities(value: string): string {
+  const serialized = value
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+  const document = parseDocument(`<a href="${serialized}"></a>`)
+  const anchor = document.children[0]
+  return anchor && 'attribs' in anchor
+    ? anchor.attribs.href ?? value
+    : value
+}
+
+function assertSafeUrl(kind: 'image' | 'link', value: string): void {
+  // Decode character references exactly as an HTML client will, then remove
+  // control/space characters that URL parsers ignore inside a scheme. This
+  // catches forms such as `javascript&#58;` and `java&#10;script:` as well as the
+  // obvious spelling.
+  const decoded = decodeAttributeEntities(value)
+  const canonical = [...decoded.trim()]
+    .filter((character) => {
+      const codePoint = character.codePointAt(0)!
+      return codePoint > 0x20 && codePoint !== 0x7F
+    })
+    .join('')
+  const scheme = /^([a-z][a-z\d+.-]*):/i.exec(canonical)?.[1]?.toLowerCase()
+  if (scheme !== undefined && !SAFE_MARKDOWN_URL_SCHEMES.has(scheme)) {
+    throw new TypeError(`EMarkdown ${kind} URL uses an unsupported scheme: ${scheme}`)
+  }
+}
 
 // Direct port of react-email's markdown/markdown.tsx renderer. The custom marked Renderer
 // emits the same inline-styled HTML string that React feeds into dangerouslySetInnerHTML.
@@ -30,12 +70,12 @@ export function renderMarkdown(
   }
 
   renderer.code = ({ text }) => {
-    text = `${text.replace(/\n$/, '')}\n`
+    text = `${escapeText(text.replace(/\n$/, ''))}\n`
     return `<pre${styleAttribute(finalStyles.codeBlock)}><code>${text}</code></pre>\n`
   }
 
   renderer.codespan = ({ text }) => {
-    return `<code${styleAttribute(finalStyles.codeInline)}>${text}</code>`
+    return `<code${styleAttribute(finalStyles.codeInline)}>${escapeText(text)}</code>`
   }
 
   renderer.del = ({ tokens }) => {
@@ -58,12 +98,14 @@ export function renderMarkdown(
   }
 
   renderer.image = ({ href, text, title }) => {
+    assertSafeUrl('image', href)
     return `<img src="${href.replaceAll('"', '&quot;')}" alt="${text.replaceAll('"', '&quot;')}"${
       title ? ` title="${title.replaceAll('"', '&quot;')}"` : ''
     }${styleAttribute(finalStyles.image)}>`
   }
 
   renderer.link = ({ href, title, tokens }) => {
+    assertSafeUrl('link', href)
     const text = renderer.parser.parseInline(tokens)
     return `<a href="${href.replaceAll('"', '&quot;')}" target="_blank"${
       title ? ` title="${title.replaceAll('"', '&quot;')}"` : ''
@@ -76,6 +118,10 @@ export function renderMarkdown(
       ? renderer.parser.parse(tokens)
       : renderer.parser.parseInline(tokens)
     return `<li${styleAttribute(finalStyles.li)}>${text}</li>\n`
+  }
+
+  renderer.html = () => {
+    throw new TypeError('EMarkdown does not support raw HTML')
   }
 
   renderer.list = ({ items, ordered, start }) => {

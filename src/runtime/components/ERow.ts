@@ -1,7 +1,9 @@
 import type { DefineComponent, TableHTMLAttributes } from 'vue'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
+import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
+import { splitTablePadding } from './table-padding'
 
 const FIXED_PRESENTATION_TABLE_ATTRIBUTES = new Set(['border', 'cellpadding', 'cellspacing', 'role'])
 
@@ -35,21 +37,48 @@ export const ERow = defineComponent({
   name: 'ERow',
   inheritAttrs: false,
   setup(_props, { attrs, slots }) {
+    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('ERow', attrs)
       assertFixedPresentationTable('ERow', attrs)
+      const { style, ...attributes } = attrs
+      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
+      const { tableStyle, cellStyle } = splitTablePadding(effectiveStyle)
 
-      return h('table', {
+      const tableAttributes = {
         align: 'center',
         width: '100%',
         border: 0,
         cellpadding: '0',
         cellspacing: '0',
         role: 'presentation',
-        ...attrs,
-      }, [
+        ...attributes,
+        ...(Object.keys(tableStyle).length > 0 ? { style: tableStyle } : {}),
+      }
+      const rowContent = [
         h('tbody', { style: { width: '100%' } }, [
           h('tr', { style: { width: '100%' } }, slots.default?.()),
+        ]),
+      ]
+
+      if (Object.keys(cellStyle).length === 0) {
+        return h('table', tableAttributes, rowContent)
+      }
+
+      return h('table', tableAttributes, [
+        h('tbody', [
+          h('tr', [
+            h('td', { style: cellStyle }, [
+              h('table', {
+                align: 'center',
+                width: '100%',
+                border: 0,
+                cellpadding: '0',
+                cellspacing: '0',
+                role: 'presentation',
+              }, rowContent),
+            ]),
+          ]),
         ]),
       ])
     }

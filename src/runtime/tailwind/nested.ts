@@ -40,8 +40,6 @@ export interface TailwindRegion {
   readonly engine: TailwindEngine
   /** Every class token seen in the region, in discovery order (duplicates kept). */
   readonly classNames: string[]
-  /** Whether a `<head>` exists in the slot-visible subtree (where a `<style>` can go). */
-  readonly hasHead: boolean
   /** Unique token injected into the head `<style>` body, replaced post-render. */
   readonly placeholder: string
   /** Comment marker content wrapping the region output (splice scope for the leftover pass). */
@@ -67,14 +65,12 @@ let regionCounter = 0
 export function createTailwindRegion(
   engine: TailwindEngine,
   classNames: string[],
-  hasHead: boolean,
 ): TailwindRegion {
   const id = `${(regionCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   return {
     id,
     engine,
     classNames,
-    hasHead,
     placeholder: `/*nuxt-email-tw-css:${id}*/`,
     startMarker: `nuxt-email-tw:${id}`,
     endMarker: `/nuxt-email-tw:${id}`,

@@ -58,7 +58,7 @@ ${cssConfigs?.utility ? '@import "custom-utilities.css" layer(utilities);' : ''}
       }
 
       throw new Error(
-        `NO-OP: should we implement support for ${resourceHint}?`,
+        `Tailwind ${resourceHint} module imports are not supported by ETailwind; pass executable plugins through the config prop instead`,
       )
     },
     polyfills: 0, // Polyfills.None — matches React Email; @property blocks stay raw
@@ -112,7 +112,7 @@ ${cssConfigs?.utility ? '@import "custom-utilities.css" layer(utilities);' : ''}
       }
 
       throw new Error(
-        'stylesheet not supported, you can only import the ones from tailwindcss',
+        `Tailwind stylesheet import "${id}" is not supported by ETailwind`,
       )
     },
   })

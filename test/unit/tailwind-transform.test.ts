@@ -29,22 +29,20 @@ function emailWith(body: unknown, head: unknown = h(EHead)): Component {
 }
 
 describe('scanTailwindTree', () => {
-  it('collects class tokens in tree order (duplicates kept) and detects a head', () => {
+  it('collects class tokens in tree order with duplicates kept', () => {
     const tree = h(EHtml, null, {
       default: () => [
         h(EHead),
         h(EBody, null, { default: () => h('div', { class: 'a b a' }, h('span', { class: 'c' })) }),
       ],
     })
-    const { classNames, hasHead } = scanTailwindTree([tree])
+    const { classNames } = scanTailwindTree([tree])
     expect(classNames).toEqual(['a', 'b', 'a', 'c'])
-    expect(hasHead).toBe(true)
   })
 
-  it('reports no head when none exists in the subtree', () => {
-    const { classNames, hasHead } = scanTailwindTree([h('div', { class: 'md:bg-red-500' })])
+  it('collects a responsive class without deriving document state', () => {
+    const { classNames } = scanTailwindTree([h('div', { class: 'md:bg-red-500' })])
     expect(classNames).toEqual(['md:bg-red-500'])
-    expect(hasHead).toBe(false)
   })
 })
 
