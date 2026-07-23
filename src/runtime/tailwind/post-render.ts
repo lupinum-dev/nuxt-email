@@ -3,17 +3,16 @@ import type { CssNode } from 'css-tree'
 import { generate, parse, walk } from 'css-tree'
 import { Parser } from 'htmlparser2'
 import { classTokens, mergeInlinableStyle, residualClasses } from './inline-utils'
-import { TailwindMissingHeadError } from './transform'
+import { TailwindMissingHeadError } from './errors'
 
 /**
  * Post-render Tailwind completion for nested-component content.
  *
- * Two things can only be finished after SSR, because they depend on classes
- * discovered while nested components rendered (which happens after both the
- * `<ETailwind>` render and the `<head>` render):
+ * Two things can only be finished after SSR, because Vue must render user
+ * components exactly once before their native/structural output is known:
  *
- *  1. Plain HTML elements emitted inside nested components still carry raw
- *     Tailwind classes — they have no style-derivation logic, so inlining them
+ *  1. Native and structural elements still carry raw Tailwind classes — they
+ *     have no style-derivation logic, so inlining them
  *     as a precise string splice is safe. Scoped to each region's comment
  *     markers so nothing outside a Tailwind boundary is touched, and driven by
  *     htmlparser2 tag offsets so every other byte — MSO conditional comments in

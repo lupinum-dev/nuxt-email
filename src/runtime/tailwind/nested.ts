@@ -7,25 +7,15 @@ import { classTokens, mergeInlinableStyle, residualClasses } from './inline-util
 /**
  * Nested-component Tailwind support.
  *
- * The primary path — the render-time VNode transform in {@link ./transform} —
- * only sees the vnodes visible at the `<ETailwind>` slot boundary; classes
- * emitted *inside* a nested user component never reach it (those vnodes only
- * exist once Vue renders the component during SSR, after the transform ran).
- * React Email's `mapReactTree` reaches them by re-invoking child components; a
- * Vue component cannot be safely re-invoked out of band, so instead:
+ * A Vue component cannot be safely invoked out of band to inspect its eventual
+ * output: doing so breaks scoped slots and executes user code more than once.
+ * Tailwind therefore follows Vue's normal render lifecycle:
  *
  *  1. Every E* primitive with style-derivation logic (Text margins, Section /
  *     Container td-padding split, Button MSO spacer derivation, Link/Img/Hr
- *     defaults) *self-inlines*: when this context is injected and the primitive
- *     still carries raw class tokens (i.e. the transform never touched it), it
- *     resolves those tokens through the engine and feeds `{ ...tailwind, ...author }`
- *     into its own style logic before rendering — see {@link resolveNestedTailwindStyle}.
- *  2. Plain HTML elements emitted inside nested components have no derivation
- *     logic, so they are inlined post-render by {@link ./post-render}.
- *
- * Elements the transform already processed carry no raw class (it strips fully
- * inlined classes and sanitizes residuals), so self-inlining them is a no-op —
- * that is the double-processing guard.
+ *     defaults) resolves its classes through this context before deriving markup.
+ *  2. Structural primitives and native elements are inlined once, after SSR, by
+ *     {@link ./post-render}.
  */
 
 /**
@@ -88,8 +78,8 @@ export interface NestedResolution {
  * Resolve a primitive's raw class tokens against the injected engine and return
  * the merged `{ ...tailwind, ...author }` style to feed into the primitive's own
  * derivation. Mutates `attributes.class` in place to the residual classes (or
- * removes it) — but ONLY when something actually changes, so a primitive outside
- * a Tailwind region, or one already processed by the transform, is untouched.
+ * removes it) only when something actually changes, so a primitive outside a
+ * Tailwind region remains untouched.
  */
 export function resolveNestedTailwindStyle(
   holder: NestedTailwindHolder | null,

@@ -6,7 +6,7 @@ import { EHead } from '../../src/runtime/components/EHead'
 import { EHtml } from '../../src/runtime/components/EHtml'
 import { ETailwind } from '../../src/runtime/components/ETailwind'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
-import { TailwindMissingHeadError } from '../../src/runtime/tailwind/transform'
+import { TailwindMissingHeadError } from '../../src/runtime/tailwind/errors'
 
 /** Wrap a nested body component in <ETailwind><EHtml><EHead/><EBody>…. */
 function email(body: unknown, options: { head?: boolean } = {}): Component {
@@ -40,6 +40,41 @@ function nestedDocument(render: () => unknown): Component {
 }
 
 describe('nested-component Tailwind', () => {
+  it('invokes nested slots exactly once', async () => {
+    let calls = 0
+    const Child = defineComponent({
+      name: 'SlottedChild',
+      setup(_props, { slots }) {
+        return () => h('div', slots.default?.())
+      },
+    })
+
+    const html = await renderComponentToHtml(email(h(Child, null, {
+      default: () => {
+        calls++
+        return h('span', { class: 'p-1' }, String(calls))
+      },
+    })))
+
+    expect(calls).toBe(1)
+    expect(html).toContain('<span style="padding:0.25rem;">1</span>')
+  })
+
+  it('preserves scoped-slot props', async () => {
+    const Child = defineComponent({
+      name: 'ScopedSlottedChild',
+      setup(_props, { slots }) {
+        return () => h('div', slots.default?.({ item: 'Scoped value' }))
+      },
+    })
+
+    const html = await renderComponentToHtml(email(h(Child, null, {
+      default: ({ item }: { item: string }) => h('span', { class: 'p-1' }, item),
+    })))
+
+    expect(html).toContain('<span style="padding:0.25rem;">Scoped value</span>')
+  })
+
   it('inlines a class emitted on a plain element inside a nested component', async () => {
     const html = await renderComponentToHtml(email(h(nested(() =>
       h('div', { class: 'bg-red-500 p-4' }, 'Deep'),
