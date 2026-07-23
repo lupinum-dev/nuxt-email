@@ -12,9 +12,9 @@ Use one of the supported Node ranges:
 - Node `24.11.0` through the latest Node 24 release.
 - Node `26.0.0` through the latest Node 26 release.
 
-The supported Nuxt range starts at `4.4.8`, which is the verified compatibility baseline. The release gate also exercises the current Nuxt 4 release candidate. As of 2026-07-21, Nuxt `4.5.0` fails its own isolated Vite production build before Nuxt Email loads because `@nuxt/vite-builder` imports an undeclared `unplugin` dependency, so v1 remains gated on an upstream patch. The verified toolchain uses Vue `3.5.40`, TypeScript `5.9.3`, and the repository-pinned pnpm `11.13.1`.
+The supported Nuxt range is `>=4.4.8 <4.5.0`; `4.4.8` is the verified compatibility baseline. Nuxt `4.5.x` is excluded because its Vite builder imports an undeclared `unplugin` dependency before Nuxt Email loads. The verified toolchain uses Vue `3.5.40`, TypeScript `5.9.3`, and the repository-pinned pnpm `11.13.1`.
 
-The declared Nuxt peer range is `^4.4.8`. The unscoped `nuxt-email` package on npm is unrelated to this project; always use the scoped package name.
+The declared Nuxt peer range is `>=4.4.8 <4.5.0`. The unscoped `nuxt-email` package on npm is unrelated to this project; always use the scoped package name.
 
 ## 2. Create the application manifest
 
@@ -27,7 +27,7 @@ Create an empty directory and add this `package.json`:
   "type": "module",
   "dependencies": {
     "@lupinum/nuxt-email": "^1.0.0",
-    "nuxt": "^4.4.8",
+    "nuxt": ">=4.4.8 <4.5.0",
     "typescript": "5.9.3",
     "vue": "3.5.40",
     "vue-tsc": "3.3.7"

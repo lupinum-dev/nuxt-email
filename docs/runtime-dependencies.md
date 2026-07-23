@@ -13,7 +13,7 @@ This record covers the eight direct runtime dependencies of the current `@lupinu
 | `marked` | `15.0.12` | Direct dependency | Parses `EMarkdown` source before it is emitted with email-safe inline styles. | MIT |
 | `tailwindcss` | `4.1.18` | Direct dependency | Compiles Tailwind v4 utilities used inside `ETailwind`; compatible declarations are inlined and residual rules are emitted to the head. | MIT |
 
-Nuxt `^4.4.8` and Vue `^3.5.35` are peer dependencies rather than hidden runtime copies. Nuxt `4.4.8` with Vue `3.5.40` is the verified baseline. The release verifier also gates on the current Nuxt release; its Nuxt `4.5.0` run is currently blocked before this module loads by the upstream Vite builder's undeclared `unplugin` import.
+Nuxt `>=4.4.8 <4.5.0` and Vue `^3.5.35` are peer dependencies rather than hidden runtime copies. Nuxt `4.4.8` with Vue `3.5.40` is the verified baseline. Nuxt `4.5.x` remains outside the peer contract until its upstream Vite builder loads successfully in an isolated consumer.
 
 `html-to-text` parses only HTML produced by the trusted application template after normal Vue escaping. `htmlparser2` also decodes character references in `EMarkdown` link and image destinations so obfuscated unsafe schemes are rejected before output. Neither dependency is used as a general sanitizer, and neither fetches remote resources. The Vite plugin is installed because the server build compiles application-owned `.vue` templates; no compiler or alternate renderer is exposed as a public API.
 

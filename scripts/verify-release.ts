@@ -83,9 +83,8 @@ const maximumFreshInstallMilliseconds = 10 * 60 * 1_000
 const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
 const releaseContract = {
   name: '@lupinum/nuxt-email',
-  releaseCandidateNuxt: '4.5.0',
   node: '^22.18.0 || ^24.11.0 || ^26.0.0',
-  nuxt: '^4.4.8',
+  nuxt: '>=4.4.8 <4.5.0',
   repository: 'git+https://github.com/Mat4m0/nuxt-email.git',
   vue: '^3.5.35',
 } as const
@@ -292,12 +291,9 @@ async function verifyFreshConsumer(
   const consumerManifest = await readJson<PackageManifest & { dependencies: Record<string, string> }>(consumerManifestPath)
   invariant(consumerManifest.dependencies['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
   consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
-  if (runNumber === 2) {
-    consumerManifest.dependencies.nuxt = releaseContract.releaseCandidateNuxt
-  }
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
-  process.stdout.write(`\n=== Fresh consumer ${runNumber} of 2 ===\n`)
+  process.stdout.write('\n=== Fresh consumer ===\n')
   const installStartedAt = performance.now()
   const installArguments = [
     'install',
@@ -688,15 +684,13 @@ async function verifyRelease(): Promise<void> {
     )
     const workspaceStore = modulesState.storeDir
     const consumers: FreshConsumerResult[] = []
-    for (const runNumber of [1, 2]) {
-      consumers.push(await verifyFreshConsumer(
-        runNumber,
-        temporaryRoot,
-        tarballPath,
-        workspaceStore,
-        packedManifest,
-      ))
-    }
+    consumers.push(await verifyFreshConsumer(
+      1,
+      temporaryRoot,
+      tarballPath,
+      workspaceStore,
+      packedManifest,
+    ))
 
     const tarballBytes = (await stat(tarballPath)).size
     const tarballSha256 = createHash('sha256').update(await readFile(tarballPath)).digest('hex')

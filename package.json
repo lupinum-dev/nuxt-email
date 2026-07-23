@@ -75,11 +75,11 @@
     "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
-    "nuxt": "^4.4.8",
+    "nuxt": ">=4.4.8 <4.5.0",
     "vue": "^3.5.35"
   },
   "dependencies": {
-    "@nuxt/kit": "^4.4.8",
+    "@nuxt/kit": ">=4.4.8 <4.5.0",
     "@vitejs/plugin-vue": "6.0.8",
     "css-tree": "3.2.1",
     "h3": "1.15.11",
@@ -91,7 +91,7 @@
   "devDependencies": {
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "^4.4.8",
+    "@nuxt/schema": "4.4.8",
     "@nuxt/test-utils": "^4.0.3",
     "@react-email/render": "2.1.0",
     "@types/css-tree": "2.3.11",
@@ -100,7 +100,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^10.4.1",
-    "nuxt": "^4.4.8",
+    "nuxt": "4.4.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-email": "6.9.0",

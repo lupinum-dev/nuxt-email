@@ -25,10 +25,10 @@ The package identity is **`@lupinum/nuxt-email`**. The repository is still pre-1
 ## Supported environment
 
 - Node.js `^22.18.0 || ^24.11.0 || ^26.0.0` — the supported even-numbered Node 22, 24, and 26 lines.
-- Nuxt `^4.4.8` — Nuxt 4.4.8 or a later Nuxt 4 release.
+- Nuxt `>=4.4.8 <4.5.0`.
 - Vue `^3.5.35`.
 
-Nuxt `4.4.8` is the verified compatibility baseline. The release gate also tests the current Nuxt 4 release; as of 2026-07-21, a clean Nuxt `4.5.0` production build is blocked before this module loads because `@nuxt/vite-builder@4.5.0` imports an undeclared `unplugin` dependency. v1 remains gated until the current Nuxt release passes that isolated build. CI covers Node 22, 24, and 26. Other Node majors, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the support contract.
+Nuxt `4.4.8` is the verified compatibility baseline. Nuxt `4.5.x` is explicitly excluded because `@nuxt/vite-builder@4.5.0` imports an undeclared `unplugin` dependency before this module loads. Widen the peer range only after an isolated consumer passes. CI covers Node 22, 24, and 26. Other Node majors, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the support contract.
 
 ## Install and configure
 
@@ -235,4 +235,4 @@ pnpm dev:build
 pnpm release:verify
 ```
 
-`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders fixed fresh applications at the supported Nuxt floor and current Nuxt release candidate. Publication still requires that complete gate, the recorded real-client QA, and external beta sign-off.
+`pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders a fresh application at the supported Nuxt baseline. Publication still requires that complete gate, the recorded real-client QA, and external beta sign-off.
