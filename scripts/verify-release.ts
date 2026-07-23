@@ -747,7 +747,6 @@ async function verifyRelease(): Promise<void> {
           htmlBytes: consumer.htmlBytes,
           previewAndFixturesExcluded: true,
           publicErrorIdentityPreserved: true,
-          publicThemeRendered: true,
           textBytes: consumer.textBytes,
           twoRendersByteIdentical: true,
         },

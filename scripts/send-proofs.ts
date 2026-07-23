@@ -4,8 +4,7 @@
  * `release-artifacts/proofs/` and POSTs each to https://api.resend.com/emails.
  *
  * Environment:
- *   RESEND_API_KEY    required to send. If absent, this prints instructions and
- *                     exits 0 (never an error) so it is safe in any pipeline.
+ *   RESEND_API_KEY    required to send.
  *   PROOF_RECIPIENTS  comma-separated destination addresses (required to send).
  *   PROOF_FROM        sender, default "Nuxt Email Proofs <proofs@example.invalid>".
  *                     Resend requires a verified sending domain — override this.
@@ -23,20 +22,6 @@ const proofsDir = join(repoRoot, 'release-artifacts/proofs')
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 const DEFAULT_FROM = 'Nuxt Email Proofs <proofs@example.invalid>'
-
-function printInstructions(reason: string): void {
-  console.log(`Proof send skipped: ${reason}.`)
-  console.log('')
-  console.log('To send the proof batch with Resend:')
-  console.log('  1. Generate the batch first:   pnpm proofs:generate')
-  console.log('  2. Export a Resend API key:     export RESEND_API_KEY=re_...')
-  console.log('  3. Export recipients:           export PROOF_RECIPIENTS=you@example.com,teammate@example.com')
-  console.log('  4. (Recommended) a verified From:')
-  console.log('                                  export PROOF_FROM="Nuxt Email Proofs <proofs@your-verified-domain.com>"')
-  console.log('  5. Send:                        pnpm proofs:send')
-  console.log('')
-  console.log('No key configured means no network call was made. This is not an error.')
-}
 
 function parseRecipients(raw: string | undefined): string[] {
   return (raw ?? '')
@@ -80,14 +65,12 @@ async function sendOne(apiKey: string, payload: SendPayload): Promise<void> {
 async function main(): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
-    printInstructions('RESEND_API_KEY is not set')
-    return
+    throw new Error('RESEND_API_KEY is required; no proof emails were sent')
   }
 
   const recipients = parseRecipients(process.env.PROOF_RECIPIENTS)
   if (recipients.length === 0) {
-    printInstructions('PROOF_RECIPIENTS is empty')
-    return
+    throw new Error('PROOF_RECIPIENTS must contain at least one address; no proof emails were sent')
   }
 
   const from = process.env.PROOF_FROM ?? DEFAULT_FROM

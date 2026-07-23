@@ -48,7 +48,7 @@ by environment variables:
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `RESEND_API_KEY` | to send | Resend API key. **If unset, the script prints instructions and exits 0** — never an error, safe in any pipeline. No key means no network call is made. |
+| `RESEND_API_KEY` | to send | Resend API key. The command fails without it so a release step cannot silently report success without sending. |
 | `PROOF_RECIPIENTS` | to send | Comma-separated destination addresses. |
 | `PROOF_FROM` | recommended | Sender; defaults to `Nuxt Email Proofs <proofs@example.invalid>`. Resend requires a **verified sending domain**, so override this. |
 
