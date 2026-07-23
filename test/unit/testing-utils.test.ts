@@ -1,31 +1,7 @@
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { defineEmail } from '../../src/runtime/render/define-email'
-import { normalizeEmailHtml, renderEmailComponent } from '../../src/runtime/testing'
-
-describe('@lupinum/nuxt-email/testing: normalizeEmailHtml', () => {
-  it('strips React boundary markers while preserving meaningful comments', () => {
-    const input = '<!--$--><p>Safe</p><!--/$--><!--meaningful-->'
-    expect(normalizeEmailHtml(input)).toBe('<p>Safe</p><!--meaningful-->')
-  })
-
-  it('sorts attributes, lowercases cellPadding/cellSpacing, and drops trailing style semicolons', () => {
-    const input = '<img style="color:red;" width="10" cellPadding="0" cellSpacing="0" alt="Logo">'
-    expect(normalizeEmailHtml(input)).toBe(
-      '<img alt="Logo" cellpadding="0" cellspacing="0" style="color:red" width="10">',
-    )
-  })
-
-  it('trims and collapses class whitespace', () => {
-    expect(normalizeEmailHtml('<span class="a   b  c">x</span>')).toBe('<span class="a b c">x</span>')
-  })
-
-  it('renders two structurally equivalent documents equal despite attribute order', () => {
-    const a = '<td align="center" style="padding:0">x</td>'
-    const b = '<td style="padding:0;" align="center">x</td>'
-    expect(normalizeEmailHtml(a)).toBe(normalizeEmailHtml(b))
-  })
-})
+import { renderEmailComponent } from '../../src/runtime/testing'
 
 describe('@lupinum/nuxt-email/testing: renderEmailComponent', () => {
   it('renders a real component to a complete email document without a Nuxt app', async () => {

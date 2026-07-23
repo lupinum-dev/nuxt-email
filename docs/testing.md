@@ -1,11 +1,10 @@
 # Testing your emails
 
-Nuxt Email ships the same rendering and comparison tools it uses for its own
-React Email conformance suite, so you can test your templates as rigorously as
-the library tests itself. Import them from the stable `@lupinum/nuxt-email/testing` subpath:
+Nuxt Email ships its standalone renderer from the stable
+`@lupinum/nuxt-email/testing` subpath:
 
 ```ts
-import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
+import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
 ```
 
 Nothing here needs a running Nuxt app or dev server — the helpers drive the
@@ -64,37 +63,8 @@ so a broken email fails your test loudly rather than shipping empty.
 `EmailRenderError` is exported by this testing subpath for focused assertions. The
 same public class is also available from `@lupinum/nuxt-email/errors`.
 
-## `normalizeEmailHtml(html)`
-
-Canonicalizes rendered email HTML so two structurally equivalent documents
-compare equal despite insignificant serialization differences. It sorts each
-element's attributes, drops trailing `;` from `style` values, collapses `class`
-whitespace, normalizes self-closing tags, and strips framework boundary comment
-markers. This is the exact normalizer Nuxt Email uses to compare Vue output
-against the React Email oracle.
-
-Use it for stable snapshot assertions that will not break on attribute ordering
-or whitespace:
-
-```ts
-import { expect, it } from 'vitest'
-import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
-import ReceiptEmail from '../emails/receipt.vue'
-
-it('matches the approved receipt markup', async () => {
-  const { html } = await renderEmailComponent(ReceiptEmail, { total: '€42.00' })
-
-  expect(normalizeEmailHtml(html)).toMatchSnapshot()
-})
-```
-
-Or to compare two renders you expect to be equivalent:
-
-```ts
-it('renders identically regardless of attribute order in the source', async () => {
-  const a = await renderEmailComponent(EmailA, props)
-  const b = await renderEmailComponent(EmailB, props)
-
-  expect(normalizeEmailHtml(a.html)).toBe(normalizeEmailHtml(b.html))
-})
-```
+Prefer focused assertions on recipient-visible text, links, required attributes,
+and client-specific markup. Whole-document snapshots tend to approve accidental
+output and make meaningful renderer changes difficult to review. The project
+keeps its React/Vue comparison normalizer internal because it encodes
+oracle-specific equivalence rules, not a general HTML contract.

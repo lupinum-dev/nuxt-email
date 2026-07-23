@@ -7,15 +7,15 @@ Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the un
 ### Added
 
 - Ordinary Vue SFC email authoring under recursive `app/emails/` discovery.
-- Nineteen auto-registered components: the document and layout primitives `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`; the content primitives `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader; the typography and code components `EFont`, `ECodeInline`, and `ECodeBlock` (Prism syntax highlighting); and the authoring helpers `EMarkdown` and `ETailwind`.
+- Eighteen auto-registered components: the document and layout primitives `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`; the content primitives `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader; plus `EFont`, `ECodeInline`, `EMarkdown`, and `ETailwind`.
 - Email-safe Tailwind v4 through `ETailwind`: render-time class inlining, including utilities emitted inside nested components, with non-inlinable rules downleveled and injected into a `<head>` `<style>`.
 - `EMarkdown` conversion of Markdown source to email-safe HTML with react-dom-compatible inline styles, raw-HTML rejection, safe URL-scheme validation, and escaped code content.
 - Optional `defineEmail({ subject: () => string })`, imported from `@lupinum/nuxt-email/define-email`, that captures the template's real props in a closure; the subject is returned as `subject` on the render result and shown in the preview.
 - Deterministic complete-document HTML rendering and plain-text fallback generation.
 - A generated Nitro-only `renderEmail(name, props)` API with typed template names and Vue props, returning `{ html, text, subject? }`.
 - One canonical server registry shared by runtime rendering and development preview.
-- First-class testing utilities on the `@lupinum/nuxt-email/testing` subpath: `renderEmailComponent`, `normalizeEmailHtml`, `EmailRenderError`, and the `RenderedEmail` type, with one shared normalizer implementation used by both consumers and the internal conformance suite.
-- Stable focused entry points for `@lupinum/nuxt-email/define-email`, `@lupinum/nuxt-email/errors`, and `@lupinum/nuxt-email/themes`.
+- First-class testing utilities on the `@lupinum/nuxt-email/testing` subpath: `renderEmailComponent`, `EmailRenderError`, and the `RenderedEmail` type.
+- Stable focused entry points for `@lupinum/nuxt-email/define-email` and `@lupinum/nuxt-email/errors`.
 - Exact sibling `.fixtures.ts` preview data and a development-only `/__email` application with a sandboxed preview, HTML, plain-text, copy/open actions, and automatic refresh.
 - Preview enhancements: a computed subject bar, a 600px/375px/full viewport toggle, and an exact UTF-8 byte-size badge with an approximate Gmail clipping-budget warning.
 - An email-client proof kit (`proofs:generate`, `proofs:send`) that renders a representative batch to `.html`, `.txt`, and valid `multipart/alternative` `.eml` messages with an optional Resend send path, plus a client QA checklist.

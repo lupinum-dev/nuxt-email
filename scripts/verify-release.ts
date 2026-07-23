@@ -368,8 +368,7 @@ async function verifyFreshConsumer(
     + ` errorsSurface: JSON.stringify(Object.keys(errors).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'EmailRenderError', 'TailwindMissingHeadError', 'UnknownEmailTemplateError']),`
     + ` defineEmailErrorIdentity: defineEmail.DefineEmailOutsideRenderError === errors.DefineEmailOutsideRenderError && defineEmail.DuplicateEmailDefinitionError === errors.DuplicateEmailDefinitionError,`
     + ` renderEmailComponent: typeof testing.renderEmailComponent === 'function',`
-    + ` normalizeEmailHtml: typeof testing.normalizeEmailHtml === 'function',`
-    + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'normalizeEmailHtml', 'renderEmailComponent']),`
+    + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'renderEmailComponent']),`
     + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError } ;`
     + ` process.stdout.write(${JSON.stringify(publicProbeMarker)} + JSON.stringify({ checks, resolved }));`,
   ], consumerDirectory)

@@ -5,10 +5,9 @@
  * emails in a unit test without booting a Nuxt app:
  *
  * ```ts
- * import { renderEmailComponent, normalizeEmailHtml } from '@lupinum/nuxt-email/testing'
+ * import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
  * ```
  */
 export { renderEmailComponent } from '../render/render-email-component'
 export { EmailRenderError } from '../render/errors'
 export type { RenderedEmail } from '../render/types'
-export { normalizeEmailHtml } from './normalize'

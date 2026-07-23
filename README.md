@@ -9,7 +9,7 @@ Nuxt Email turns `app/emails/` into a typed, Nitro-native email renderer. Author
 - **Nuxt-native and typed.** Template names and props are generated from the SFCs in your application. There is no sidecar build or second template registry.
 - **Tailwind v4 built for email output.** `ETailwind` inlines compatible utilities, keeps author styles authoritative, and moves media-query and pseudo-class rules into the document head.
 - **One production rendering path.** Development preview, unit-test helpers, and Nitro rendering use the same isolated Vue SSR renderer.
-- **Email-safe primitives.** Nineteen server components cover documents, table layout, content, Outlook-safe buttons, Markdown, code, fonts, previews, and Tailwind.
+- **Email-safe primitives.** Eighteen server components cover documents, table layout, content, Outlook-safe buttons, Markdown, inline code, fonts, previews, and Tailwind.
 - **Behavior is verified, not hand-waved.** Covered primitives are compared case by case with a pinned React Email oracle. The generated conformance report records exact matches and intentional divergences; it does not claim universal email-client parity.
 
 ## Is it the right tool?
@@ -137,7 +137,7 @@ Do not import `renderEmail` into Vue components or other client code. Nuxt Email
 Render any email component to `{ html, text, subject? }` in a unit test without booting Nuxt, using the stable testing subpath:
 
 ```ts
-import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
+import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
 import Welcome from './app/emails/welcome.vue'
 
 const { html, text } = await renderEmailComponent(Welcome, {
@@ -146,7 +146,8 @@ const { html, text } = await renderEmailComponent(Welcome, {
 })
 ```
 
-`normalizeEmailHtml` is the exact normalizer the project uses for its own React Email conformance suite, so structurally equivalent documents compare equal despite insignificant serialization differences. See the [testing guide](./docs/testing.md).
+Assert on recipient-visible content and required markup rather than normalizing the
+entire document into a broad snapshot. See the [testing guide](./docs/testing.md).
 
 ## Preview in development
 
@@ -198,7 +199,7 @@ Stable package entry points are deliberately small:
 
 - `@lupinum/nuxt-email` — the Nuxt module.
 - `@lupinum/nuxt-email/define-email` — template metadata and its typed errors.
-- `@lupinum/nuxt-email/testing` — standalone component rendering and HTML normalization.
+- `@lupinum/nuxt-email/testing` — standalone component rendering.
 - `@lupinum/nuxt-email/errors` — supported runtime error classes.
 
 ## Documentation

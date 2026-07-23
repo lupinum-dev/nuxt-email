@@ -7,7 +7,7 @@ import {
   TailwindMissingHeadError,
   UnknownEmailTemplateError,
 } from '@lupinum/nuxt-email/errors'
-import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
+import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
 
 export function provePublicSubpathTypes(): void {
   void defineEmail
@@ -16,8 +16,6 @@ export function provePublicSubpathTypes(): void {
   void EmailRenderError
   void TailwindMissingHeadError
   void UnknownEmailTemplateError
-  void normalizeEmailHtml
-
   void renderEmailComponent(WelcomeEmail, {
     orderNumber: 7319,
     recipientName: 'Ada',
