@@ -22,7 +22,6 @@ import { compileScript, parse } from 'vue/compiler-sfc'
 import {
   EBody,
   EButton,
-  ECodeBlock,
   EColumn,
   EContainer,
   EFont,
@@ -37,7 +36,6 @@ import {
   ESection,
   ETailwind,
   EText,
-  vscDarkPlus,
 } from '../src/runtime/components'
 import { defineEmail } from '../src/runtime/render/define-email'
 import { renderEmailComponent } from '../src/runtime/render/render-email-component'
@@ -264,7 +262,7 @@ const slot = (children: unknown) => ({ default: () => children })
  * Dedicated proof template exercising every client-risk area in one email:
  * defineEmail subject, EPreview preheader, EFont webfont, ETailwind with a responsive
  * media query (`sm:`) and a dark-mode variant (`dark:`), an MSO-padded EButton, a
- * Section/Row/Column table layout, EMarkdown, and an ECodeBlock.
+ * Section/Row/Column table layout and EMarkdown.
  */
 const ProofKitEmail = defineComponent({
   name: 'ProofKitEmail',
@@ -329,16 +327,6 @@ const ProofKitEmail = defineComponent({
         ].join('\n'),
       })
 
-      const code = h(ECodeBlock, {
-        code: [
-          'const email = await renderEmail(\'welcome\', {',
-          '  firstName: \'Ada\',',
-          '})',
-        ].join('\n'),
-        language: 'typescript',
-        theme: vscDarkPlus,
-      })
-
       const container = h(EContainer, {
         style: {
           backgroundColor: '#ffffff',
@@ -354,7 +342,6 @@ const ProofKitEmail = defineComponent({
         button,
         h(EHr, { style: { borderTopColor: '#d9dfdc', margin: '0 0 24px' } }),
         markdown,
-        code,
         h(EText, { style: { color: '#607067', fontSize: '13px', margin: '24px 0 0' } }, slot([
           'Questions? Email ',
           h(ELink, { href: 'mailto:proofs@example.invalid' }, slot('proofs@example.invalid')),

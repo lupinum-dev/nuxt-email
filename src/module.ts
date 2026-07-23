@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve } from 'node:path'
 import {
-  addComponentExports,
+  addComponent,
   addServerImports,
   addServerHandler,
   addServerTemplate,
@@ -14,6 +14,27 @@ import vue from '@vitejs/plugin-vue'
 import { attachPreviewFixtures } from './preview-fixtures'
 import { discoverEmailTemplates } from './template-discovery'
 import { generateEmailRegistry, generateEmailTypes } from './template-generation'
+
+const EMAIL_COMPONENT_NAMES = [
+  'EBody',
+  'EButton',
+  'ECodeInline',
+  'EColumn',
+  'EContainer',
+  'EFont',
+  'EHead',
+  'EHeading',
+  'EHr',
+  'EHtml',
+  'EImg',
+  'ELink',
+  'EMarkdown',
+  'EPreview',
+  'ERow',
+  'ESection',
+  'ETailwind',
+  'EText',
+] as const
 
 type NitroRollupOptions = {
   nitro?: {
@@ -82,10 +103,14 @@ export default defineNuxtModule<ModuleOptions>({
         from: registryId,
       },
     ])
-    addComponentExports({
-      filePath: resolver.resolve('./runtime/components/email-components'),
-      mode: 'server',
-    })
+    for (const name of EMAIL_COMPONENT_NAMES) {
+      addComponent({
+        name,
+        export: name,
+        filePath: resolver.resolve(`./runtime/components/${name}`),
+        mode: 'server',
+      })
+    }
 
     if (nuxt.options.dev) {
       addServerHandler({

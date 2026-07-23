@@ -42,10 +42,6 @@
     "./errors": {
       "types": "./dist/runtime/errors.d.ts",
       "import": "./dist/runtime/errors.js"
-    },
-    "./themes": {
-      "types": "./dist/runtime/themes.d.ts",
-      "import": "./dist/runtime/themes.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -90,7 +86,6 @@
     "html-to-text": "9.0.5",
     "htmlparser2": "^10.1.0",
     "marked": "15.0.12",
-    "prismjs": "1.30.0",
     "tailwindcss": "4.1.18"
   },
   "devDependencies": {
@@ -102,7 +97,6 @@
     "@types/css-tree": "2.3.11",
     "@types/html-to-text": "9.0.4",
     "@types/node": "latest",
-    "@types/prismjs": "1.26.6",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^10.4.1",

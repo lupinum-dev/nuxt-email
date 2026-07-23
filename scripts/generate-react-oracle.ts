@@ -7,11 +7,9 @@ import React from 'react'
 import {
   Body,
   Button,
-  CodeBlock,
   CodeInline,
   Column,
   Container,
-  dracula,
   Font,
   Head,
   Heading,
@@ -20,7 +18,6 @@ import {
   Img,
   Link,
   Markdown,
-  oneDark,
   pixelBasedPreset,
   Preview,
   Row,
@@ -159,7 +156,7 @@ async function generateOracle() {
     'target': '_self',
   }, 'Click & continue')
 
-  // --- Feature component fixtures (Font, CodeInline, CodeBlock, Markdown, Tailwind) ---
+  // --- Feature component fixtures (Font, CodeInline, Markdown, Tailwind) ---
 
   type TailwindConfig = NonNullable<React.ComponentProps<typeof Tailwind>['config']>
 
@@ -170,10 +167,6 @@ async function generateOracle() {
       React.createElement(Head, null, React.createElement(Font, fontProps)),
       React.createElement(Body, null, 'Sample body copy in the branded font.'),
     )
-
-  const codeSnippet = 'const greeting = \'hi\';\nfunction wave() {\n  return greeting;\n}'
-  const cssSnippet = '.btn {\n  color: red;\n  padding: 4px 8px;\n}'
-
   const markdownDocument = [
     '# Heading One',
     '',
@@ -613,45 +606,6 @@ async function generateOracle() {
       semanticAssertions: ['unclassed code copy is ` cino`', 'unclassed span copy is ` cio`'],
       intentionalDivergence: 'The hidden Orange.fr compatibility copy is excluded from recipient plain text.',
     }, React.createElement(Text, null, React.createElement(CodeInline, null, 'const x = 1;'))),
-    'code-block-basic': await renderCase({
-      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
-      nuxtComponent: 'ECodeBlock',
-      classification: 'normalized',
-      input: { language: 'javascript', theme: 'dracula', lines: 3 },
-      semanticAssertions: ['theme base pre styles', 'per-token span styles', 'nbsp+ZWJ+ZWSP spaces', 'line breaks'],
-    }, React.createElement(CodeBlock, { code: codeSnippet, language: 'javascript', theme: dracula })),
-    'code-block-line-numbers': await renderCase({
-      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
-      nuxtComponent: 'ECodeBlock',
-      classification: 'normalized',
-      input: { language: 'javascript', theme: 'dracula', lineNumbers: true, fontFamily: 'monospace' },
-      semanticAssertions: ['line-number prefix span', 'custom font family applied'],
-    }, React.createElement(CodeBlock, { code: codeSnippet, language: 'javascript', theme: dracula, lineNumbers: true, fontFamily: 'monospace' })),
-    'code-block-css-lang': await renderCase({
-      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
-      nuxtComponent: 'ECodeBlock',
-      classification: 'normalized',
-      input: { language: 'css', theme: 'oneDark' },
-      semanticAssertions: ['css grammar tokenization', 'alternate theme token styles'],
-    }, React.createElement(CodeBlock, { code: cssSnippet, language: 'css', theme: oneDark })),
-    'code-block-attributes': await renderCase({
-      reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
-      nuxtComponent: 'ECodeBlock',
-      classification: 'normalized',
-      input: { 'className': 'snippet', 'id': 'sample', 'dir': 'ltr', 'title': 'Sample', 'aria-label': 'code sample', 'role': 'group', 'data-x': '1' },
-      semanticAssertions: ['native pass-through attributes forwarded onto <pre>'],
-    }, React.createElement(CodeBlock, {
-      'code': codeSnippet,
-      'language': 'javascript',
-      'theme': dracula,
-      'className': 'snippet',
-      'id': 'sample',
-      'dir': 'ltr',
-      'title': 'Sample',
-      'aria-label': 'code sample',
-      'role': 'group',
-      'data-x': '1',
-    } as unknown as React.ComponentProps<typeof CodeBlock>)),
     'markdown-document': await renderCase({
       reactReference: 'packages/react-email/src/components/markdown/markdown.tsx',
       nuxtComponent: 'EMarkdown',
@@ -839,7 +793,14 @@ async function generateOracle() {
       'tailwind-non-inlinable-without-head': tailwindNonInlinableWithoutHeadError,
       'tailwind-non-inlinable-without-head-multi': tailwindNonInlinableWithoutHeadMultiError,
     },
-    unsupported: [],
+    unsupported: [
+      {
+        id: 'code-block',
+        reactComponent: 'CodeBlock',
+        reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
+        reason: 'Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component.',
+      },
+    ],
   }
 }
 

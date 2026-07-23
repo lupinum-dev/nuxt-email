@@ -44,7 +44,7 @@ defineEmail({
 - `EHtml` and `EBody` are the supported complete-document wrappers. The renderer does not repair or auto-wrap fragments, text roots, body-only templates, or multiple document roots.
 - Vue SSR interpolation and attribute values are escaped.
 - Rendering removes only Vue's empty/fragment bookkeeping comments observed by the conformance suite. Test normalization never changes production output.
-- A fresh isolated Vue SSR application is created for every call, with exactly nineteen email components registered inside it.
+- A fresh isolated Vue SSR application is created for every call. Nuxt email templates receive their E-components through server-only auto-imports.
 - Framework code does not fetch images, stylesheets, fonts, or other remote assets during rendering.
 
 Two calls with the same template code and props are required to return byte-identical HTML and text. Templates remain responsible for avoiding clocks, random values, mutable external state, and nondeterministic data.

@@ -173,6 +173,9 @@ describe('production server boundary', () => {
 
       expect(serverOutput).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(serverOutput).toContain('html-to-text')
+      expect(serverOutput).not.toContain('Prism.languages')
+      expect(serverOutput).not.toContain('ECodeBlock')
+      expect(serverFiles.some(path => path.includes('/ECodeBlock-'))).toBe(false)
 
       const routeDirectory = join(result.outputDir, 'server/chunks/routes/api')
       const routeUrls = [

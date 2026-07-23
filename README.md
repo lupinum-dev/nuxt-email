@@ -94,11 +94,11 @@ defineEmail({
 </template>
 ```
 
-The nineteen `E*` components are auto-registered for email rendering; templates do not import them:
+The eighteen `E*` components are auto-registered for email rendering; templates do not import them:
 
 - **Document and layout** — `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`.
 - **Content** — `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader.
-- **Typography and code** — `EFont` (`@font-face` loading), `ECodeInline`, and `ECodeBlock` (Prism syntax highlighting).
+- **Typography and code** — `EFont` (`@font-face` loading) and `ECodeInline`.
 - **Authoring helpers** — `EMarkdown` (Markdown to email-safe HTML) and `ETailwind` (render-time Tailwind class inlining, including utilities emitted inside nested components, with non-inlinable rules downleveled into a `<head>` `<style>`).
 
 Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, Tailwind classes, and Vue style bindings. Import `defineEmail` from `@lupinum/nuxt-email/define-email` when the template owns its subject line; its zero-argument closure captures the template's actual props, so there is no separate metadata prop type to drift. The [component reference](./docs/components.md) records every component's important props, fixed semantics, and defaults.
@@ -190,7 +190,7 @@ Delivering that batch and completing the [client QA checklist](https://github.co
 
 ## Compatibility and limits
 
-Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for supported behavior, intentional Vue/email-safety divergences, and unsupported components. It currently records **61 of 61 runnable behaviors passing**: 10 exact, 38 normalized, 5 semantic, and 8 intentional divergences, against React Email `6.9.0`, `@react-email/render` `2.1.0`, and source commit `6eb428924c4c2774228a07cbec1977ad8898f143`; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
+Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for runnable reference cases, intentional divergences, and unsupported components; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
 
 The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configuration options, and a public registry API. Sending and subject/recipient delivery remain application-owned.
 
@@ -200,7 +200,6 @@ Stable package entry points are deliberately small:
 - `@lupinum/nuxt-email/define-email` — template metadata and its typed errors.
 - `@lupinum/nuxt-email/testing` — standalone component rendering and HTML normalization.
 - `@lupinum/nuxt-email/errors` — supported runtime error classes.
-- `@lupinum/nuxt-email/themes` — Prism code-block themes and their type.
 
 ## Documentation
 

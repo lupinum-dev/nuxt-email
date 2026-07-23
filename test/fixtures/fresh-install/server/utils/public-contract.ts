@@ -8,7 +8,6 @@ import {
   UnknownEmailTemplateError,
 } from '@lupinum/nuxt-email/errors'
 import { normalizeEmailHtml, renderEmailComponent } from '@lupinum/nuxt-email/testing'
-import { dracula, oneDark } from '@lupinum/nuxt-email/themes'
 
 export function provePublicSubpathTypes(): void {
   void defineEmail
@@ -18,8 +17,6 @@ export function provePublicSubpathTypes(): void {
   void TailwindMissingHeadError
   void UnknownEmailTemplateError
   void normalizeEmailHtml
-  void dracula
-  void oneDark
 
   void renderEmailComponent(WelcomeEmail, {
     orderNumber: 7319,

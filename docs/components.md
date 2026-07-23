@@ -1,6 +1,6 @@
 # Component reference
 
-Nuxt Email provides nineteen E-prefixed components. They are auto-registered inside email templates and the isolated server renderer. All composition uses ordinary Vue slots; all attributes use Vue and HTML names rather than React prop aliases.
+Nuxt Email provides eighteen E-prefixed components. They are auto-registered inside email templates. All composition uses ordinary Vue slots; all attributes use Vue and HTML names rather than React prop aliases.
 
 ## Shared rules
 
@@ -159,35 +159,6 @@ It renders three siblings: a `<style>` with the Orange.fr webmail compatibility 
 </EText>
 ```
 
-## Syntax-highlighted code blocks
-
-`ECodeBlock` renders a syntax-highlighted `<pre>` using PrismJS grammars and a theme object. It is server-only.
-
-| Prop | Contract |
-| --- | --- |
-| `code` | Required source string. |
-| `language` | Required `CodeBlockLanguage` (a PrismJS language id such as `javascript` or `css`). An unknown language throws. |
-| `theme` | Required `CodeBlockTheme`. Themes are named exports of the package (`dracula`, `oneDark`, `nord`, and the rest of the PrismJS theme set). |
-| `lineNumbers` | Optional. Prepends a line-number column. |
-| `fontFamily` | Optional. Applies a font family to every rendered element, mainly to override a global `EFont`. |
-
-Source spaces are encoded as no-break space plus zero-width joiner plus zero-width space, and each line ends with `<br/>`, matching React Email byte-for-byte.
-
-```vue
-<script setup lang="ts">
-import { dracula } from '@lupinum/nuxt-email/themes'
-</script>
-
-<template>
-  <ECodeBlock
-    language="javascript"
-    :theme="dracula"
-    :line-numbers="true"
-    :code="`const x = 1;\nconsole.log(x);`"
-  />
-</template>
-```
-
 ## Markdown
 
 `EMarkdown` renders Markdown to email-safe HTML with inline styles.
@@ -282,7 +253,7 @@ Classes on elements written directly in the email template are inlined by a rend
 
 E* primitives with style logic (`EBody`, `EText`, `EButton`, `ESection`, `EContainer`, `ERow`, `ELink`, `EImg`, `EHr`) resolve their own Tailwind classes before running their margin/padding/Outlook derivation, so utilities behave identically whether the primitive is written inline or produced by a nested component. Plain HTML elements and structural primitives (`EHtml`, `EHeading`, `EColumn`) are inlined after render. Non-inlinable rules from nested classes (e.g. the `md:text-lg` above) still reach the `<head>` `<style>`, and the missing-`<head>` error still fires when such a class has nowhere to go.
 
-Limitations: `ECodeInline`, `ECodeBlock`, `EMarkdown`, `EPreview`, and `EFont` do not treat a nested `class` as a Tailwind style target (their `class`/head semantics differ), nested `<ETailwind>` boundaries are not supported, and render-time CSS/`@plugin` filesystem imports are not resolved. Emails that do not use `<ETailwind>` are entirely unaffected — the nested support adds zero cost to them.
+Limitations: `ECodeInline`, `EMarkdown`, `EPreview`, and `EFont` do not treat a nested `class` as a Tailwind style target (their `class`/head semantics differ), nested `<ETailwind>` boundaries are not supported, and render-time CSS/`@plugin` filesystem imports are not resolved. Emails that do not use `<ETailwind>` are entirely unaffected — the nested support adds zero cost to them.
 
 ## Complete-document requirement
 

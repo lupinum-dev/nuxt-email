@@ -1,10 +1,5 @@
-// Curated runtime registry for the nineteen email primitives. Keep this barrel
-// component-only: Nuxt scans its named exports for server component types and
-// the standalone renderer registers every export on its private Vue app.
-// Themes and helper values deliberately live outside this file.
 export { EBody } from './EBody'
 export { EButton } from './EButton'
-export { ECodeBlock } from './ECodeBlock'
 export { ECodeInline } from './ECodeInline'
 export { EColumn } from './EColumn'
 export { EContainer } from './EContainer'

@@ -227,7 +227,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
 
   invariant(
     JSON.stringify(Object.keys(packed.exports ?? {}).sort())
-    === JSON.stringify(['.', './define-email', './errors', './testing', './themes']),
+    === JSON.stringify(['.', './define-email', './errors', './testing']),
     'Packed package exports differ from the intentional public surface',
   )
 
@@ -244,7 +244,6 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   for (const [subpath, importPath, typePath] of [
     ['./define-email', './dist/runtime/define-email.js', './dist/runtime/define-email.d.ts'],
     ['./errors', './dist/runtime/errors.js', './dist/runtime/errors.d.ts'],
-    ['./themes', './dist/runtime/themes.js', './dist/runtime/themes.d.ts'],
   ] as const) {
     const packageExport = packed.exports?.[subpath]
     invariant(typeof packageExport === 'object' && packageExport !== null, `Packed package must export its ${subpath} subpath`)
@@ -350,10 +349,9 @@ async function verifyFreshConsumer(
       '@lupinum/nuxt-email/define-email',
       '@lupinum/nuxt-email/errors',
       '@lupinum/nuxt-email/testing',
-      '@lupinum/nuxt-email/themes',
     ])};`
     + ` const resolved = Object.fromEntries(specifiers.map(specifier => [specifier, import.meta.resolve(specifier)]));`
-    + ` const [defineEmail, errors, testing, themes] = await Promise.all(specifiers.map(specifier => import(specifier)));`
+    + ` const [defineEmail, errors, testing] = await Promise.all(specifiers.map(specifier => import(specifier)));`
     + ` const checks = {`
     + ` defineEmail: typeof defineEmail.defineEmail === 'function',`
     + ` defineEmailOutside: typeof defineEmail.DefineEmailOutsideRenderError === 'function',`
@@ -372,9 +370,7 @@ async function verifyFreshConsumer(
     + ` renderEmailComponent: typeof testing.renderEmailComponent === 'function',`
     + ` normalizeEmailHtml: typeof testing.normalizeEmailHtml === 'function',`
     + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'normalizeEmailHtml', 'renderEmailComponent']),`
-    + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError,`
-    + ` dracula: typeof themes.dracula === 'object',`
-    + ` oneDark: typeof themes.oneDark === 'object' } ;`
+    + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError } ;`
     + ` process.stdout.write(${JSON.stringify(publicProbeMarker)} + JSON.stringify({ checks, resolved }));`,
   ], consumerDirectory)
   const publicProbeStart = publicProbe.stdout.indexOf(publicProbeMarker)
@@ -515,7 +511,6 @@ async function verifyFreshConsumer(
   invariant(rendered.first.html.startsWith('<!DOCTYPE html'), 'Production render did not return a complete HTML document')
   invariant(rendered.first.html.includes('NUXT_EMAIL_FRESH_TEMPLATE_4D91'), 'Production render omitted the email template sentinel')
   invariant(rendered.first.html.includes('Order 7319 for Ada &amp; Lin'), 'Production render did not escape and render typed props')
-  invariant(rendered.first.html.includes('background:hsl(220, 13%, 18%)'), 'Production render did not execute the oneDark theme imported from the public themes subpath')
   invariant(rendered.first.text.includes('ORDER 7319 FOR ADA & LIN'), 'Production plain text did not preserve the rendered content')
   invariant(rendered.first.text.includes('View order https://example.com/orders/7319'), 'Production plain text did not preserve the email link')
   invariant(rendered.first.subject === 'Order 7319 confirmed', 'Production render did not preserve the computed subject')
@@ -613,8 +608,6 @@ async function verifyRelease(): Promise<void> {
       'dist/runtime/define-email.d.ts',
       'dist/runtime/errors.js',
       'dist/runtime/errors.d.ts',
-      'dist/runtime/themes.js',
-      'dist/runtime/themes.d.ts',
       'dist/runtime/testing/index.js',
       'dist/runtime/testing/index.d.ts',
       'dist/runtime/server/preview-page-script.js',

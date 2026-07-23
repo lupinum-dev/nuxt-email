@@ -129,7 +129,7 @@ defineEmail({
 </template>
 ```
 
-No component imports are needed. The module registers exactly nineteen email primitives inside the isolated server renderer. Tailwind v4 is opt-in per template through `ETailwind`; emails without that boundary are not rewritten by the Tailwind engine.
+No component imports are needed. The module auto-imports exactly eighteen email primitives into email templates. Tailwind v4 is opt-in per template through `ETailwind`; emails without that boundary are not rewritten by the Tailwind engine.
 
 ## 5. Add the development fixture
 

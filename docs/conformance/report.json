@@ -11,18 +11,18 @@
     "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
-  "oracleSha256": "9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b8032824",
+  "oracleSha256": "3e566f12eee11277248c2c4303dcccf43be2b29419410866d67d3ef2ab8a25fd",
   "summary": {
     "failed": 0,
-    "passed": 61,
-    "runnable": 61,
-    "unsupported": 0
+    "passed": 57,
+    "runnable": 57,
+    "unsupported": 1
   },
   "classificationCounts": {
     "normalized": {
       "failed": 0,
-      "passed": 38,
-      "total": 38
+      "passed": 34,
+      "total": 34
     },
     "semantic": {
       "failed": 0,
@@ -42,7 +42,7 @@
     "unsupported": {
       "failed": 0,
       "passed": 0,
-      "total": 0
+      "total": 1
     }
   },
   "componentCounts": {
@@ -65,11 +65,6 @@
       "failed": 0,
       "passed": 1,
       "total": 1
-    },
-    "ECodeBlock": {
-      "failed": 0,
-      "passed": 4,
-      "total": 4
     },
     "ECodeInline": {
       "failed": 0,
@@ -250,67 +245,6 @@
       "test": {
         "file": "test/conformance/phase-two-components.test.ts",
         "name": "EButton > matches the padded React oracle including exact Outlook fragments"
-      }
-    },
-    {
-      "id": "code-block-attributes",
-      "classification": "normalized",
-      "status": "passed",
-      "nuxtComponent": "ECodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "semanticAssertions": [
-        "native pass-through attributes forwarded onto <pre>"
-      ],
-      "test": {
-        "file": "test/conformance/code-block.test.ts",
-        "name": "ECodeBlock > forwards native pass-through attributes onto the <pre>, matching the oracle"
-      }
-    },
-    {
-      "id": "code-block-basic",
-      "classification": "normalized",
-      "status": "passed",
-      "nuxtComponent": "ECodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "semanticAssertions": [
-        "theme base pre styles",
-        "per-token span styles",
-        "nbsp+ZWJ+ZWSP spaces",
-        "line breaks"
-      ],
-      "test": {
-        "file": "test/conformance/code-block.test.ts",
-        "name": "ECodeBlock > matches the dracula JavaScript oracle with exact space substitution"
-      }
-    },
-    {
-      "id": "code-block-css-lang",
-      "classification": "normalized",
-      "status": "passed",
-      "nuxtComponent": "ECodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "semanticAssertions": [
-        "css grammar tokenization",
-        "alternate theme token styles"
-      ],
-      "test": {
-        "file": "test/conformance/code-block.test.ts",
-        "name": "ECodeBlock > matches the oneDark CSS oracle with css-grammar tokenization"
-      }
-    },
-    {
-      "id": "code-block-line-numbers",
-      "classification": "normalized",
-      "status": "passed",
-      "nuxtComponent": "ECodeBlock",
-      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "semanticAssertions": [
-        "line-number prefix span",
-        "custom font family applied"
-      ],
-      "test": {
-        "file": "test/conformance/code-block.test.ts",
-        "name": "ECodeBlock > matches the line-numbers oracle including the prefix span and font family"
       }
     },
     {
@@ -1137,5 +1071,12 @@
       "status": "passed"
     }
   ],
-  "unsupported": []
+  "unsupported": [
+    {
+      "id": "code-block",
+      "reactComponent": "CodeBlock",
+      "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
+      "reason": "Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component."
+    }
+  ]
 }

@@ -7,28 +7,23 @@ import { renderComponentToHtml } from '../../src/runtime/render/render-component
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 
 describe('component rendering', () => {
-  it('registers only the nineteen curated email primitives', () => {
-    expect(Object.keys(emailComponents).sort()).toEqual([
-      'EBody',
-      'EButton',
-      'ECodeBlock',
-      'ECodeInline',
-      'EColumn',
-      'EContainer',
-      'EFont',
-      'EHead',
-      'EHeading',
-      'EHr',
-      'EHtml',
-      'EImg',
-      'ELink',
-      'EMarkdown',
-      'EPreview',
-      'ERow',
-      'ESection',
-      'ETailwind',
-      'EText',
-    ])
+  it('registers the supported email components for compiled no-import templates', async () => {
+    const NoImportEmail = defineComponent({
+      name: 'NoImportEmail',
+      setup() {
+        const EHtml = resolveComponent('EHtml')
+        const EBody = resolveComponent('EBody')
+        const EText = resolveComponent('EText')
+        return () => h(EHtml, null, {
+          default: () => h(EBody, null, {
+            default: () => h(EText, null, { default: () => 'Hello' }),
+          }),
+        })
+      },
+    })
+
+    expect(Object.keys(emailComponents)).toHaveLength(18)
+    await expect(renderEmailComponent(NoImportEmail)).resolves.toMatchObject({ text: 'Hello' })
   })
 
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {
@@ -76,24 +71,6 @@ describe('component rendering', () => {
     expect(first).toEqual(second)
     expect(Object.keys(first)).toEqual(['html', 'text'])
     expect(first.text).toBe('Hello')
-  })
-
-  it('resolves the public E-components as globals for compiled Nuxt email SFCs', async () => {
-    const GlobalComponentEmail = defineComponent({
-      name: 'GlobalComponentEmail',
-      setup: () => () => h(resolveComponent('EHtml'), null, {
-        default: () => h(resolveComponent('EBody'), null, {
-          default: () => h(resolveComponent('EText'), null, {
-            default: () => 'Global primitives work',
-          }),
-        }),
-      }),
-    })
-
-    const result = await renderEmailComponent(GlobalComponentEmail)
-
-    expect(result.html).toContain('<html dir="ltr" lang="en">')
-    expect(result.text).toBe('Global primitives work')
   })
 
   it('accepts typed functional-component props when no runtime declaration exists', async () => {

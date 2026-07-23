@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineEmail } from '@lupinum/nuxt-email/define-email'
-import { oneDark } from '@lupinum/nuxt-email/themes'
 
 defineOptions({ name: 'FreshInstallWelcomeEmail' })
 
@@ -14,11 +13,6 @@ const props = defineProps<WelcomeProps>()
 defineEmail({
   subject: () => `Order ${props.orderNumber} confirmed`,
 })
-
-// A snippet that forces real Prism tokenization (the vendored grammar registry)
-// inside the bundled production chunk — the exact surface the release blocker hid.
-const trackingSnippet = `// track your order
-const status = await fetch('/orders/7319').then(r => r.json());`
 
 const nextSteps = '### What happens next\n\nWe will email you when your order **ships**.'
 </script>
@@ -36,12 +30,6 @@ const nextSteps = '### What happens next\n\nWe will email you when your order **
           <EText>NUXT_EMAIL_FRESH_TEMPLATE_4D91</EText>
 
           <EMarkdown :source="nextSteps" />
-
-          <ECodeBlock
-            :code="trackingSnippet"
-            :theme="oneDark"
-            language="typescript"
-          />
 
           <EButton :href="`https://example.com/orders/${orderNumber}`">
             View order

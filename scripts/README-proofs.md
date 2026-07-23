@@ -23,7 +23,7 @@ Writes to `release-artifacts/proofs/` (git-ignored):
 | Proof | Source | Risk areas exercised |
 | --- | --- | --- |
 | `welcome` | `playground/app/emails/welcome.vue` (compiled SFC) | The canonical playground template with real fixture props; proves the SFC compile path end to end. |
-| `proof-kit` | dedicated template in `generate-proofs.ts` | `defineEmail` subject (non-ASCII), `EPreview` preheader, `EFont` webfont, `ETailwind` with a `sm:` media query and a `dark:` variant, an MSO-padded `EButton`, a `Section`/`Row`/`Column` table layout, `EMarkdown`, and an `ECodeBlock`. |
+| `proof-kit` | dedicated template in `generate-proofs.ts` | `defineEmail` subject (non-ASCII), `EPreview` preheader, `EFont` webfont, `ETailwind` with a `sm:` media query and a `dark:` variant, an MSO-padded `EButton`, a `Section`/`Row`/`Column` table layout, and `EMarkdown`. |
 
 For each proof it emits:
 

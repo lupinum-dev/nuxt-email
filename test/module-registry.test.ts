@@ -11,7 +11,6 @@ const workspaceDirectory = fileURLToPath(new URL('..', import.meta.url))
 const emailComponentNames = [
   'EBody',
   'EButton',
-  'ECodeBlock',
   'ECodeInline',
   'EColumn',
   'EContainer',
@@ -66,14 +65,15 @@ describe('Nuxt email registry regeneration', () => {
       await nuxt.callHook('components:dirs', [])
       await nuxt.callHook('components:extend', components as never)
       const emailComponents = components
-        .filter(component => component.filePath.replaceAll('\\', '/').endsWith('/runtime/components/email-components'))
+        .filter(component => component.filePath.replaceAll('\\', '/').includes('/runtime/components/E'))
         .map(component => ({
           export: component.export,
           mode: component.mode,
           pascalName: component.pascalName,
         }))
+        .sort((left, right) => left.pascalName.localeCompare(right.pascalName))
 
-      expect(emailComponents).toEqual(emailComponentNames.map(componentName => ({
+      expect(emailComponents).toEqual([...emailComponentNames].sort().map(componentName => ({
         export: componentName,
         mode: 'server',
         pascalName: componentName,

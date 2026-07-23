@@ -28,7 +28,7 @@ appearance setting. Where a client has no dark mode, mark the dark rows **N/A**.
 | Proof | What it is | Primary risk areas |
 | --- | --- | --- |
 | `welcome` | Canonical playground template, real fixture props | Container layout, single MSO button, preheader, link, `EHr` |
-| `proof-kit` | Every risk area in one email | MSO button, `Row`/`Column` table layout, preheader, Tailwind media query + dark variant, markdown, code block, webfont, non-ASCII subject |
+| `proof-kit` | Every risk area in one email | MSO button, `Row`/`Column` table layout, preheader, Tailwind media query + dark variant, markdown, webfont, non-ASCII subject |
 
 ## Clients to cover
 
@@ -66,9 +66,8 @@ appearance setting. Where a client has no dark mode, mark the dark rows **N/A**.
 | P5 | Media query (`sm:`) | Heading scales up at wider widths where supported; **degrades gracefully** (base size, no broken layout) where media queries are ignored (Gmail, Outlook classic) | Gmail (ignored), Apple Mail (honored) |
 | P6 | Dark variant (`dark:`) | In dark mode, `dark:` styles apply where supported (Apple Mail); elsewhere the light styling remains readable — no unreadable dark-on-dark | Apple Mail vs Gmail/Outlook |
 | P7 | Markdown spacing | Heading, paragraph, and bulleted list have correct vertical spacing; **bold**, inline `code`, and the link all render; no raw `#`/`*`/backticks visible | All |
-| P8 | Code block fidelity | Monospaced block with syntax colors; indentation and line breaks preserved; no horizontal overflow of the card | Gmail (color stripping), Outlook |
-| P9 | Webfont (`EFont`) | Inter where the client loads webfonts; **clean fallback** to Helvetica/sans-serif where it does not (Gmail, Outlook) — never a serif or broken glyphs | Apple Mail (loads) vs Gmail/Outlook (fallback) |
-| P10 | Dark mode overall | Whole email legible in dark mode; card, code block, and button all readable; no invisible text | Gmail apps, Apple Mail, Outlook |
+| P8 | Webfont (`EFont`) | Inter where the client loads webfonts; **clean fallback** to Helvetica/sans-serif where it does not (Gmail, Outlook) — never a serif or broken glyphs | Apple Mail (loads) vs Gmail/Outlook (fallback) |
+| P9 | Dark mode overall | Whole email legible in dark mode; card and button remain readable; no invisible text | Gmail apps, Apple Mail, Outlook |
 
 Graceful-degradation note: media queries and `dark:` variants are expected to be
 honored only in some clients (notably Apple Mail) and ignored in others (Gmail,

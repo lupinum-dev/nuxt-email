@@ -1,6 +1,6 @@
 # Runtime dependency and license review
 
-This record covers the nine direct runtime dependencies of the current `@lupinum/nuxt-email` candidate as reviewed on 2026-07-21. Versions are the exact packages exercised by the lockfile, release verifier, and fresh-install fixture. License values were checked from the installed package manifests; the packed tarball is separately required to preserve Nuxt Email's `LICENSE` and `THIRD_PARTY_NOTICES` byte-for-byte.
+This record covers the eight direct runtime dependencies of the current `@lupinum/nuxt-email` candidate as reviewed on 2026-07-23. Versions are the exact packages exercised by the lockfile, release verifier, and fresh-install fixture. License values were checked from the installed package manifests; the packed tarball is separately required to preserve Nuxt Email's `LICENSE` and `THIRD_PARTY_NOTICES` byte-for-byte.
 
 | Package | Tested version | Relationship | Purpose | License |
 | --- | ---: | --- | --- | --- |
@@ -11,7 +11,6 @@ This record covers the nine direct runtime dependencies of the current `@lupinum
 | `html-to-text` | `9.0.5` | Direct dependency | Converts the final rendered HTML into the deterministic plain-text fallback. | MIT |
 | `htmlparser2` | `10.1.0` | Direct dependency | Walks marker-scoped Tailwind output and decodes Markdown URL attributes before scheme validation. | MIT |
 | `marked` | `15.0.12` | Direct dependency | Parses `EMarkdown` source before it is emitted with email-safe inline styles. | MIT |
-| `prismjs` | `1.30.0` | Direct dependency | Tokenizes `ECodeBlock` source with the bundled, statically imported grammar registry. | MIT |
 | `tailwindcss` | `4.1.18` | Direct dependency | Compiles Tailwind v4 utilities used inside `ETailwind`; compatible declarations are inlined and residual rules are emitted to the head. | MIT |
 
 Nuxt `^4.4.8` and Vue `^3.5.35` are peer dependencies rather than hidden runtime copies. Nuxt `4.4.8` with Vue `3.5.40` is the verified baseline. The release verifier also gates on the current Nuxt release; its Nuxt `4.5.0` run is currently blocked before this module loads by the upstream Vite builder's undeclared `unplugin` import.

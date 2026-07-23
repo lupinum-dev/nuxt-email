@@ -6,11 +6,11 @@ Nuxt Email 0.1.0 is compared against React Email 6.9.0 and @react-email/render 2
 
 | Runnable | Passed | Failed | Unsupported React components |
 | ---: | ---: | ---: | ---: |
-| 61 | 61 | 0 | 0 |
+| 57 | 57 | 0 | 1 |
 
 Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
 Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b8032824`
+Oracle SHA-256: `3e566f12eee11277248c2c4303dcccf43be2b29419410866d67d3ef2ab8a25fd`
 
 ## Classifications
 
@@ -18,9 +18,9 @@ Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b803282
 | --- | ---: | ---: | ---: |
 | exact | 10 | 10 | 0 |
 | intentional-divergence | 8 | 8 | 0 |
-| normalized | 38 | 38 | 0 |
+| normalized | 34 | 34 | 0 |
 | semantic | 5 | 5 | 0 |
-| unsupported | 0 | 0 | 0 |
+| unsupported | 1 | 0 | 0 |
 
 ## Supported components and utilities
 
@@ -30,7 +30,6 @@ Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b803282
 | CompleteBasicEmail | 1 | 1 | 0 |
 | EBody | 1 | 1 | 0 |
 | EButton | 3 | 3 | 0 |
-| ECodeBlock | 4 | 4 | 0 |
 | ECodeInline | 2 | 2 | 0 |
 | EContainer | 1 | 1 | 0 |
 | EFont | 3 | 3 | 0 |
@@ -66,7 +65,7 @@ Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b803282
 
 | React component | Reference | Reason |
 | --- | --- | --- |
-
+| CodeBlock | packages/react-email/src/components/code-block/code-block.tsx | Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component. |
 
 ## Additional behavioral divergences and notes
 
@@ -76,7 +75,7 @@ Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b803282
 - **Only inline/static presentation-table padding can move to a cell.** Physical padding already known at render time — author `style` and non-variant Tailwind utilities — moves from ESection, EContainer, and ERow tables to a `<td>`. Responsive or pseudo-class padding remains a media/pseudo rule on the table because there is no inline value to relocate. For clients that force collapsed table borders, put responsive padding on an inner EColumn (a real `<td>`) instead.
 - **ECodeInline excludes its compatibility copy from plain text.** HTML retains the hidden Orange.fr fallback span, but `renderPlainText` skips that copy so recipients receive the code once. React Email emits it twice.
 - **ETailwind moves non-inlinable rules to `<head>`.** Media-query and pseudo-class rules that cannot be inlined are collected into a `<style>` element in the document `<head>` (a `<head>` inside `<Tailwind>` is required, otherwise rendering throws), residual class names are sanitized, and `mso-*` style properties survive inlining. Output tracks the pinned Tailwind version compiled by the engine.
-- **ETailwind reaches classes inside nested components.** The slot-visible subtree is inlined by a VNode transform, exactly as before. Classes emitted *inside* nested user components — which the transform never sees — are reached three ways: E* primitives with style logic (Body, Text, Button, Section, Container, Row, Link, Img, Hr) self-inline via provide/inject; plain HTML elements are inlined by a post-render, marker-scoped string pass that leaves every other byte (MSO conditional comments included) untouched; and the head `<style>` is completed post-render with the full non-inlinable CSS, including classes discovered only while nested components rendered. Structural/head-only primitives without style logic (EHtml, EHeading, EColumn) are handled by the same post-render plain-element pass; ECodeInline, ECodeBlock, EMarkdown, EPreview, and EFont are excluded (their `class`/head semantics are not Tailwind style targets). Nested `<Tailwind>` boundaries are not a supported configuration.
+- **ETailwind renders user components exactly once.** E* primitives with style-derived markup (Body, Text, Button, Section, Container, Row, Link, Img, Hr) resolve classes through the provided render context. After SSR, one marker-scoped pass handles native and structural elements and completes non-inlinable `<head>` CSS without re-invoking slots. ECodeInline, EMarkdown, EPreview, and EFont are excluded because their class/head semantics are not Tailwind style targets. Nested `<Tailwind>` boundaries are not supported.
 
 ## Behavior cases
 
@@ -88,10 +87,6 @@ Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b803282
 | button-asymmetric-text | renderPlainText with EButton | exact | passed | 1 |
 | button-no-padding | EButton | normalized | passed | 3 |
 | button-padding | EButton | normalized | passed | 3 |
-| code-block-attributes | ECodeBlock | normalized | passed | 1 |
-| code-block-basic | ECodeBlock | normalized | passed | 4 |
-| code-block-css-lang | ECodeBlock | normalized | passed | 2 |
-| code-block-line-numbers | ECodeBlock | normalized | passed | 2 |
 | code-inline-basic | ECodeInline | intentional-divergence | passed | 3 |
 | code-inline-no-class | ECodeInline | intentional-divergence | passed | 2 |
 | complete-basic-email | CompleteBasicEmail | semantic | passed | 4 |
