@@ -1,14 +1,13 @@
 # Email client PROOF KIT
 
-Tools for the release-blocking manual step: rendering a representative batch of
-emails and confirming they display correctly in real email clients. Everything up to
+Tools for the release-blocking manual step: rendering a representative email and
+confirming it displays correctly in real email clients. Everything up to
 the moment a human looks at the rendered mail is automated here; the visual sign-off
 is done by a person against
 [`docs/release/client-qa-checklist.md`](../docs/release/client-qa-checklist.md).
 
-Zero new dependencies: the `.vue` template is compiled with `vue/compiler-sfc`
-(shipped with Vue), rendered through the frozen `renderEmailComponent`, and the MIME
-container is hand-assembled by a small encoder in `generate-proofs.ts`.
+The proof uses the same component renderer as production. The MIME container is
+hand-assembled by a small encoder in `generate-proofs.ts`.
 
 ## Scripts
 
@@ -22,7 +21,6 @@ Writes to `release-artifacts/proofs/` (git-ignored):
 
 | Proof | Source | Risk areas exercised |
 | --- | --- | --- |
-| `welcome` | `playground/app/emails/welcome.vue` (compiled SFC) | The canonical playground template with real fixture props; proves the SFC compile path end to end. |
 | `proof-kit` | dedicated template in `generate-proofs.ts` | `defineEmail` subject (non-ASCII), `EPreview` preheader, `EFont` webfont, `ETailwind` with a `sm:` media query and a `dark:` variant, an MSO-padded `EButton`, a `Section`/`Row`/`Column` table layout, and `EMarkdown`. |
 
 For each proof it emits:

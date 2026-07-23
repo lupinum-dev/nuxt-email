@@ -1,24 +1,19 @@
 /**
  * Email-client PROOF KIT generator.
  *
- * Renders a batch of representative emails to `release-artifacts/proofs/`, writing
+ * Renders a representative email to `release-artifacts/proofs/`, writing
  * for each a `<name>.html`, a `<name>.txt`, and a valid RFC 5322 `.eml`
  * (multipart/alternative, quoted-printable, CRLF line endings) that opens cleanly
  * when double-clicked in Apple Mail / Outlook. A `manifest.json` describes the batch
  * so `send-proofs.ts` and the proof test can consume it without re-rendering.
  *
- * Zero new dependencies: the SFC is compiled with `vue/compiler-sfc` (already present
- * via Vue), rendered through the frozen `renderEmailComponent`, and the MIME container
- * is hand-assembled by the small encoder below.
- *
  * Run: `node --import tsx scripts/generate-proofs.ts` (or `pnpm proofs:generate`).
  */
 import type { Component } from 'vue'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { defineComponent, h } from 'vue'
-import { compileScript, parse } from 'vue/compiler-sfc'
 import {
   EBody,
   EButton,
@@ -39,7 +34,6 @@ import {
 } from '../src/runtime/components'
 import { defineEmail } from '../src/runtime/render/define-email'
 import { renderEmailComponent } from '../src/runtime/render/render-email-component'
-import welcomeFixtures from '../playground/app/emails/welcome.fixtures'
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = dirname(scriptsDir)
@@ -226,36 +220,6 @@ export function buildEml(options: BuildEmlOptions): string {
   return [...headers, '', ...body].join('\r\n')
 }
 
-// ---------------------------------------------------------------------------
-// Template loading & the proof batch.
-// ---------------------------------------------------------------------------
-
-/**
- * Compile a `.vue` email template to an SSR component through `vue/compiler-sfc`.
- * The compiled module is written next to the repo (so bare `vue` imports resolve) and
- * deleted once imported. Templates whose `<script setup>` uses only Vue compiler
- * macros (such as defineProps and defineOptions) need no extra module resolution.
- */
-async function loadSfcComponent(vuePath: string, id: string): Promise<Component> {
-  const source = await readFile(vuePath, 'utf8')
-  const { descriptor } = parse(source, { filename: `${id}.vue` })
-  const compiled = compileScript(descriptor, {
-    id,
-    inlineTemplate: true,
-    templateOptions: { ssr: true },
-  })
-  const tempDir = await mkdtemp(join(repoRoot, '.proof-compiled-'))
-  try {
-    const modulePath = join(tempDir, `${id}.mts`)
-    await writeFile(modulePath, compiled.content, 'utf8')
-    const module = await import(pathToFileURL(modulePath).href) as { default: Component }
-    return module.default
-  }
-  finally {
-    await rm(tempDir, { recursive: true, force: true })
-  }
-}
-
 const slot = (children: unknown) => ({ default: () => children })
 
 /**
@@ -374,18 +338,8 @@ interface ProofSpec {
   fallbackSubject: string
 }
 
-async function proofSpecs(): Promise<ProofSpec[]> {
-  const welcome = await loadSfcComponent(
-    join(repoRoot, 'playground/app/emails/welcome.vue'),
-    'welcome',
-  )
+function proofSpecs(): ProofSpec[] {
   return [
-    {
-      name: 'welcome',
-      component: welcome,
-      props: welcomeFixtures,
-      fallbackSubject: `Welcome to ${welcomeFixtures.workspaceName}`,
-    },
     {
       name: 'proof-kit',
       component: ProofKitEmail,
@@ -428,7 +382,7 @@ export async function generateProofs(options: GenerateProofsOptions = {}): Promi
   const outDir = options.outDir ?? join(repoRoot, 'release-artifacts/proofs')
   await mkdir(outDir, { recursive: true })
 
-  const specs = await proofSpecs()
+  const specs = proofSpecs()
   const results: ProofResult[] = []
   for (const spec of specs) {
     const result = await renderProof(spec)

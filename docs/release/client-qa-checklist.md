@@ -80,7 +80,7 @@ Fill one row per client. Verify **both** light and dark for every proof before m
 a client passed. Use the notes column for any per-check failures (reference the check
 IDs above, e.g. "P3 fail: button padding collapsed").
 
-| Client | Mode | `welcome` (L / D) | `proof-kit` (L / D) | Verifier | Date | Pass/Fail | Notes |
+| Client | Mode | `proof-kit` (L / D) | Verifier | Date | Pass/Fail | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Gmail — web | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
 | Gmail — iOS app | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |

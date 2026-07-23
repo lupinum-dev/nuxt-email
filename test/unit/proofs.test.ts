@@ -92,8 +92,8 @@ describe('generateProofs', () => {
     await rm(outDir, { recursive: true, force: true })
   })
 
-  it('renders the welcome and proof-kit emails', () => {
-    expect(manifest.proofs.map(proof => proof.name)).toEqual(['welcome', 'proof-kit'])
+  it('renders the proof-kit email', () => {
+    expect(manifest.proofs.map(proof => proof.name)).toEqual(['proof-kit'])
     expect(manifest.from).toBe('proofs@example.invalid')
     expect(manifest.to).toBe('proofs@example.invalid')
   })
@@ -136,11 +136,9 @@ describe('generateProofs', () => {
     expect(eml).toContain(`--${boundary}--${CRLF}`)
   })
 
-  it('base64 encodes the non-ASCII proof-kit subject and passes the ASCII welcome subject through', async () => {
+  it('base64 encodes the non-ASCII proof-kit subject', async () => {
     const proofKitEml = await readFile(join(outDir, 'proof-kit.eml'), 'latin1')
-    const welcomeEml = await readFile(join(outDir, 'welcome.eml'), 'latin1')
 
     expect(proofKitEml).toMatch(/Subject: =\?utf-8\?B\?/)
-    expect(welcomeEml).toContain('Subject: Welcome to Northstar')
   })
 })
