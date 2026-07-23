@@ -30,6 +30,11 @@ describe('email document assembly', () => {
     '<html><head></head></html>',
     '<html><body>One</body><body>Two</body></html>',
     '<html><body>One</body></html><html><body>Two</body></html>',
+    '<html></body><body></html>',
+    '<html><p>Outside body</p><body>Inside</body></html>',
+    '<html><body>Inside</body><p>Outside body</p></html>',
+    '<p>Outside root</p><html><body>Inside</body></html>',
+    '<html><body>Inside</body></html><p>Outside root</p>',
   ])('rejects an incomplete or ambiguous document root: %j', (html) => {
     expect(() => assertCompleteEmailDocument(`${EMAIL_DOCTYPE}${html}`))
       .toThrow('Email templates must render exactly one <html> root containing exactly one <body>')

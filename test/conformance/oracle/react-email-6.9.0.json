@@ -538,7 +538,7 @@
     "code-inline-basic": {
       "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
       "nuxtComponent": "ECodeInline",
-      "classification": "normalized",
+      "classification": "intentional-divergence",
       "input": {
         "className": "inline-code",
         "child": "const x = 1;"
@@ -548,12 +548,13 @@
         "cino code copy",
         "cio span copy always present"
       ],
+      "intentionalDivergence": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\"><style>\n        meta ~ .cino {\n          display: none !important;\n          opacity: 0 !important;\n        }\n\n        meta ~ .cio {\n          display: block !important;\n        }\n      </style><code class=\"inline-code cino\">const x = 1;</code><span class=\"inline-code cio\" style=\"display:none\">const x = 1;</span></p><!--/$-->"
     },
     "code-inline-no-class": {
       "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
       "nuxtComponent": "ECodeInline",
-      "classification": "normalized",
+      "classification": "intentional-divergence",
       "input": {
         "child": "const x = 1;"
       },
@@ -561,6 +562,7 @@
         "unclassed code copy is ` cino`",
         "unclassed span copy is ` cio`"
       ],
+      "intentionalDivergence": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><p style=\"font-size:14px;line-height:24px;margin-top:16px;margin-bottom:16px\"><style>\n        meta ~ .cino {\n          display: none !important;\n          opacity: 0 !important;\n        }\n\n        meta ~ .cio {\n          display: block !important;\n        }\n      </style><code class=\" cino\">const x = 1;</code><span class=\" cio\" style=\"display:none\">const x = 1;</span></p><!--/$-->"
     },
     "code-block-basic": {

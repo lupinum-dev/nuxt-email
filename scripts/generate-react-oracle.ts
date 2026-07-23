@@ -600,16 +600,18 @@ async function generateOracle() {
     'code-inline-basic': await renderCase({
       reactReference: 'packages/react-email/src/components/code-inline/code-inline.tsx',
       nuxtComponent: 'ECodeInline',
-      classification: 'normalized',
+      classification: 'intentional-divergence',
       input: { className: 'inline-code', child: 'const x = 1;' },
       semanticAssertions: ['Orange.fr style rule', 'cino code copy', 'cio span copy always present'],
+      intentionalDivergence: 'The hidden Orange.fr compatibility copy is excluded from recipient plain text.',
     }, React.createElement(Text, null, React.createElement(CodeInline, { className: 'inline-code' }, 'const x = 1;'))),
     'code-inline-no-class': await renderCase({
       reactReference: 'packages/react-email/src/components/code-inline/code-inline.tsx',
       nuxtComponent: 'ECodeInline',
-      classification: 'normalized',
+      classification: 'intentional-divergence',
       input: { child: 'const x = 1;' },
       semanticAssertions: ['unclassed code copy is ` cino`', 'unclassed span copy is ` cio`'],
+      intentionalDivergence: 'The hidden Orange.fr compatibility copy is excluded from recipient plain text.',
     }, React.createElement(Text, null, React.createElement(CodeInline, null, 'const x = 1;'))),
     'code-block-basic': await renderCase({
       reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',

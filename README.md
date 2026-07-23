@@ -190,7 +190,7 @@ Delivering that batch and completing the [client QA checklist](https://github.co
 
 ## Compatibility and limits
 
-Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for supported behavior, intentional Vue/email-safety divergences, and unsupported components. It currently records **61 of 61 runnable behaviors passing**: 10 exact, 40 normalized, 5 semantic, and 6 intentional divergences, against React Email `6.9.0`, `@react-email/render` `2.1.0`, and source commit `6eb428924c4c2774228a07cbec1977ad8898f143`; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
+Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for supported behavior, intentional Vue/email-safety divergences, and unsupported components. It currently records **61 of 61 runnable behaviors passing**: 10 exact, 38 normalized, 5 semantic, and 8 intentional divergences, against React Email `6.9.0`, `@react-email/render` `2.1.0`, and source commit `6eb428924c4c2774228a07cbec1977ad8898f143`; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
 
 The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configuration options, and a public registry API. Sending and subject/recipient delivery remain application-owned.
 

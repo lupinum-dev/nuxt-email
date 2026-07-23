@@ -151,7 +151,7 @@ Button padding accepts finite non-negative numbers or `px`, `em`, `rem`, and `%`
 
 `ECodeInline` renders inline code inside a text flow. Place it inside `EText` (or another text element). It accepts safe HTML attributes and forwards them, plus `style`, to both emitted elements.
 
-It renders three siblings: a `<style>` with the Orange.fr webmail compatibility rule, a visible `<code>` element, and a hidden copy `<span>` (`display:none`). Because the content is emitted twice, plain-text conversion contains it twice; this matches React Email exactly.
+It renders three siblings: a `<style>` with the Orange.fr webmail compatibility rule, a visible `<code>` element, and a hidden copy `<span>` (`display:none`). The hidden compatibility copy is excluded from plain-text conversion, so recipients receive the code once.
 
 ```vue
 <EText>

@@ -11,7 +11,7 @@
     "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
-  "oracleSha256": "2b641c670b290cdba25c7e43f4c4c7cfdb30ce7d9924c5b76830f768d76e3a4b",
+  "oracleSha256": "9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b8032824",
   "summary": {
     "failed": 0,
     "passed": 61,
@@ -21,8 +21,8 @@
   "classificationCounts": {
     "normalized": {
       "failed": 0,
-      "passed": 40,
-      "total": 40
+      "passed": 38,
+      "total": 38
     },
     "semantic": {
       "failed": 0,
@@ -36,8 +36,8 @@
     },
     "intentional-divergence": {
       "failed": 0,
-      "passed": 6,
-      "total": 6
+      "passed": 8,
+      "total": 8
     },
     "unsupported": {
       "failed": 0,
@@ -315,7 +315,7 @@
     },
     {
       "id": "code-inline-basic",
-      "classification": "normalized",
+      "classification": "intentional-divergence",
       "status": "passed",
       "nuxtComponent": "ECodeInline",
       "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
@@ -324,6 +324,7 @@
         "cino code copy",
         "cio span copy always present"
       ],
+      "intentionalDivergence": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
       "test": {
         "file": "test/conformance/code-inline.test.ts",
         "name": "ECodeInline > matches the oracle three-sibling structure with user class merged before cino/cio"
@@ -331,7 +332,7 @@
     },
     {
       "id": "code-inline-no-class",
-      "classification": "normalized",
+      "classification": "intentional-divergence",
       "status": "passed",
       "nuxtComponent": "ECodeInline",
       "reactReference": "packages/react-email/src/components/code-inline/code-inline.tsx",
@@ -339,6 +340,7 @@
         "unclassed code copy is ` cino`",
         "unclassed span copy is ` cio`"
       ],
+      "intentionalDivergence": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
       "test": {
         "file": "test/conformance/code-inline.test.ts",
         "name": "ECodeInline > renders the unclassed case, normalizing away React's insignificant leading class space"
@@ -1094,6 +1096,16 @@
     }
   ],
   "intentionalDivergences": [
+    {
+      "id": "code-inline-basic",
+      "note": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
+      "status": "passed"
+    },
+    {
+      "id": "code-inline-no-class",
+      "note": "The hidden Orange.fr compatibility copy is excluded from recipient plain text.",
+      "status": "passed"
+    },
     {
       "id": "html-defaults",
       "note": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",

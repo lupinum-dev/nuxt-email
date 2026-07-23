@@ -10,15 +10,15 @@ Nuxt Email 0.1.0 is compared against React Email 6.9.0 and @react-email/render 2
 
 Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
 Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `2b641c670b290cdba25c7e43f4c4c7cfdb30ce7d9924c5b76830f768d76e3a4b`
+Oracle SHA-256: `9c6882f2d514e9ba0ff4367a0d98e96bb5f858086ada084096f0b066b8032824`
 
 ## Classifications
 
 | Classification | Total | Passed | Failed |
 | --- | ---: | ---: | ---: |
 | exact | 10 | 10 | 0 |
-| intentional-divergence | 6 | 6 | 0 |
-| normalized | 40 | 40 | 0 |
+| intentional-divergence | 8 | 8 | 0 |
+| normalized | 38 | 38 | 0 |
 | semantic | 5 | 5 | 0 |
 | unsupported | 0 | 0 | 0 |
 
@@ -53,6 +53,8 @@ Oracle SHA-256: `2b641c670b290cdba25c7e43f4c4c7cfdb30ce7d9924c5b76830f768d76e3a4
 
 | Case | Status | Reason |
 | --- | --- | --- |
+| code-inline-basic | passed | The hidden Orange.fr compatibility copy is excluded from recipient plain text. |
+| code-inline-no-class | passed | The hidden Orange.fr compatibility copy is excluded from recipient plain text. |
 | html-defaults | passed | Vue SSR does not inject React 19's implicit empty head into a standalone html element. |
 | preview-max-length | passed | EPreview omits React 19 title output and keeps hiding and plain-text exclusion invariant because Vue SSR cannot safely hoist title into head. |
 | preview-short | passed | React 19 hoists Preview title output into head; Vue authors place title explicitly in EHead. EPreview also keeps hiding styles and data-skip-in-text fixed so user attributes cannot expose filler. |
@@ -72,7 +74,7 @@ Oracle SHA-256: `2b641c670b290cdba25c7e43f4c4c7cfdb30ce7d9924c5b76830f768d76e3a4
 - **EMarkdown rejects active content.** Unlike the pinned React Email implementation, EMarkdown rejects raw HTML and URL schemes outside `http`, `https`, `mailto`, `tel`, and `cid` (relative URLs remain valid). HTML-looking code spans and fences are escaped. This deliberate safety divergence prevents Markdown content from becoming an implicit raw-HTML escape hatch.
 - **Presentation tables reject fixed attributes.** ESection, EContainer, and ERow throw a `TypeError` when passed `border`, `cellpadding`, `cellspacing`, or `role`. React Email silently discards these overrides; nuxt-email fails loudly to keep the email-client-safe table layout an invariant.
 - **Only inline/static presentation-table padding can move to a cell.** Physical padding already known at render time — author `style` and non-variant Tailwind utilities — moves from ESection, EContainer, and ERow tables to a `<td>`. Responsive or pseudo-class padding remains a media/pseudo rule on the table because there is no inline value to relocate. For clients that force collapsed table borders, put responsive padding on an inner EColumn (a real `<td>`) instead.
-- **ECodeInline duplicates content in plain text (matches React).** ECodeInline renders its content twice, a visible `<code>` and a hidden copy span, so `renderPlainText` emits the content twice. This is faithful to React Email and is noted only to prevent surprise; it is not a divergence.
+- **ECodeInline excludes its compatibility copy from plain text.** HTML retains the hidden Orange.fr fallback span, but `renderPlainText` skips that copy so recipients receive the code once. React Email emits it twice.
 - **ETailwind moves non-inlinable rules to `<head>`.** Media-query and pseudo-class rules that cannot be inlined are collected into a `<style>` element in the document `<head>` (a `<head>` inside `<Tailwind>` is required, otherwise rendering throws), residual class names are sanitized, and `mso-*` style properties survive inlining. Output tracks the pinned Tailwind version compiled by the engine.
 - **ETailwind reaches classes inside nested components.** The slot-visible subtree is inlined by a VNode transform, exactly as before. Classes emitted *inside* nested user components — which the transform never sees — are reached three ways: E* primitives with style logic (Body, Text, Button, Section, Container, Row, Link, Img, Hr) self-inline via provide/inject; plain HTML elements are inlined by a post-render, marker-scoped string pass that leaves every other byte (MSO conditional comments included) untouched; and the head `<style>` is completed post-render with the full non-inlinable CSS, including classes discovered only while nested components rendered. Structural/head-only primitives without style logic (EHtml, EHeading, EColumn) are handled by the same post-render plain-element pass; ECodeInline, ECodeBlock, EMarkdown, EPreview, and EFont are excluded (their `class`/head semantics are not Tailwind style targets). Nested `<Tailwind>` boundaries are not a supported configuration.
 
@@ -90,8 +92,8 @@ Oracle SHA-256: `2b641c670b290cdba25c7e43f4c4c7cfdb30ce7d9924c5b76830f768d76e3a4
 | code-block-basic | ECodeBlock | normalized | passed | 4 |
 | code-block-css-lang | ECodeBlock | normalized | passed | 2 |
 | code-block-line-numbers | ECodeBlock | normalized | passed | 2 |
-| code-inline-basic | ECodeInline | normalized | passed | 3 |
-| code-inline-no-class | ECodeInline | normalized | passed | 2 |
+| code-inline-basic | ECodeInline | intentional-divergence | passed | 3 |
+| code-inline-no-class | ECodeInline | intentional-divergence | passed | 2 |
 | complete-basic-email | CompleteBasicEmail | semantic | passed | 4 |
 | complete-basic-email-text | renderPlainText | exact | passed | 2 |
 | container-padding | EContainer | normalized | passed | 3 |

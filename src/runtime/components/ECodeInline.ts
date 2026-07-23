@@ -50,8 +50,9 @@ export const ECodeInline = defineComponent({
         // Renders only on Orange.fr
         h('span', {
           ...attributes,
-          class: `${userClass} cio`,
-          style: mergeEmailStyles({ display: 'none' }, style),
+          'class': `${userClass} cio`,
+          'style': mergeEmailStyles({ display: 'none' }, style),
+          'data-skip-in-text': 'true',
         }, children),
       ]
     }
