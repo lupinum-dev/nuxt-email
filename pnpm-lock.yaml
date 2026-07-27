@@ -104,11 +104,11 @@ importers:
   docs-site:
     dependencies:
       '@lupinum/ginko-content':
-        specifier: file:./vendor/lupinum-ginko-content-0.3.0-rc.5.tgz
-        version: file:docs-site/vendor/lupinum-ginko-content-0.3.0-rc.5.tgz(dd3bccfd47425ea2379c75a22b959df7)
+        specifier: 0.3.2
+        version: 0.3.2(dd3bccfd47425ea2379c75a22b959df7)
       '@lupinum/ginko-docs':
-        specifier: ^0.2.2
-        version: 0.2.2(5c4e6a380e4c2ae0017246c1aba43454)
+        specifier: ^0.2.3
+        version: 0.2.3(e124827bd0fd448c07d7a08086673102)
       nuxt:
         specifier: 4.4.8
         version: 4.4.8(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@types/node@26.1.1)(@vue/compiler-sfc@3.5.40)(cac@6.7.14)(commander@13.1.0)(db0@0.3.4)(esbuild@0.28.1)(eslint@10.7.0(jiti@2.7.0))(ioredis@5.11.1)(lightningcss@1.32.0)(magicast@0.5.3)(optionator@0.9.4)(rollup-plugin-visualizer@7.0.1(rollup@4.62.2))(rollup@4.62.2)(srvx@0.11.22)(terser@5.49.0)(tsx@4.23.1)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))(vue-tsc@3.3.7(typescript@5.9.3))(yaml@2.9.0)
@@ -929,9 +929,8 @@ packages:
   '@kwsites/promise-deferred@1.1.1':
     resolution: {integrity: sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==}
 
-  '@lupinum/ginko-content@file:docs-site/vendor/lupinum-ginko-content-0.3.0-rc.5.tgz':
-    resolution: {integrity: sha512-bbLw6PdGEpRDlycEYr01YN6NHxvq4ioL/7QeywbpKMQIAmUJmLvkXdhbbI11stsca8PPQ2gPzgAMDd59uRZ/eQ==, tarball: file:docs-site/vendor/lupinum-ginko-content-0.3.0-rc.5.tgz}
-    version: 0.3.0-rc.5
+  '@lupinum/ginko-content@0.3.2':
+    resolution: {integrity: sha512-0Ynn1+ZB5HUECcFkZi96IsUD2mjpcslYmoP2XasDK2KTJWQ60FKJeAbiaGb/MwpBDQjTLQXFkQIdAPyHleXwvQ==}
     engines: {node: ^22.18.0 || ^24.11.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
@@ -945,11 +944,12 @@ packages:
       vitest:
         optional: true
 
-  '@lupinum/ginko-docs@0.2.2':
-    resolution: {integrity: sha512-9D/zt03ltnEid0MdKLg5PI4vDrwS/4HzQQLNZC/iKyaZEG3sd4cPSWVxsqO/WX6jX28pJlE+ovIPgrGgk8699A==}
+  '@lupinum/ginko-docs@0.2.3':
+    resolution: {integrity: sha512-kwiVbU0qfyaBFFj7r/idcuVEkcOqoc0Og3rA+cDsfbhVpzO2q2Ct2S32CNWIGuzUbqKiJIWmpGIas4FOhxcZaQ==}
+    engines: {node: ^22.18.0 || ^24.11.0 || >=26.0.0}
     peerDependencies:
-      '@lupinum/ginko-content': '>=0.3.0-rc.2 <0.4.0'
-      nuxt: ^4.4.6
+      '@lupinum/ginko-content': '>=0.3.2 <0.4.0'
+      nuxt: '>=4.4.7 <5'
       vue: ^3.5.35
       vue-router: ^5.1.0
 
@@ -4150,6 +4150,20 @@ packages:
   fraction.js@5.3.4:
     resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
+  framer-motion@12.42.2:
+    resolution: {integrity: sha512-5XY9luDiu0oHfHBjpDthFMh0ES+122w6p/papSJBweMkO8Sn+PW2QaEgRblQBpWFnuvZS5qvarpt/hO2pjGmnw==}
+    peerDependencies:
+      '@emotion/is-prop-valid': '*'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@emotion/is-prop-valid':
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+
   fresh@2.0.0:
     resolution: {integrity: sha512-Rx/WycZ60HOaqLKAi6cHRKKI7zxWbJ31MhntmtwMoaTeF7XFH9hhBp8vITaMidfljRQ6eYWCKkaTK+ykVJHP2A==}
     engines: {node: '>= 0.8'}
@@ -4273,6 +4287,9 @@ packages:
   hex-rgb@4.3.0:
     resolution: {integrity: sha512-Ox1pJVrDCyGHMG9CFg1tmrRUMRPRsAWYc/PinY0XzJU4K7y7vjNoLKIQ7BR5UJMCxNN8EM1MNDmHWA/B3aZUuw==}
     engines: {node: '>=6'}
+
+  hey-listen@1.0.8:
+    resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
 
   hono@4.12.31:
     resolution: {integrity: sha512-zJIHFrl6bq3RDd2YusFNCDlM8qUprxKswyi/OPzPyzKDdyBXDqWx8bZlZ7R+saTdSTatUmb3O7K4SspGPaEOQg==}
@@ -4853,6 +4870,18 @@ packages:
 
   mocked-exports@0.1.1:
     resolution: {integrity: sha512-aF7yRQr/Q0O2/4pIXm6PZ5G+jAd7QS4Yu8m+WEeEHGnbo+7mE36CbLSDQiXYV8bVL3NfmdeqPJct0tUlnjVSnA==}
+
+  motion-dom@12.42.2:
+    resolution: {integrity: sha512-5gIMWLp/PycBtJRJWRgjxke5n8dlvkSn2DrYW+tr3XcqAZY1xZh6BJyooJXCM8wdfM7wfMjkBJNLge1CKPUIRA==}
+
+  motion-utils@12.39.0:
+    resolution: {integrity: sha512-8nadJAJjTtqRkmRF36FoJTrywK9nnFmnPwnSMyxaOCU7GDjN9RTMJIxx9De8ErM+vpPhMccr/6fo5WciyQLnMQ==}
+
+  motion-v@2.3.0:
+    resolution: {integrity: sha512-J0CCfXtICCni9RjotDUBOs57xNpYI9yyBSohEOxaRHrmjwOtlw291fhRu/mdgEdSasys96R028YDDOAtWBbRaA==}
+    peerDependencies:
+      '@vueuse/core': '>=10.0.0'
+      vue: '>=3.0.0'
 
   mrmime@2.0.1:
     resolution: {integrity: sha512-Y3wQdFg2Va6etvQ5I82yUhGdsKrcYox6p7FfL1LbK2J4V01F9TGlepTIhnK24t7koZibmg82KGglhA1XK5IsLQ==}
@@ -7606,7 +7635,7 @@ snapshots:
 
   '@kwsites/promise-deferred@1.1.1': {}
 
-  '@lupinum/ginko-content@file:docs-site/vendor/lupinum-ginko-content-0.3.0-rc.5.tgz(dd3bccfd47425ea2379c75a22b959df7)':
+  '@lupinum/ginko-content@0.3.2(dd3bccfd47425ea2379c75a22b959df7)':
     dependencies:
       '@comark/vue': 0.4.0(shiki@4.3.1)(vue@3.5.40(typescript@5.9.3))
       '@nuxt/kit': 4.4.8(magicast@0.5.3)
@@ -7685,12 +7714,12 @@ snapshots:
       - webpack
       - xml2js
 
-  '@lupinum/ginko-docs@0.2.2(5c4e6a380e4c2ae0017246c1aba43454)':
+  '@lupinum/ginko-docs@0.2.3(e124827bd0fd448c07d7a08086673102)':
     dependencies:
       '@iconify-json/circle-flags': 1.2.10
       '@iconify-json/logos': 1.2.11
       '@iconify-json/lucide': 1.2.118
-      '@lupinum/ginko-content': file:docs-site/vendor/lupinum-ginko-content-0.3.0-rc.5.tgz(dd3bccfd47425ea2379c75a22b959df7)
+      '@lupinum/ginko-content': 0.3.2(dd3bccfd47425ea2379c75a22b959df7)
       '@nuxt/fonts': 0.14.0(db0@0.3.4)(esbuild@0.28.1)(ioredis@5.11.1)(magicast@0.5.3)(rollup@4.62.2)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       '@nuxt/icon': 2.3.1(magicast@0.5.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))(vue@3.5.40(typescript@5.9.3))
       '@nuxt/image': 2.0.0(@types/node@26.1.1)(db0@0.3.4)(ioredis@5.11.1)(magicast@0.5.3)(srvx@0.11.22)
@@ -7707,7 +7736,7 @@ snapshots:
       '@vueuse/core': 14.3.0(vue@3.5.40(typescript@5.9.3))
       class-variance-authority: 0.7.1
       clsx: 2.1.1
-      h3: 1.15.11
+      motion-v: 2.3.0(@vueuse/core@14.3.0(vue@3.5.40(typescript@5.9.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.40(typescript@5.9.3))
       nitropack: 2.13.4(oxc-parser@0.140.0)(srvx@0.11.22)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       nuxt: 4.4.8(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@types/node@26.1.1)(@vue/compiler-sfc@3.5.40)(cac@6.7.14)(commander@13.1.0)(db0@0.3.4)(esbuild@0.28.1)(eslint@10.7.0(jiti@2.7.0))(ioredis@5.11.1)(lightningcss@1.32.0)(magicast@0.5.3)(optionator@0.9.4)(rollup-plugin-visualizer@7.0.1(rollup@4.62.2))(rollup@4.62.2)(srvx@0.11.22)(terser@5.49.0)(tsx@4.23.1)(typescript@5.9.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))(vue-tsc@3.3.7(typescript@5.9.3))(yaml@2.9.0)
       nuxt-og-image: 6.7.3(ab0ba34f0cbf8bd26a56e6f6bcf663ff)
@@ -7731,6 +7760,7 @@ snapshots:
       - '@cfworker/json-schema'
       - '@deno/kv'
       - '@electric-sql/pglite'
+      - '@emotion/is-prop-valid'
       - '@farmfe/core'
       - '@googlemaps/markerclusterer'
       - '@libsql/client'
@@ -7768,6 +7798,7 @@ snapshots:
       - esbuild
       - eslint
       - fontless
+      - h3
       - idb-keyval
       - ioredis
       - magic-string
@@ -7777,6 +7808,8 @@ snapshots:
       - petite-vue-i18n
       - pinia
       - playwright-core
+      - react
+      - react-dom
       - react-native-b4a
       - rolldown
       - rollup
@@ -11312,6 +11345,15 @@ snapshots:
 
   fraction.js@5.3.4: {}
 
+  framer-motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+    dependencies:
+      motion-dom: 12.42.2
+      motion-utils: 12.39.0
+      tslib: 2.8.1
+    optionalDependencies:
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
   fresh@2.0.0: {}
 
   fsevents@2.3.3:
@@ -11447,6 +11489,8 @@ snapshots:
       '@types/hast': 3.0.5
 
   hex-rgb@4.3.0: {}
+
+  hey-listen@1.0.8: {}
 
   hono@4.12.31: {}
 
@@ -12045,6 +12089,25 @@ snapshots:
       ufo: 1.6.4
 
   mocked-exports@0.1.1: {}
+
+  motion-dom@12.42.2:
+    dependencies:
+      motion-utils: 12.39.0
+
+  motion-utils@12.39.0: {}
+
+  motion-v@2.3.0(@vueuse/core@14.3.0(vue@3.5.40(typescript@5.9.3)))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.40(typescript@5.9.3)):
+    dependencies:
+      '@vueuse/core': 14.3.0(vue@3.5.40(typescript@5.9.3))
+      framer-motion: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      hey-listen: 1.0.8
+      motion-dom: 12.42.2
+      motion-utils: 12.39.0
+      vue: 3.5.40(typescript@5.9.3)
+    transitivePeerDependencies:
+      - '@emotion/is-prop-valid'
+      - react
+      - react-dom
 
   mrmime@2.0.1: {}
 

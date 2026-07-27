@@ -8,6 +8,5 @@ export default defineGinkoDocsConfig({
     url: 'https://nuxt-email.lupinum.com',
   },
   locales: ['en'],
-  defaultLocale: 'en',
   blog: false,
 })
