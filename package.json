@@ -48,10 +48,6 @@
   "types": "./dist/module.d.mts",
   "files": [
     "CHANGELOG.md",
-    "docs/*.md",
-    "docs/conformance",
-    "docs/performance",
-    "docs/testing",
     "dist",
     "THIRD_PARTY_NOTICES"
   ],

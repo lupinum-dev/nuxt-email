@@ -145,11 +145,11 @@ interface RenderedEmail {
 }
 ```
 
-Do not import `renderEmail` into Vue components or other client code. Nuxt Email does not send mail, choose providers, or manage recipients. It can declare a `subject` (via `defineEmail`), but the application still owns delivery: pass the returned `html`, `text`, and optional `subject` to the provider SDK alongside that provider's own `from` and `to` fields. See the [renderer and error contract](./docs/renderer.md).
+Do not import `renderEmail` into Vue components or other client code. Nuxt Email does not send mail, choose providers, or manage recipients. It can declare a `subject` (via `defineEmail`), but the application still owns delivery: pass the returned `html`, `text`, and optional `subject` to the provider SDK alongside that provider's own `from` and `to` fields. See the [renderer contract](https://nuxt-email.lupinum.com/docs/reference/render-email).
 
 ## Test your emails
 
-Render any email component to `{ html, text, subject? }` in a unit test without booting Nuxt, using the stable testing subpath:
+Render templates that use the eighteen built-ins to `{ html, text, subject? }` without booting Nuxt, using the stable testing subpath:
 
 ```ts
 import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
@@ -199,7 +199,7 @@ Run `pnpm exec nuxt dev` and open `/__email`. The page provides the sandboxed em
 
 The byte count is exact; Gmail clipping behavior is not a cross-account or cross-client guarantee. The preview does not simulate dark mode. Test dark-mode behavior and final rendering in real target clients.
 
-Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and preview UI are excluded from production builds; do not import fixtures into production application code. Read the [preview guide](./docs/preview.md) for the exact security and fixture contract.
+Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and preview UI are excluded from production builds; do not import fixtures into production application code. Read the [preview guide](https://nuxt-email.lupinum.com/docs/guides/preview-workflow) for the exact security and fixture contract.
 
 ## Email-client proofs
 
@@ -214,9 +214,9 @@ Delivering that batch and completing the [client QA checklist](https://github.co
 
 ## Compatibility and limits
 
-Nuxt Email does not claim full React Email compatibility. The generated [conformance report](./docs/conformance/report.md) is the source of truth for runnable reference cases, intentional divergences, and unsupported components; provenance is recorded separately in the [license policy](./docs/conformance/provenance.md).
+Nuxt Email does not claim full React Email compatibility. The generated [conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md) is the source of truth for runnable reference cases, intentional divergences, and unsupported components; provenance is recorded separately in the [license policy](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/provenance.md).
 
-The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configuration options, and a public registry API. Sending and subject/recipient delivery remain application-owned.
+The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configurable discovery paths, and a public registry API. `codeBlock` is the only module option. Sending and subject/recipient delivery remain application-owned.
 
 Stable package entry points are deliberately small:
 
@@ -227,18 +227,23 @@ Stable package entry points are deliberately small:
 
 ## Documentation
 
-- [Getting started](./docs/getting-started.md)
-- [Component reference](./docs/components.md)
-- [Renderer, plain-text, error, and security contracts](./docs/renderer.md)
-- [Testing utilities (`@lupinum/nuxt-email/testing`)](./docs/testing.md)
-- [Runtime dependency and license review](./docs/runtime-dependencies.md)
-- [Development preview](./docs/preview.md)
-- [Future feature roadmap](./docs/roadmap.md)
+The [documentation site](https://nuxt-email.lupinum.com/docs) is the canonical source for public guides and API contracts:
+
+- [Getting started](https://nuxt-email.lupinum.com/docs/getting-started)
+- [Component reference](https://nuxt-email.lupinum.com/docs/components)
+- [Renderer, plain-text, error, and security contracts](https://nuxt-email.lupinum.com/docs/reference/render-email)
+- [Testing utilities (`@lupinum/nuxt-email/testing`)](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails)
+- [Development preview](https://nuxt-email.lupinum.com/docs/guides/preview-workflow)
+- [React Email migration](https://nuxt-email.lupinum.com/docs/reference/migration)
+
+Repository-only engineering and release evidence remains on GitHub:
+
+- [Runtime dependency and license review](https://github.com/Mat4m0/nuxt-email/blob/main/docs/runtime-dependencies.md)
+- [Future feature roadmap](https://github.com/Mat4m0/nuxt-email/blob/main/docs/roadmap.md)
+- [Generated conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md)
+- [Manual email-client QA](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/manual-email-client-qa.md)
+- [External beta record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/external-beta.md)
 - [Email-client proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/README-proofs.md)
-- [React Email migration](./docs/migration-from-react-email.md)
-- [Generated conformance report](./docs/conformance/report.md)
-- [Manual email-client QA](./docs/testing/manual-email-client-qa.md)
-- [External beta record](./docs/testing/external-beta.md)
 - [Changelog](./CHANGELOG.md)
 
 ## Local development

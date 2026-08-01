@@ -207,12 +207,8 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.types === './dist/module.d.mts', 'Packed package types entry must be ./dist/module.d.mts')
   invariant(
     Array.isArray(packed.files)
-    && packed.files.length === 7
+    && packed.files.length === 3
     && packed.files.includes('CHANGELOG.md')
-    && packed.files.includes('docs/*.md')
-    && packed.files.includes('docs/conformance')
-    && packed.files.includes('docs/performance')
-    && packed.files.includes('docs/testing')
     && packed.files.includes('dist')
     && packed.files.includes('THIRD_PARTY_NOTICES'),
     'Packed files allowlist differs from the release package surface',
@@ -599,12 +595,6 @@ async function verifyRelease(): Promise<void> {
       'README.md',
       'CHANGELOG.md',
       'THIRD_PARTY_NOTICES',
-      'docs/components.md',
-      'docs/conformance/report.md',
-      'docs/getting-started.md',
-      'docs/migration-from-react-email.md',
-      'docs/renderer.md',
-      'docs/runtime-dependencies.md',
       'dist/module.mjs',
       'dist/module.d.mts',
       'dist/types.d.mts',
@@ -632,7 +622,6 @@ async function verifyRelease(): Promise<void> {
     ])
     const allowedPackageFile = (path: string) => (
       allowedTopLevelFiles.has(path)
-      || path.startsWith('docs/')
       || path.startsWith('dist/')
     )
     invariant(
@@ -640,8 +629,8 @@ async function verifyRelease(): Promise<void> {
       `Packed package contains files outside the release allowlist: ${packedFiles.filter(path => !allowedPackageFile(path)).join(', ')}`,
     )
     invariant(
-      packedFiles.every(path => !path.startsWith('docs/release/')),
-      'Packed package contains the live release ledger and would create a tarball-hash cycle',
+      packedFiles.every(path => !path.startsWith('docs/')),
+      'Packed package contains repository-only documentation instead of linking to the canonical documentation site',
     )
     invariant(
       packedFiles.every(path => !/(?:^|\/)(?:node_modules|playground|scripts|src|test)(?:\/|$)/.test(path)),
