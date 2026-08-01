@@ -7,7 +7,8 @@ Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the un
 ### Added
 
 - Ordinary Vue SFC email authoring under recursive `app/emails/` discovery.
-- Eighteen auto-registered components: the document and layout primitives `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`; the content primitives `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader; plus `EFont`, `ECodeInline`, `EMarkdown`, and `ETailwind`.
+- Eighteen built-in auto-registered components: the document and layout primitives `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`; the content primitives `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader; plus `EFont`, `ECodeInline`, `EMarkdown`, and `ETailwind`.
+- Opt-in `ECodeBlock` syntax highlighting with one configured Shiki theme, a closed language allowlist, inline token colors, email-safe wrapping, optional line numbers, and a Nuxt-config-aware `#nuxt-email/testing` binding.
 - Email-safe Tailwind v4 through `ETailwind`: render-time class inlining, including utilities emitted inside nested components, with non-inlinable rules downleveled and injected into a `<head>` `<style>`.
 - `EMarkdown` conversion of Markdown source to email-safe HTML with react-dom-compatible inline styles, raw-HTML rejection, safe URL-scheme validation, and escaped code content.
 - Optional `defineEmail({ subject: () => string })`, imported from `@lupinum/nuxt-email/define-email`, that captures the template's real props in a closure; the subject is returned as `subject` on the render result and shown in the preview.
@@ -35,8 +36,8 @@ Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the un
 
 ### Intentional scope
 
-- Supported behavior is reported per case in the generated [conformance report](./docs/conformance/report.md); this release does not claim full React Email compatibility.
-- Provider adapters, send endpoints, JSX, React streaming, edge runtimes, raw HTML, configuration options, and a public registry protocol are not part of v1.
+- Supported behavior is reported per case in the generated [conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md); this release does not claim full React Email compatibility.
+- Provider adapters, send endpoints, JSX, React streaming, edge runtimes, raw HTML, configurable discovery paths, and a public registry protocol are not part of v1. `codeBlock` is the sole module option.
 - Sending remains application-owned: callers pass `{ html, text, subject? }` to their selected provider SDK.
 
 ### Supported environment

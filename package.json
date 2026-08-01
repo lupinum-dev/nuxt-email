@@ -72,7 +72,7 @@
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
+    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
     "nuxt": ">=4.4.8 <4.5.0",
@@ -80,6 +80,10 @@
   },
   "dependencies": {
     "@nuxt/kit": ">=4.4.8 <4.5.0",
+    "@shikijs/core": "4.3.1",
+    "@shikijs/engine-javascript": "4.3.1",
+    "@shikijs/langs": "4.3.1",
+    "@shikijs/themes": "4.3.1",
     "@vitejs/plugin-vue": "6.0.8",
     "css-tree": "3.2.1",
     "h3": "1.15.11",

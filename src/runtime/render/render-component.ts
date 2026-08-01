@@ -2,10 +2,12 @@ import type { Component } from 'vue'
 import type { EmailRenderContext } from './define-email'
 import { createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
-import * as emailComponents from '../components/email-components'
+import { emailComponentRegistry } from '../components/email-component-registry'
 import { applyTailwindPostRender } from '../tailwind/post-render'
 import { createEmailRenderContext, runWithEmailRenderContext } from './define-email'
 import { assembleEmailDocument } from './document'
+
+export type EmailComponentRegistry = Readonly<Record<string, Component>>
 
 type ComponentWithProps = Component & {
   props?: readonly string[] | Record<string, unknown>
@@ -50,10 +52,11 @@ export async function renderComponentToHtml(
   component: Component,
   props: Record<string, unknown> = {},
   context: EmailRenderContext = createEmailRenderContext(),
+  componentRegistry: EmailComponentRegistry = emailComponentRegistry,
 ): Promise<string> {
   assertKnownProps(component, props)
   const app = createSSRApp(component, props)
-  for (const [name, emailComponent] of Object.entries(emailComponents)) {
+  for (const [name, emailComponent] of Object.entries(componentRegistry)) {
     app.component(name, emailComponent)
   }
   // Vue SSR swallows errors thrown from an async `<script setup>` (after any
@@ -64,13 +67,27 @@ export async function renderComponentToHtml(
   // Installing a handler also makes synchronous setup/render throws resolve with a
   // captured error rather than reject, so this one path covers both cases.
   let renderFailure: { cause: unknown } | undefined
+  let unresolvedEmailComponent: string | undefined
   app.config.errorHandler = (error) => {
     renderFailure ??= { cause: error }
+  }
+  app.config.warnHandler = (message, _instance, trace) => {
+    const unresolved = message.match(/^Failed to resolve component: (E[A-Za-z0-9]+)/)?.[1]
+    if (unresolved !== undefined) {
+      unresolvedEmailComponent ??= unresolved
+      return
+    }
+    console.warn(`[Vue warn]: ${message}${trace}`)
   }
 
   const renderedHtml = await runWithEmailRenderContext(context, () => renderToString(app, context))
   if (renderFailure !== undefined) {
     throw renderFailure.cause
+  }
+  if (unresolvedEmailComponent !== undefined) {
+    throw new TypeError(
+      `Unknown email component <${unresolvedEmailComponent}>. Configure it or use a registered E* component.`,
+    )
   }
 
   const document = assembleEmailDocument(

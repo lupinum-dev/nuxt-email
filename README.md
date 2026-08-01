@@ -8,8 +8,8 @@ Nuxt Email turns `app/emails/` into a typed, Nitro-native email renderer. Author
 
 - **Nuxt-native and typed.** Template names and props are generated from the SFCs in your application. There is no sidecar build or second template registry.
 - **Tailwind v4 built for email output.** `ETailwind` inlines compatible utilities, keeps author styles authoritative, and moves media-query and pseudo-class rules into the document head.
-- **One production rendering path.** Development preview, unit-test helpers, and Nitro rendering use the same isolated Vue SSR renderer.
-- **Email-safe primitives.** Eighteen server components cover documents, table layout, content, Outlook-safe buttons, Markdown, inline code, fonts, previews, and Tailwind.
+- **One rendering core.** Development preview, testing helpers, and Nitro rendering use the same isolated Vue SSR renderer and an explicit component registry.
+- **Email-safe primitives.** Eighteen built-in server components cover documents, table layout, content, Outlook-safe buttons, Markdown, inline code, fonts, previews, and Tailwind; `ECodeBlock` is added only when configured.
 - **Behavior is verified, not hand-waved.** Covered primitives are compared case by case with a pinned React Email oracle. The generated conformance report records exact matches and intentional divergences; it does not claim universal email-client parity.
 
 ## Is it the right tool?
@@ -49,7 +49,22 @@ export default defineNuxtConfig({
 })
 ```
 
-There are no module options. Follow the [complete fresh-install guide](./docs/getting-started.md) for the release-tested setup.
+Syntax-highlighted code blocks are deliberately opt-in. Configure one Shiki theme and the closed set of languages your emails use:
+
+```ts
+export default defineNuxtConfig({
+  modules: [
+    [NuxtEmail, {
+      codeBlock: {
+        languages: ['typescript', 'vue'],
+        theme: 'github-dark',
+      },
+    }],
+  ],
+})
+```
+
+Without `codeBlock`, `ECodeBlock` is not registered and Shiki is absent from the production bundle. Follow the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation) for the supported setup.
 
 ## Author a Vue email
 
@@ -94,14 +109,14 @@ defineEmail({
 </template>
 ```
 
-The eighteen `E*` components are auto-registered for email rendering; templates do not import them:
+The eighteen built-in `E*` components are auto-registered for email rendering; templates do not import them. Configuring `codeBlock` adds `ECodeBlock`:
 
 - **Document and layout** — `EHtml`, `EHead`, `EBody`, `EContainer`, `ESection`, `ERow`, `EColumn`, `EHr`.
 - **Content** — `EHeading`, `EText`, `ELink`, `EImg`, the Outlook-safe `EButton`, and the hidden `EPreview` preheader.
-- **Typography and code** — `EFont` (`@font-face` loading) and `ECodeInline`.
+- **Typography and code** — `EFont` (`@font-face` loading), `ECodeInline`, and the opt-in `ECodeBlock`.
 - **Authoring helpers** — `EMarkdown` (Markdown to email-safe HTML) and `ETailwind` (render-time Tailwind class inlining, including utilities emitted inside nested components, with non-inlinable rules downleveled into a `<head>` `<style>`).
 
-Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, Tailwind classes, and Vue style bindings. Import `defineEmail` from `@lupinum/nuxt-email/define-email` when the template owns its subject line; its zero-argument closure captures the template's actual props, so there is no separate metadata prop type to drift. The [component reference](./docs/components.md) records every component's important props, fixed semantics, and defaults.
+Use normal `defineProps()`, slots, `v-if`, `v-for`, HTML attributes, Tailwind classes, and Vue style bindings. Import `defineEmail` from `@lupinum/nuxt-email/define-email` when the template owns its subject line; its zero-argument closure captures the template's actual props, so there is no separate metadata prop type to drift. The [component reference](https://nuxt-email.lupinum.com/docs/components) records every component's important props, fixed semantics, and defaults.
 
 `ETailwind` does not automatically load the Nuxt app stylesheet or inherit browser CSS variables. To make utilities such as `text-primary` share application colors, pass a concrete Tailwind v4 `theme` string or `config` sourced from your application's canonical design-token module. Render-time filesystem CSS imports and CSS `@plugin` imports are intentionally not resolved; executable plugins belong in `config`.
 
@@ -146,8 +161,16 @@ const { html, text } = await renderEmailComponent(Welcome, {
 })
 ```
 
+Templates that use configured components such as `ECodeBlock` must use the binding generated from the application's Nuxt configuration in a Nuxt-aware test environment after `nuxt prepare`:
+
+```ts
+import { renderEmailComponent } from '#nuxt-email/testing'
+```
+
+Both the generated helper and `renderEmail` use the same configured renderer. The standalone helper fails loudly if a template references an unregistered `E*` component.
+
 Assert on recipient-visible content and required markup rather than normalizing the
-entire document into a broad snapshot. See the [testing guide](./docs/testing.md).
+entire document into a broad snapshot. See the [testing guide](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails).
 
 ## Preview in development
 

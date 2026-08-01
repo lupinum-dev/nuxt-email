@@ -15,6 +15,7 @@ defineEmail({
 })
 
 const nextSteps = '### What happens next\n\nWe will email you when your order **ships**.'
+const highlightedSource = 'const status: string = "<ready>"'
 </script>
 
 <template>
@@ -30,6 +31,13 @@ const nextSteps = '### What happens next\n\nWe will email you when your order **
           <EText>NUXT_EMAIL_FRESH_TEMPLATE_4D91</EText>
 
           <EMarkdown :source="nextSteps" />
+
+          <ECodeBlock
+            :code="highlightedSource"
+            language="typescript"
+            line-numbers
+            style="padding:16px"
+          />
 
           <EButton :href="`https://example.com/orders/${orderNumber}`">
             View order

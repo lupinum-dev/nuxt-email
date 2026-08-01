@@ -33,8 +33,8 @@ SOFTWARE.
 Runtime libraries
 =================
 
-The following third-party libraries are used by the runtime of the Markdown and
-Tailwind components. Each is distributed under the MIT License,
+The following third-party libraries are used by the runtime of the Markdown,
+Tailwind, and opt-in syntax-highlighting components. Each is distributed under the MIT License,
 whose text is reproduced once below.
 
 - marked 15.0.12 — Markdown-to-HTML rendering in EMarkdown.
@@ -47,6 +47,12 @@ whose text is reproduced once below.
 - tailwindcss 4.1.18 — utility compilation used by ETailwind; its stylesheet CSS
   is also vendored byte-for-byte into the engine.
   Copyright (c) Tailwind Labs, Inc.
+
+- @shikijs/core, @shikijs/engine-javascript, @shikijs/langs, and
+  @shikijs/themes 4.3.1 — fine-grained TextMate syntax highlighting used only
+  when ECodeBlock is configured.
+  Copyright (c) 2021 Pine Wu
+  Copyright (c) 2023-present Anthony Fu
 
 MIT License
 

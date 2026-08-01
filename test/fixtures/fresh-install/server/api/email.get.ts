@@ -1,4 +1,6 @@
 import { UnknownEmailTemplateError } from '@lupinum/nuxt-email/errors'
+import { renderEmailComponent } from '#nuxt-email/testing'
+import WelcomeEmail from '../../app/emails/welcome.vue'
 
 export function proveGeneratedEmailTypes(): void {
   void renderEmail('welcome', {
@@ -36,8 +38,17 @@ export default defineEventHandler(async () => {
     }
   }
 
-  return renderEmail('welcome', {
+  const props = {
     orderNumber: 7319,
     recipientName: 'Ada & Lin',
-  })
+  }
+  const [production, configuredTest] = await Promise.all([
+    renderEmail('welcome', props),
+    renderEmailComponent(WelcomeEmail, props),
+  ])
+  if (JSON.stringify(production) !== JSON.stringify(configuredTest)) {
+    throw new Error('Configured testing renderer diverged from renderEmail')
+  }
+
+  return production
 })

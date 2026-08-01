@@ -5,29 +5,10 @@ import { fileURLToPath } from 'node:url'
 import { loadNuxt } from '@nuxt/kit'
 import { afterEach, describe, expect, it } from 'vitest'
 import NuxtEmail from '../src/module'
+import { EMAIL_COMPONENT_NAMES } from '../src/runtime/components/email-component-names'
 
 const temporaryDirectories: string[] = []
 const workspaceDirectory = fileURLToPath(new URL('..', import.meta.url))
-const emailComponentNames = [
-  'EBody',
-  'EButton',
-  'ECodeInline',
-  'EColumn',
-  'EContainer',
-  'EFont',
-  'EHead',
-  'EHeading',
-  'EHr',
-  'EHtml',
-  'EImg',
-  'ELink',
-  'EMarkdown',
-  'EPreview',
-  'ERow',
-  'ESection',
-  'ETailwind',
-  'EText',
-] as const
 
 async function temporaryNuxtDirectory(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'nuxt-email-module-'))
@@ -73,7 +54,7 @@ describe('Nuxt email registry regeneration', () => {
         }))
         .sort((left, right) => left.pascalName.localeCompare(right.pascalName))
 
-      expect(emailComponents).toEqual([...emailComponentNames].sort().map(componentName => ({
+      expect(emailComponents).toEqual([...EMAIL_COMPONENT_NAMES].sort().map(componentName => ({
         export: componentName,
         mode: 'server',
         pascalName: componentName,
@@ -88,6 +69,8 @@ describe('Nuxt email registry regeneration', () => {
         .toMatch(/\/runtime\/define-email\.(?:js|ts)$/)
       expect(nitroAlias?.['@lupinum/nuxt-email/errors']?.replaceAll('\\', '/'))
         .toMatch(/\/runtime\/errors\.(?:js|ts)$/)
+      expect(nitroAlias?.['#nuxt-email/testing']?.replaceAll('\\', '/'))
+        .toMatch(/\/runtime\/testing\/index\.(?:js|ts)$/)
       for (const specifier of [
         '@lupinum/nuxt-email/define-email',
         '@lupinum/nuxt-email/errors',

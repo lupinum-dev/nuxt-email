@@ -24,6 +24,7 @@ interface BuildResult {
 
 const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
+const codeBlockFixture = fileURLToPath(new URL('./fixtures/code-block', import.meta.url))
 const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
 const executeFile = promisify(execFile)
 const childOutputStart = 'NUXT_EMAIL_PRODUCTION_RESULT_START'
@@ -175,6 +176,8 @@ describe('production server boundary', () => {
       expect(serverOutput).toContain('html-to-text')
       expect(serverOutput).not.toContain('Prism.languages')
       expect(serverOutput).not.toContain('ECodeBlock')
+      expect(serverOutput).not.toContain('@shikijs')
+      expect(serverOutput).not.toContain('createHighlighterCore')
       expect(serverFiles.some(path => path.includes('/ECodeBlock-'))).toBe(false)
 
       const routeDirectory = join(result.outputDir, 'server/chunks/routes/api')
@@ -205,6 +208,56 @@ describe('production server boundary', () => {
         name: 'UnknownEmailTemplateError',
         requestedName: 'not-registered',
       })
+    }
+    finally {
+      await rm(result.temporaryDirectory, { recursive: true, force: true })
+    }
+  })
+
+  it('bundles and renders only explicitly enabled code-block grammars', { timeout: 120_000 }, async () => {
+    const result = await buildFixture(codeBlockFixture)
+
+    try {
+      const serverFiles = (await collectFiles(join(result.outputDir, 'server')))
+        .filter(path => /\.(?:js|json|map|mjs)$/.test(path))
+      const serverOutput = (
+        await Promise.all(serverFiles.map(path => readFile(path, 'utf8')))
+      ).join('\n')
+
+      expect(serverOutput).toContain('ECodeBlock')
+      expect(serverOutput).toContain('source.ts')
+      expect(serverOutput).not.toContain('source.python')
+      expect(serverOutput).not.toContain('bundle/web')
+
+      const routePath = serverFiles.find(path => (
+        path.replaceAll('\\', '/').endsWith('/chunks/routes/api/render-code.get.mjs')
+      ))
+      expect(routePath).toBeDefined()
+      const routeUrl = pathToFileURL(routePath!).href
+      const { stdout } = await executeFile(process.execPath, [
+        '--input-type=module',
+        '--eval',
+        `const route = await import(${JSON.stringify(routeUrl)}); const handler = typeof route.default === 'function' ? route.default : Object.values(route).find(value => value && typeof value === 'object' && typeof value.default === 'function')?.default; if (typeof handler !== 'function') throw new TypeError('Built code-block route exposed no handler'); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await handler()) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
+      ], {
+        env: { ...process.env, NODE_ENV: 'production' },
+      })
+      const rendered = parseChildOutput<{
+        concurrentEqual: boolean
+        configuredTest: { html: string, text: string }
+        production: { html: string, text: string }
+      }>(stdout)
+      const { configuredTest, production } = rendered
+
+      expect(rendered.concurrentEqual).toBe(true)
+      expect(configuredTest).toEqual(production)
+      expect(production.html).toContain('data-code-theme="github-dark"')
+      expect(production.html).toContain('color:#F97583')
+      expect(production.html).toContain('color:#9ECBFF')
+      expect(production.html).toContain('padding:16px')
+      expect(production.html).not.toContain('width:100%')
+      expect(production.html).toContain('&lt;script&gt;')
+      expect(production.html).not.toContain('<script>')
+      expect(production.text).toBe('const answer: string = "<script>"')
     }
     finally {
       await rm(result.temporaryDirectory, { recursive: true, force: true })

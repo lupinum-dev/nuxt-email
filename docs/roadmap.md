@@ -29,7 +29,7 @@ The default decision is to keep the core small. A useful idea can remain in this
 
 ## Release rule
 
-Do not add another renderer feature before `1.0.0`. Until v1 is published, the only permitted product changes are fixes found by the external application beta, real-client Gmail/Apple Mail/Outlook QA, the current Nuxt release gate, or documentation review.
+Do not add another renderer feature beyond the accepted opt-in `ECodeBlock` before `1.0.0`. Until v1 is published, the only permitted product changes are fixes found by the external application beta, real-client Gmail/Apple Mail/Outlook QA, the current Nuxt release gate, or documentation review.
 
 ## Priority 1: documentation and evaluation
 

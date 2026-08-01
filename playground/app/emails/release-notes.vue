@@ -17,26 +17,6 @@ defineEmail({
   subject: () => `${props.productName} ${props.version} — what's new`,
 })
 
-// ECodeBlock's `theme` is a plain style map; a template can define one inline
-// without importing a named theme.
-const codeTheme: Record<string, Record<string, string>> = {
-  base: {
-    background: '#0d1117',
-    borderRadius: '8px',
-    color: '#c9d1d9',
-    fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
-    fontSize: '13px',
-    overflow: 'auto',
-    padding: '16px',
-    whiteSpace: 'pre-wrap',
-  },
-  comment: { color: '#8b949e' },
-  function: { color: '#d2a8ff' },
-  keyword: { color: '#ff7b72' },
-  number: { color: '#79c0ff' },
-  string: { color: '#a5d6ff' },
-}
-
 const usageSnippet = `// server/api/release-notes.get.ts
 export default defineEventHandler(() => {
   return renderEmail('release-notes', {
@@ -78,8 +58,8 @@ export default defineEventHandler(() => {
           </EHeading>
           <ECodeBlock
             :code="usageSnippet"
-            :theme="codeTheme"
             language="typescript"
+            style="border-radius:8px;font-size:13px;padding:16px"
           />
 
           <ESection class="pb-1 pt-7">

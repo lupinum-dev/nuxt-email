@@ -1,4 +1,4 @@
-import NuxtEmail from '@lupinum/nuxt-email'
+import NuxtEmail from '../../../src/module'
 
 export default defineNuxtConfig({
   modules: [
@@ -9,5 +9,4 @@ export default defineNuxtConfig({
       },
     }],
   ],
-  compatibilityDate: '2025-07-15',
 })

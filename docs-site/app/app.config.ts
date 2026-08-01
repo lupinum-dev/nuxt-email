@@ -90,7 +90,7 @@ export default {
         {
           title: { en: 'Outlook-safe primitives' },
           description: {
-            en: 'Eighteen E* components handle presentation tables, MSO button spacers, preview text, fonts, inline code, Markdown, and Tailwind inlining.',
+            en: 'Eighteen built-in E* components handle email structure and styling; configured applications can add syntax-highlighted ECodeBlock.',
           },
           icon: 'lucide:mail-check',
         },

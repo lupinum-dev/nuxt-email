@@ -1,7 +1,8 @@
 import type { Component, FunctionalComponent } from 'vue'
 import { createCommentVNode, defineComponent, Fragment, h, resolveComponent } from 'vue'
 import { describe, expect, it } from 'vitest'
-import * as emailComponents from '../../src/runtime/components/email-components'
+import * as emailComponents from '../../src/runtime/components'
+import { EMAIL_COMPONENT_NAMES } from '../../src/runtime/components/email-component-names'
 import { EmailRenderError } from '../../src/runtime/render/errors'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
@@ -22,8 +23,30 @@ describe('component rendering', () => {
       },
     })
 
-    expect(Object.keys(emailComponents)).toHaveLength(18)
+    expect(Object.keys(emailComponents).sort()).toEqual([...EMAIL_COMPONENT_NAMES].sort())
     await expect(renderEmailComponent(NoImportEmail)).resolves.toMatchObject({ text: 'Hello' })
+  })
+
+  it('rejects unresolved E-prefixed components instead of emitting fake email markup', async () => {
+    const UnconfiguredEmail = defineComponent({
+      name: 'UnconfiguredEmail',
+      setup() {
+        const ECodeBlock = resolveComponent('ECodeBlock')
+        return () => h('html', [
+          h('body', [
+            h(ECodeBlock, { code: 'const answer = 42', language: 'typescript' }),
+          ]),
+        ])
+      },
+    })
+
+    const error = await renderEmailComponent(UnconfiguredEmail).catch(value => value)
+
+    expect(error).toBeInstanceOf(EmailRenderError)
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe(
+      'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
+    )
   })
 
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {
