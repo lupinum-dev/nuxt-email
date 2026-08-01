@@ -1,7 +1,10 @@
 import type { Resolver } from '@nuxt/kit'
-import { addComponent, addTemplate } from '@nuxt/kit'
+import { addComponent, addTemplate, addTypeTemplate } from '@nuxt/kit'
 import { generateCodeBlockComponent } from './generate-component'
-import { generateConfiguredRenderer } from './generate-configured-renderer'
+import {
+  generateConfiguredRenderer,
+  generateConfiguredRendererTypes,
+} from './generate-configured-renderer'
 import type { CodeBlockOptions } from './options'
 import { normalizeCodeBlockOptions } from './options'
 
@@ -30,17 +33,21 @@ export function setupCodeBlock(options: CodeBlockOptions, resolver: Resolver): s
     mode: 'server',
   })
 
+  const configuredRendererPaths = {
+    codeBlockComponent: componentTemplate.dst,
+    createRenderEmailComponent: resolver.resolve('./runtime/render/render-email-component'),
+    emailComponentRegistry: resolver.resolve('./runtime/components/email-component-registry'),
+    emailRenderError: resolver.resolve('./runtime/render/errors'),
+  }
   const configuredRendererTemplate = addTemplate({
-    filename: 'nuxt-email/configured-renderer.ts',
+    filename: 'nuxt-email/configured-renderer.js',
     write: true,
-    getContents: () => generateConfiguredRenderer({
-      codeBlockComponent: componentTemplate.dst,
-      createRenderEmailComponent: resolver.resolve('./runtime/render/render-email-component'),
-      emailComponentRegistry: resolver.resolve('./runtime/components/email-component-registry'),
-      emailRenderError: resolver.resolve('./runtime/render/errors'),
-      renderedEmail: resolver.resolve('./runtime/render/types'),
-    }),
+    getContents: () => generateConfiguredRenderer(configuredRendererPaths),
   })
+  addTypeTemplate({
+    filename: 'nuxt-email/configured-renderer.d.ts',
+    getContents: () => generateConfiguredRendererTypes(resolver.resolve('./runtime/testing')),
+  }, { nitro: true })
 
   return configuredRendererTemplate.dst
 }

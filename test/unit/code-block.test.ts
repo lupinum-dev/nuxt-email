@@ -7,7 +7,10 @@ import { defineComponent, h } from 'vue'
 import {
   generateCodeBlockComponent,
 } from '../../src/code-block/generate-component'
-import { generateConfiguredRenderer } from '../../src/code-block/generate-configured-renderer'
+import {
+  generateConfiguredRenderer,
+  generateConfiguredRendererTypes,
+} from '../../src/code-block/generate-configured-renderer'
 import { normalizeCodeBlockOptions } from '../../src/code-block/options'
 import { createCodeBlockComponent } from '../../src/runtime/code-block/create-component'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
@@ -120,18 +123,21 @@ describe('configured code blocks', () => {
   })
 
   it('generates one renderer with the configured code-block component', () => {
-    const generated = generateConfiguredRenderer({
+    const runtimePaths = {
       codeBlockComponent: '/build/nuxt-email/ECodeBlock.ts',
       createRenderEmailComponent: '/package/runtime/render/render-email-component',
       emailComponentRegistry: '/package/runtime/components/email-component-registry',
       emailRenderError: '/package/runtime/render/errors',
-      renderedEmail: '/package/runtime/render/types',
-    })
+    }
+    const generated = generateConfiguredRenderer(runtimePaths)
+    const generatedTypes = generateConfiguredRendererTypes('/package/runtime/testing')
 
     expect(generated).toContain('import { ECodeBlock } from "/build/nuxt-email/ECodeBlock"')
     expect(generated).toContain('const configuredEmailComponents = Object.freeze({ ...emailComponentRegistry, ECodeBlock })')
     expect(generated).toContain('export const renderEmailComponent = createRenderEmailComponent(configuredEmailComponents)')
     expect(generated).toContain('export { EmailRenderError }')
-    expect(generated).toContain('export type { RenderedEmail } from "/package/runtime/render/types"')
+    expect(generated).not.toContain('export type')
+    expect(generatedTypes).toContain('export { EmailRenderError, renderEmailComponent } from "/package/runtime/testing"')
+    expect(generatedTypes).toContain('export type { RenderedEmail } from "/package/runtime/testing"')
   })
 })

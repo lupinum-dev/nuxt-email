@@ -3,7 +3,6 @@ export interface ConfiguredRendererRuntimePaths {
   createRenderEmailComponent: string
   emailComponentRegistry: string
   emailRenderError: string
-  renderedEmail: string
 }
 
 function importPath(path: string): string {
@@ -17,10 +16,17 @@ export function generateConfiguredRenderer(
 import { createRenderEmailComponent } from ${importPath(runtimePaths.createRenderEmailComponent)}
 import { ECodeBlock } from ${importPath(runtimePaths.codeBlockComponent.replace(/\.ts$/, ''))}
 export { EmailRenderError } from ${importPath(runtimePaths.emailRenderError)}
-export type { RenderedEmail } from ${importPath(runtimePaths.renderedEmail)}
 
 const configuredEmailComponents = Object.freeze({ ...emailComponentRegistry, ECodeBlock })
 
 export const renderEmailComponent = createRenderEmailComponent(configuredEmailComponents)
+`
+}
+
+export function generateConfiguredRendererTypes(
+  testingPath: string,
+): string {
+  return `export { EmailRenderError, renderEmailComponent } from ${importPath(testingPath)}
+export type { RenderedEmail } from ${importPath(testingPath)}
 `
 }
