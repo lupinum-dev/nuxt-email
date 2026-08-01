@@ -1,5 +1,5 @@
 import { stat } from 'node:fs/promises'
-import type { DiscoveredEmailTemplate } from './template-discovery'
+import type { DiscoveredEmailTemplate } from './template-registry/discovery'
 
 export function previewFixturePath(sourcePath: string): string {
   return `${sourcePath.slice(0, -'.vue'.length)}.fixtures.ts`

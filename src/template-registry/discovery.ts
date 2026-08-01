@@ -3,7 +3,7 @@ import { resolveFiles } from '@nuxt/kit'
 import {
   DuplicateEmailTemplateError,
   EmailTemplateDiscoveryError,
-} from './runtime/server/errors'
+} from './discovery-errors'
 
 export interface DiscoveredEmailTemplate {
   name: string

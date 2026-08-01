@@ -1,9 +1,9 @@
-import type { DiscoveredEmailTemplate } from './template-discovery'
+import type { DiscoveredEmailTemplate } from './discovery'
 
 export interface RegistryRuntimePaths {
   emailRenderError: string
   renderEmailComponent: string
-  serverErrors: string
+  templateRegistryErrors: string
 }
 
 export interface RegistryTypePaths {
@@ -30,7 +30,7 @@ export function generateEmailRegistry(
 
   return `import { EmailRenderError } from ${importPath(runtimePaths.emailRenderError)}
 import { renderEmailComponent } from ${importPath(runtimePaths.renderEmailComponent)}
-import { UnknownEmailTemplateError } from ${importPath(runtimePaths.serverErrors)}
+import { UnknownEmailTemplateError } from ${importPath(runtimePaths.templateRegistryErrors)}
 
 export const emailTemplates = Object.freeze({
 ${entries.join('\n')}

@@ -5,11 +5,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   discoverEmailTemplates,
   templatesFromSourcePaths,
-} from '../../src/template-discovery'
+} from '../../../src/template-registry/discovery'
 import {
   DuplicateEmailTemplateError,
   EmailTemplateDiscoveryError,
-} from '../../src/runtime/server/errors'
+} from '../../../src/template-registry/discovery-errors'
 
 const temporaryDirectories: string[] = []
 

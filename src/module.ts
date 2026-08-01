@@ -14,8 +14,8 @@ import vue from '@vitejs/plugin-vue'
 import type { CodeBlockOptions } from './code-block/options'
 import { attachPreviewFixtures } from './preview-fixtures'
 import { EMAIL_COMPONENT_NAMES } from './runtime/components/email-component-names'
-import { discoverEmailTemplates } from './template-discovery'
-import { generateEmailRegistry, generateEmailTypes } from './template-generation'
+import { discoverEmailTemplates } from './template-registry/discovery'
+import { generateEmailRegistry, generateEmailTypes } from './template-registry/generation'
 
 type NitroRollupOptions = {
   nitro?: {
@@ -69,7 +69,7 @@ export default defineNuxtModule<ModuleOptions>({
     const registryRuntimePaths = {
       emailRenderError: resolver.resolve('./runtime/render/errors'),
       renderEmailComponent: renderEmailComponentPath,
-      serverErrors: resolver.resolve('./runtime/server/errors'),
+      templateRegistryErrors: resolver.resolve('./runtime/template-registry/errors'),
     }
     const registryTypePaths = {
       renderedEmail: resolver.resolve('./runtime/render/types'),

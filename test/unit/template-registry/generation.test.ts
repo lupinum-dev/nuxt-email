@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { generateEmailRegistry, generateEmailTypes } from '../../src/template-generation'
+import {
+  generateEmailRegistry,
+  generateEmailTypes,
+} from '../../../src/template-registry/generation'
 
 const templates = [
   {
@@ -22,7 +25,7 @@ describe('email template generation', () => {
     const runtimePaths = {
       emailRenderError: '/package/runtime/render/errors',
       renderEmailComponent: '/package/runtime/render/render-email-component',
-      serverErrors: '/package/runtime/server/errors',
+      templateRegistryErrors: '/package/runtime/template-registry/errors',
     }
     const first = generateEmailRegistry(templates, runtimePaths)
     const second = generateEmailRegistry(templates, runtimePaths)
@@ -64,7 +67,7 @@ describe('email template generation', () => {
     const generated = generateEmailRegistry(productionTemplates, {
       emailRenderError: '/package/runtime/render/errors',
       renderEmailComponent: '/package/runtime/render/render-email-component',
-      serverErrors: '/package/runtime/server/errors',
+      templateRegistryErrors: '/package/runtime/template-registry/errors',
     })
 
     expect(generated).not.toContain('.fixtures.ts')
