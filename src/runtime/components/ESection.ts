@@ -3,7 +3,7 @@ import { defineComponent, h, inject } from 'vue'
 import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
-import { assertFixedPresentationTable } from './ERow'
+import { assertFixedPresentationTable } from './presentation-table'
 import { splitTablePadding } from './table-padding'
 
 export type ESectionProps = Omit<

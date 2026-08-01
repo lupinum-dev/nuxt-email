@@ -1,6 +1,6 @@
 import type { FunctionalComponent } from 'vue'
 import { defineComponent, h } from 'vue'
-import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
+import { renderEmailComponent } from '../../src/runtime/testing'
 
 const RequiredEmail = defineComponent({
   props: {

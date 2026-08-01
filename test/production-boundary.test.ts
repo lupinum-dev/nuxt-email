@@ -139,9 +139,7 @@ describe('production server boundary', () => {
       expect(result.clientModuleIds.length).toBeGreaterThan(0)
       expect(result.clientModuleIds.filter(id => (
         id.includes('/app/emails/')
-        || id.includes('/src/runtime/components/')
-        || id.includes('/src/runtime/render/')
-        || id.includes('/src/runtime/server/')
+        || id.includes('/src/runtime/')
         || id.includes('/css-tree/')
         || id.includes('/html-to-text/')
         || id.includes('/htmlparser2/')
@@ -160,8 +158,7 @@ describe('production server boundary', () => {
 
       expect(clientOutput).not.toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(clientOutput).not.toContain('/app/emails/')
-      expect(clientOutput).not.toContain('/src/runtime/components/')
-      expect(clientOutput).not.toContain('/src/runtime/render/')
+      expect(clientOutput).not.toContain('/src/runtime/')
       expect(clientOutput).not.toContain('css-tree')
       expect(clientOutput).not.toContain('html-to-text')
       expect(clientOutput).not.toContain('tailwindcss')

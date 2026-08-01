@@ -3,7 +3,7 @@ import { createCommentVNode, defineComponent, h, inject } from 'vue'
 import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
-import { parseButtonPadding, pixelsToPoints, pixelStyle } from './button-padding'
+import { parseButtonPadding, pixelsToPoints, pixelStyle } from './EButton.padding'
 import { normalizeEmailStyle } from './style'
 
 export type EButtonProps = Omit<SafeEmailAttributes<AnchorHTMLAttributes>, 'href'> & {
