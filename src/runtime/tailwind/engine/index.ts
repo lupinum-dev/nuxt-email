@@ -135,28 +135,3 @@ export async function createTailwindEngine(
 
 export { pixelBasedPreset } from './pixel-based-preset'
 export type { TailwindConfig, TailwindEngineOptions } from './types'
-
-// Lower-level building blocks — exposed for the ETailwind component layer and
-// as the trust anchor for the ported unit suite.
-export { setupTailwind } from './setup-tailwind'
-export type { SetupTailwindProps, TailwindSetup } from './setup-tailwind'
-export { sanitizeStyleSheet } from './sanitize-stylesheet'
-export { extractRulesPerClass } from './css/extract-rules-per-class'
-export type { ExtractedRules } from './css/extract-rules-per-class'
-export { getCustomProperties } from './css/get-custom-properties'
-export type { CustomProperties, CustomProperty } from './css/get-custom-properties'
-export { makeInlineStylesFor } from './css/make-inline-styles-for'
-export { isRuleInlinable } from './css/is-rule-inlinable'
-export { isPartInlinable } from './css/is-part-inlinable'
-export { splitMixedRule } from './css/split-mixed-rule'
-export { resolveAllCssVariables } from './css/resolve-all-css-variables'
-export { resolveCalcExpressions } from './css/resolve-calc-expressions'
-export { sanitizeDeclarations } from './css/sanitize-declarations'
-export { sanitizeNonInlinableRules } from './css/sanitize-non-inlinable-rules'
-export { downlevelForEmailClients } from './css/downlevel-for-email-clients'
-export { stripEmptyTailwindVars } from './css/strip-empty-tailwind-vars'
-export { unwrapValue } from './css/unwrap-value'
-export { getCssProperty } from './css/get-css-property'
-export { sanitizeClassName } from './compatibility/sanitize-class-name'
-export { escapeClassName } from './compatibility/escape-class-name'
-export { unescapeClass } from './compatibility/unescape-class'
