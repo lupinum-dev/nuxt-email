@@ -1,12 +1,12 @@
 import { arch, platform, release } from 'node:os'
 import { performance } from 'node:perf_hooks'
-import { renderEmailComponent } from '../src/runtime/render/render-email-component'
+import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 import {
   LARGE_EMAIL_PAYLOAD,
   LARGE_EMAIL_ROWS,
   LargeEmail,
-} from '../test/fixtures/LargeEmail'
-import { measureRenderer } from '../test/helpers/render-performance'
+} from '../fixtures/LargeEmail'
+import { measureRenderer } from './measure-renderer'
 
 const WARM_ITERATIONS = 100
 const SEQUENTIAL_ITERATIONS = 1_000

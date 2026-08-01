@@ -34,11 +34,11 @@ interface TaggedResult {
 }
 
 const REPORT_MODE = process.env.NUXT_EMAIL_CONFORMANCE_REPORT
-const ROOT_PATH = fileURLToPath(new URL('..', import.meta.url))
-const ORACLE_PATH = fileURLToPath(new URL('../test/conformance/oracle/react-email-6.9.0.json', import.meta.url))
-const PACKAGE_PATH = fileURLToPath(new URL('../package.json', import.meta.url))
-const JSON_REPORT_PATH = fileURLToPath(new URL('../docs/conformance/report.json', import.meta.url))
-const MARKDOWN_REPORT_PATH = fileURLToPath(new URL('../docs/conformance/report.md', import.meta.url))
+const ROOT_PATH = fileURLToPath(new URL('../../..', import.meta.url))
+const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.9.0.json', import.meta.url))
+const PACKAGE_PATH = fileURLToPath(new URL('../../../package.json', import.meta.url))
+const JSON_REPORT_PATH = fileURLToPath(new URL('../../../docs/conformance/report.json', import.meta.url))
+const MARKDOWN_REPORT_PATH = fileURLToPath(new URL('../../../docs/conformance/report.md', import.meta.url))
 const TAG_PREFIX = 'conformance:'
 
 function compareCodePoints(left: string, right: string): number {

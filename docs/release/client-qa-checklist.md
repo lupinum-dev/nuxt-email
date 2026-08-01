@@ -1,6 +1,6 @@
 # Email client QA checklist (release-blocking)
 
-Manual visual verification of the [proof batch](../../scripts/README-proofs.md) across
+Manual visual verification of the [proof batch](../../scripts/proofs/README.md) across
 real email clients. **This checklist must be completed and the sign-off table signed
 before a release ships.** Automated rendering conformance does not prove client
 display; only a human looking at real mail does.

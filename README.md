@@ -203,7 +203,7 @@ Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and p
 
 ## Email-client proofs
 
-The [proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/README-proofs.md) renders a representative batch of emails to `.html`, `.txt`, and valid `.eml` (`multipart/alternative`, quoted-printable, CRLF) messages that open directly in a desktop client, with an optional Resend send path:
+The [proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/proofs/README.md) renders a representative batch of emails to `.html`, `.txt`, and valid `.eml` (`multipart/alternative`, quoted-printable, CRLF) messages that open directly in a desktop client, with an optional Resend send path:
 
 ```bash
 pnpm proofs:generate   # write release-artifacts/proofs/
@@ -243,7 +243,7 @@ Repository-only engineering and release evidence remains on GitHub:
 - [Generated conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md)
 - [Manual email-client QA](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/manual-email-client-qa.md)
 - [External beta record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/external-beta.md)
-- [Email-client proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/README-proofs.md)
+- [Email-client proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/proofs/README.md)
 - [Changelog](./CHANGELOG.md)
 
 ## Local development

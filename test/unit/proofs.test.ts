@@ -2,13 +2,13 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { ProofManifest } from '../../scripts/generate-proofs'
+import type { ProofManifest } from '../../scripts/proofs/generate'
 import {
   buildEml,
   encodeQuotedPrintable,
   encodeSubjectHeader,
   generateProofs,
-} from '../../scripts/generate-proofs'
+} from '../../scripts/proofs/generate'
 
 const CRLF = '\r\n'
 

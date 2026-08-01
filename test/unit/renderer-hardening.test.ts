@@ -7,7 +7,7 @@ import {
   LARGE_EMAIL_ROWS,
   LargeEmail,
 } from '../fixtures/LargeEmail'
-import { measureRenderer } from '../helpers/render-performance'
+import { measureRenderer } from '../performance/measure-renderer'
 
 describe('renderer hardening', () => {
   it('escapes attributes and text while preserving international content in plain text', async () => {

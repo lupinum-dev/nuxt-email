@@ -898,7 +898,7 @@
       "id": "code-block",
       "reactComponent": "CodeBlock",
       "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "reason": "Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component."
+      "reason": "`ECodeBlock` is an opt-in divergence that uses configured Shiki language entrypoints and inline theme colors instead of React Email's bundled Prism registry and runtime theme object."
     }
   ]
 }

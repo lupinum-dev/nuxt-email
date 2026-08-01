@@ -20,7 +20,7 @@ import { pixelBasedPreset } from '../../src/runtime/tailwind/engine/index'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { normalizeEmailHtml } from './normalize'
 
-// Same shape as scripts/generate-react-oracle.ts `tailwindEmail`: wrap
+// Same shape as tooling/generate-react-oracle.ts `tailwindEmail`: wrap
 // <ETailwind><EHtml><EHead/><EBody>{body}</EBody></EHtml></ETailwind>.
 function tailwindEmail(
   config: TailwindConfig | undefined,

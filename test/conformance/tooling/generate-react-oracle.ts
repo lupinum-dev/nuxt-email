@@ -25,12 +25,12 @@ import {
   Tailwind,
   Text,
 } from 'react-email'
-import { plainTextCorpus } from '../test/conformance/plain-text-corpus'
+import { plainTextCorpus } from '../plain-text-corpus'
 
-const ORACLE_PATH = fileURLToPath(new URL('../test/conformance/oracle/react-email-6.9.0.json', import.meta.url))
+const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.9.0.json', import.meta.url))
 const REACT_EMAIL_CHECKOUT = process.env.NUXT_EMAIL_REACT_EMAIL_CHECKOUT
   ? resolve(process.env.NUXT_EMAIL_REACT_EMAIL_CHECKOUT)
-  : fileURLToPath(new URL('../../react-email', import.meta.url))
+  : fileURLToPath(new URL('../../../../react-email', import.meta.url))
 const SOURCE_CHECKOUT_COMMIT = '6eb428924c4c2774228a07cbec1977ad8898f143'
 const PUBLISHED_PACKAGE_COMMIT = '71656573fa24b09e48173ae2357bf712fcb401b6'
 
@@ -798,7 +798,7 @@ async function generateOracle() {
         id: 'code-block',
         reactComponent: 'CodeBlock',
         reactReference: 'packages/react-email/src/components/code-block/code-block.tsx',
-        reason: 'Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component.',
+        reason: '`ECodeBlock` is an opt-in divergence that uses configured Shiki language entrypoints and inline theme colors instead of React Email\'s bundled Prism registry and runtime theme object.',
       },
     ],
   }

@@ -5,9 +5,9 @@
  * for each a `<name>.html`, a `<name>.txt`, and a valid RFC 5322 `.eml`
  * (multipart/alternative, quoted-printable, CRLF line endings) that opens cleanly
  * when double-clicked in Apple Mail / Outlook. A `manifest.json` describes the batch
- * so `send-proofs.ts` and the proof test can consume it without re-rendering.
+ * so `send.ts` and the proof test can consume it without re-rendering.
  *
- * Run: `node --import tsx scripts/generate-proofs.ts` (or `pnpm proofs:generate`).
+ * Run: `node --import tsx scripts/proofs/generate.ts` (or `pnpm proofs:generate`).
  */
 import type { Component } from 'vue'
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -31,12 +31,12 @@ import {
   ESection,
   ETailwind,
   EText,
-} from '../src/runtime/components'
-import { defineEmail } from '../src/runtime/render/define-email'
-import { renderEmailComponent } from '../src/runtime/render/render-email-component'
+} from '../../src/runtime/components'
+import { defineEmail } from '../../src/runtime/render/define-email'
+import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 
-const scriptsDir = dirname(fileURLToPath(import.meta.url))
-const repoRoot = dirname(scriptsDir)
+const proofToolingDir = dirname(fileURLToPath(import.meta.url))
+const repoRoot = dirname(dirname(proofToolingDir))
 
 // Fixed timestamp so the batch is byte-reproducible across runs (no churn in Date /
 // Message-ID). 2026-07-20 is a Monday.

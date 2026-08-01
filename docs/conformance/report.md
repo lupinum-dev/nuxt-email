@@ -10,7 +10,7 @@ Nuxt Email 0.1.0 is compared against React Email 6.9.0 and @react-email/render 2
 
 Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
 Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `3e566f12eee11277248c2c4303dcccf43be2b29419410866d67d3ef2ab8a25fd`
+Oracle SHA-256: `cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbfd`
 
 ## Classifications
 
@@ -65,7 +65,7 @@ Oracle SHA-256: `3e566f12eee11277248c2c4303dcccf43be2b29419410866d67d3ef2ab8a25f
 
 | React component | Reference | Reason |
 | --- | --- | --- |
-| CodeBlock | packages/react-email/src/components/code-block/code-block.tsx | Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component. |
+| CodeBlock | packages/react-email/src/components/code-block/code-block.tsx | `ECodeBlock` is an opt-in divergence that uses configured Shiki language entrypoints and inline theme colors instead of React Email's bundled Prism registry and runtime theme object. |
 
 ## Additional behavioral divergences and notes
 

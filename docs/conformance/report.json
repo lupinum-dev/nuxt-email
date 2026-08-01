@@ -11,7 +11,7 @@
     "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
-  "oracleSha256": "3e566f12eee11277248c2c4303dcccf43be2b29419410866d67d3ef2ab8a25fd",
+  "oracleSha256": "cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbfd",
   "summary": {
     "failed": 0,
     "passed": 57,
@@ -1076,7 +1076,7 @@
       "id": "code-block",
       "reactComponent": "CodeBlock",
       "reactReference": "packages/react-email/src/components/code-block/code-block.tsx",
-      "reason": "Syntax highlighting is outside the focused transactional v1 surface; use preformatted text or an application-owned component."
+      "reason": "`ECodeBlock` is an opt-in divergence that uses configured Shiki language entrypoints and inline theme colors instead of React Email's bundled Prism registry and runtime theme object."
     }
   ]
 }

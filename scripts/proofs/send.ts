@@ -1,6 +1,6 @@
 /**
  * OPTIONAL live send of the PROOF KIT batch via Resend's HTTP API (no SDK — plain
- * `fetch`). Reads the artifacts produced by `generate-proofs.ts` from
+ * `fetch`). Reads the artifacts produced by `generate.ts` from
  * `release-artifacts/proofs/` and POSTs each to https://api.resend.com/emails.
  *
  * Environment:
@@ -9,15 +9,15 @@
  *   PROOF_FROM        sender, default "Nuxt Email Proofs <proofs@example.invalid>".
  *                     Resend requires a verified sending domain — override this.
  *
- * Run: `node --import tsx scripts/send-proofs.ts` (or `pnpm proofs:send`).
+ * Run: `node --import tsx scripts/proofs/send.ts` (or `pnpm proofs:send`).
  */
-import type { ProofManifest } from './generate-proofs'
+import type { ProofManifest } from './generate'
 import { readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const scriptsDir = dirname(fileURLToPath(import.meta.url))
-const repoRoot = dirname(scriptsDir)
+const proofToolingDir = dirname(fileURLToPath(import.meta.url))
+const repoRoot = dirname(dirname(proofToolingDir))
 const proofsDir = join(repoRoot, 'release-artifacts/proofs')
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
