@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   attachPreviewFixtures,
   previewFixturePath,
-} from '../../src/preview-fixtures'
+} from '../../../src/dev-preview/fixtures'
 
 const temporaryDirectories: string[] = []
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   PREVIEW_PAGE_CSP,
   PREVIEW_PAGE_HTML,
-} from '../../src/runtime/server/preview-page.get'
+} from '../../../src/runtime/dev-preview/page.get'
 
 describe('development preview page', () => {
   it('ships as one self-contained accessible product surface', () => {

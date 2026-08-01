@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
     const template = Object.hasOwn(emailTemplates, name)
       ? emailTemplates[name]
       : undefined
-    if (!template) {
+    if (template === undefined) {
       throw new PreviewRequestError(
         404,
         `Unknown email template "${name}"; known templates: ${Object.keys(emailTemplates).join(', ')}`,

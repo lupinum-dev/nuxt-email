@@ -1,4 +1,4 @@
-export const PREVIEW_PAGE_CLIENT: string = `
+export const PREVIEW_PAGE_CLIENT = `
     (function () {
       'use strict'
 

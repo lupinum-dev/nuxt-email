@@ -284,7 +284,7 @@ describe('production server boundary', () => {
       const productionOutput = `${publicOutput}\n${serverOutput}`
 
       expect(outputPaths.filter(path => path.includes('/__email'))).toEqual([])
-      expect(outputPaths.filter(path => /preview-(?:page|render|templates)\.get/.test(path))).toEqual([])
+      expect(outputPaths.filter(path => path.includes('dev-preview'))).toEqual([])
       expect(outputPaths.filter(path => path.includes('.fixtures.'))).toEqual([])
 
       expect(serverOutput).not.toContain('route: \'/__email\'')
@@ -292,9 +292,9 @@ describe('production server boundary', () => {
       expect(serverOutput).not.toContain('route: \'/__email/render\'')
       expect(productionOutput).not.toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
       expect(productionOutput).not.toContain('NUXT_EMAIL_FIXTURE_ONLY_93D1')
-      expect(productionOutput).not.toContain('preview-page.get')
-      expect(productionOutput).not.toContain('preview-render.get')
-      expect(productionOutput).not.toContain('preview-templates.get')
+      expect(productionOutput).not.toContain('dev-preview/page.get')
+      expect(productionOutput).not.toContain('dev-preview/render.get')
+      expect(productionOutput).not.toContain('dev-preview/templates.get')
       expect(productionOutput).not.toContain('welcome.fixtures')
       expect(productionOutput).not.toContain('broken.fixtures')
 

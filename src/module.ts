@@ -12,7 +12,7 @@ import {
 } from '@nuxt/kit'
 import vue from '@vitejs/plugin-vue'
 import type { CodeBlockOptions } from './code-block/options'
-import { attachPreviewFixtures } from './preview-fixtures'
+import { attachPreviewFixtures } from './dev-preview/fixtures'
 import { EMAIL_COMPONENT_NAMES } from './runtime/components/email-component-names'
 import { discoverEmailTemplates } from './template-registry/discovery'
 import { generateEmailRegistry, generateEmailTypes } from './template-registry/generation'
@@ -104,19 +104,19 @@ export default defineNuxtModule<ModuleOptions>({
         route: '/__email',
         method: 'get',
         env: 'dev',
-        handler: resolver.resolve('./runtime/server/preview-page.get'),
+        handler: resolver.resolve('./runtime/dev-preview/page.get'),
       })
       addServerHandler({
         route: '/__email/api/templates',
         method: 'get',
         env: 'dev',
-        handler: resolver.resolve('./runtime/server/preview-templates.get'),
+        handler: resolver.resolve('./runtime/dev-preview/templates.get'),
       })
       addServerHandler({
         route: '/__email/render',
         method: 'get',
         env: 'dev',
-        handler: resolver.resolve('./runtime/server/preview-render.get'),
+        handler: resolver.resolve('./runtime/dev-preview/render.get'),
       })
     }
 

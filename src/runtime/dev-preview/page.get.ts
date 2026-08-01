@@ -1,6 +1,6 @@
 import { defineEventHandler, setHeaders } from 'h3'
-import { PREVIEW_PAGE_CSS } from './preview-page.css'
-import { PREVIEW_PAGE_CLIENT } from './preview-page-script'
+import { PREVIEW_PAGE_CSS } from './page.css'
+import { PREVIEW_PAGE_CLIENT } from './page-script'
 
 export const PREVIEW_PAGE_CSP: string = [
   'default-src \'none\'',

@@ -383,7 +383,7 @@ async function verifyFreshConsumer(
   }
 
   const consumerRequire = createRequire(join(consumerDirectory, 'package.json'))
-  const previewHandlerPath = join(installedPackageRoot, 'dist/runtime/server/preview-page.get.js')
+  const previewHandlerPath = join(installedPackageRoot, 'dist/runtime/dev-preview/page.get.js')
   const renderComponentPath = join(installedPackageRoot, 'dist/runtime/render/render-component.js')
   const h3Resolution = await realpath(createRequire(pathToFileURL(previewHandlerPath)).resolve('h3'))
   const vueServerRendererResolution = await realpath(createRequire(pathToFileURL(renderComponentPath)).resolve('vue/server-renderer'))
@@ -615,11 +615,11 @@ async function verifyRelease(): Promise<void> {
       'dist/runtime/errors.d.ts',
       'dist/runtime/testing/index.js',
       'dist/runtime/testing/index.d.ts',
-      'dist/runtime/server/preview-page-script.js',
-      'dist/runtime/server/preview-page.css.js',
-      'dist/runtime/server/preview-page.get.js',
-      'dist/runtime/server/preview-render.get.js',
-      'dist/runtime/server/preview-templates.get.js',
+      'dist/runtime/dev-preview/page-script.js',
+      'dist/runtime/dev-preview/page.css.js',
+      'dist/runtime/dev-preview/page.get.js',
+      'dist/runtime/dev-preview/render.get.js',
+      'dist/runtime/dev-preview/templates.get.js',
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }

@@ -1,4 +1,4 @@
-export const PREVIEW_PAGE_CSS: string = `
+export const PREVIEW_PAGE_CSS = `
     :root {
       color-scheme: light;
       --background: oklch(0.975 0 0);
