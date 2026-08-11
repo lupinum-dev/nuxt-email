@@ -5,7 +5,7 @@ import { renderToString } from 'vue/server-renderer'
 import { emailComponentRegistry } from '../components/email-component-registry'
 import { applyTailwindPostRender } from '../tailwind/post-render'
 import { createEmailRenderContext, runWithEmailRenderContext } from './define-email'
-import { assembleEmailDocument } from './document'
+import { assembleEmailDocument, assertNoUnresolvedEmailComponents } from './document'
 
 export type EmailComponentRegistry = Readonly<Record<string, Component>>
 
@@ -67,28 +67,15 @@ export async function renderComponentToHtml(
   // Installing a handler also makes synchronous setup/render throws resolve with a
   // captured error rather than reject, so this one path covers both cases.
   let renderFailure: { cause: unknown } | undefined
-  let unresolvedEmailComponent: string | undefined
   app.config.errorHandler = (error) => {
     renderFailure ??= { cause: error }
-  }
-  app.config.warnHandler = (message, _instance, trace) => {
-    const unresolved = message.match(/^Failed to resolve component: (E[A-Za-z0-9]+)/)?.[1]
-    if (unresolved !== undefined) {
-      unresolvedEmailComponent ??= unresolved
-      return
-    }
-    console.warn(`[Vue warn]: ${message}${trace}`)
   }
 
   const renderedHtml = await runWithEmailRenderContext(context, () => renderToString(app, context))
   if (renderFailure !== undefined) {
     throw renderFailure.cause
   }
-  if (unresolvedEmailComponent !== undefined) {
-    throw new TypeError(
-      `Unknown email component <${unresolvedEmailComponent}>. Configure it or use a registered E* component.`,
-    )
-  }
+  assertNoUnresolvedEmailComponents(renderedHtml)
 
   const document = assembleEmailDocument(
     renderedHtml

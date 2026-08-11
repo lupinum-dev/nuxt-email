@@ -2,10 +2,18 @@ import { describe, expect, it } from 'vitest'
 import {
   assembleEmailDocument,
   assertCompleteEmailDocument,
+  assertNoUnresolvedEmailComponents,
   EMAIL_DOCTYPE,
 } from '../../src/runtime/render/document'
 
 describe('email document assembly', () => {
+  it('rejects unresolved email component tags without matching comments or text', () => {
+    expect(() => assertNoUnresolvedEmailComponents('<html><body><EButon>Open</EButon></body></html>'))
+      .toThrow('Unknown email component <EButon>. Configure it or use a registered E* component.')
+    expect(() => assertNoUnresolvedEmailComponents('<html><body><!-- <EButon> --><p>&lt;EButon&gt;</p></body></html>'))
+      .not.toThrow()
+  })
+
   it('adds the configured doctype exactly once', () => {
     expect(assembleEmailDocument('<html></html>')).toBe(`${EMAIL_DOCTYPE}<html></html>`)
     expect(assembleEmailDocument(`  <!DoCtYpE html><html></html>`)).toBe(`${EMAIL_DOCTYPE}<html></html>`)

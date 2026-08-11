@@ -1,4 +1,7 @@
 import type { Component, FunctionalComponent } from 'vue'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { fileURLToPath } from 'node:url'
 import { createCommentVNode, defineComponent, Fragment, h, resolveComponent } from 'vue'
 import { describe, expect, it } from 'vitest'
 import * as emailComponents from '../../src/runtime/components'
@@ -6,6 +9,9 @@ import { EMAIL_COMPONENT_NAMES } from '../../src/runtime/components/email-compon
 import { EmailRenderError } from '../../src/runtime/render/errors'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
+
+const executeFile = promisify(execFile)
+const workspaceDirectory = fileURLToPath(new URL('../..', import.meta.url))
 
 describe('component rendering', () => {
   it('registers the supported email components for compiled no-import templates', async () => {
@@ -47,6 +53,45 @@ describe('component rendering', () => {
     expect(error.cause.message).toBe(
       'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
     )
+  })
+
+  it('rejects unresolved E-prefixed components when Vue production warnings are disabled', async () => {
+    const script = `
+      import { defineComponent, h, resolveComponent } from 'vue'
+      import { renderEmailComponent } from './src/runtime/render/render-email-component.ts'
+      const Email = defineComponent({
+        name: 'ProductionUnresolvedEmail',
+        setup() {
+          const ECodeBlock = resolveComponent('ECodeBlock')
+          return () => h('html', [h('body', [h(ECodeBlock, { code: 'x', language: 'typescript' })])])
+        },
+      })
+      try {
+        await renderEmailComponent(Email)
+        process.stdout.write('resolved')
+      }
+      catch (error) {
+        process.stdout.write(JSON.stringify({
+          cause: error.cause instanceof Error ? error.cause.message : String(error.cause),
+          name: error.name,
+        }))
+      }
+    `
+    const { stdout } = await executeFile(process.execPath, [
+      '--import',
+      'tsx',
+      '--input-type=module',
+      '--eval',
+      script,
+    ], {
+      cwd: workspaceDirectory,
+      env: { ...process.env, NODE_ENV: 'production' },
+    })
+
+    expect(JSON.parse(stdout)).toEqual({
+      cause: 'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
+      name: 'EmailRenderError',
+    })
   })
 
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {

@@ -3,9 +3,28 @@ import { Parser } from 'htmlparser2'
 export const EMAIL_DOCTYPE = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
 
 const LEADING_DOCTYPE = /^\s*<!doctype[^>]*>/i
+const EMAIL_COMPONENT_TAG = /^E[A-Za-z0-9]+$/
 
 export function assembleEmailDocument(renderedHtml: string): string {
   return `${EMAIL_DOCTYPE}${renderedHtml.replace(LEADING_DOCTYPE, '')}`
+}
+
+export function assertNoUnresolvedEmailComponents(renderedHtml: string): void {
+  let unresolvedComponent: string | undefined
+  const parser = new Parser({
+    onopentag(name) {
+      if (unresolvedComponent === undefined && EMAIL_COMPONENT_TAG.test(name)) {
+        unresolvedComponent = name
+      }
+    },
+  }, { xmlMode: true })
+  parser.end(renderedHtml)
+
+  if (unresolvedComponent !== undefined) {
+    throw new TypeError(
+      `Unknown email component <${unresolvedComponent}>. Configure it or use a registered E* component.`,
+    )
+  }
 }
 
 export function assertCompleteEmailDocument(html: string): void {
