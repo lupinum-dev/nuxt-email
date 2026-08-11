@@ -92,8 +92,7 @@ describe('defineEmail subject registration', () => {
 
   it('resolves the subject when defineEmail runs after a top-level await in async setup', async () => {
     // Realistic pattern: `const user = await fetchUser(); defineEmail({ subject: ... })`.
-    // useSSRContext() loses the component instance across the await, so the render context is
-    // now carried through AsyncLocalStorage instead.
+    // The standalone renderer carries its metadata context across arbitrary async setup work.
     const AsyncSubjectEmail = defineComponent({
       name: 'AsyncSubjectEmail',
       props: { firstName: { type: String, required: true } },
@@ -108,6 +107,45 @@ describe('defineEmail subject registration', () => {
 
     expect(result.subject).toBe('Hi Ada')
     expect(result.html).toContain('Hi Ada')
+  })
+
+  it('restores an outer render context after a nested render', async () => {
+    const InnerEmail = subjectEmail('NestedInnerEmail', () => 'Inner subject')
+    let innerSubject: string | undefined
+    const OuterEmail = defineComponent({
+      name: 'NestedOuterEmail',
+      async setup() {
+        innerSubject = (await renderEmailComponent(InnerEmail, { firstName: 'Inner' })).subject
+        defineEmail({ subject: () => 'Outer subject' })
+        return () => h('html', [h('body', [h('p', 'Outer body')])])
+      },
+    })
+
+    const outer = await renderEmailComponent(OuterEmail)
+
+    expect(innerSubject).toBe('Inner subject')
+    expect(outer.subject).toBe('Outer subject')
+  })
+
+  it('cleans up render context after a failed render', async () => {
+    const BrokenEmail = defineComponent({
+      name: 'BrokenContextEmail',
+      setup() {
+        defineEmail({ subject: () => 'Must not leak' })
+        throw new Error('setup failed')
+      },
+    })
+
+    await expect(renderEmailComponent(BrokenEmail)).rejects.toMatchObject({
+      cause: { message: 'setup failed' },
+    })
+    expect(() => defineEmail({ subject: () => 'orphan' }))
+      .toThrow(DefineEmailOutsideRenderError)
+
+    const next = await renderEmailComponent(subjectEmail('AfterFailureEmail', () => 'Fresh subject'), {
+      firstName: 'Ada',
+    })
+    expect(next.subject).toBe('Fresh subject')
   })
 
   it('rejects multiple definitions within one render', async () => {
