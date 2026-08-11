@@ -158,13 +158,15 @@ const { html, text } = await renderEmailComponent(Welcome, {
 })
 ```
 
-Templates that use configured components such as `ECodeBlock` must use the binding generated from the application's Nuxt configuration in a Nuxt-aware test environment after `nuxt prepare`:
+Vue SFC tests need `@vitejs/plugin-vue` in their Vitest config. The helper is Node/test-only and must not enter application or shared client code.
+
+Templates that use configured components such as `ECodeBlock` must use the binding generated from the application's Nuxt configuration after `nuxt prepare`:
 
 ```ts
 import { renderEmailComponent } from '#nuxt-email/testing'
 ```
 
-Both the generated helper and `renderEmail` use the same configured renderer. The standalone helper fails loudly if a template references an unregistered `E*` component.
+Configure Vitest with `@vitejs/plugin-vue`, map `#nuxt-email/testing` from the path written to `.nuxt/tsconfig.json`, use the Node environment, and run `nuxt prepare` first. This uses Nuxt's generated alias without booting its SSR-disabled unit-test environment; email components are server-only. Both the generated helper and `renderEmail` use the same configured renderer. The generated alias is also Node-test-only. The standalone helper fails loudly if a template references an unregistered `E*` component in development or production.
 
 Assert on recipient-visible content and required markup rather than normalizing the
 entire document into a broad snapshot. See the [testing guide](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails).

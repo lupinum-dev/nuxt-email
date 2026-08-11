@@ -307,6 +307,7 @@ async function verifyFreshConsumer(
     const message = error instanceof Error ? error.message : String(error)
     const offlineDataIsIncomplete = [
       'ERR_PNPM_NO_MATCHING_VERSION',
+      'ERR_PNPM_NO_OFFLINE_META',
       'ERR_PNPM_NO_OFFLINE_TARBALL',
     ].some(code => message.includes(code))
     if (!offlineDataIsIncomplete) {
@@ -399,6 +400,22 @@ async function verifyFreshConsumer(
 
   const prepare = await run('pnpm', ['exec', 'nuxt', 'prepare'], consumerDirectory)
   timingsMilliseconds.prepare = prepare.durationMilliseconds
+  const standaloneTests = await run('pnpm', [
+    'exec',
+    'vitest',
+    'run',
+    '--config',
+    'vitest.standalone.config.ts',
+  ], consumerDirectory)
+  timingsMilliseconds.standaloneTests = standaloneTests.durationMilliseconds
+  const configuredTests = await run('pnpm', [
+    'exec',
+    'vitest',
+    'run',
+    '--config',
+    'vitest.configured.config.ts',
+  ], consumerDirectory)
+  timingsMilliseconds.configuredTests = configuredTests.durationMilliseconds
   const serverTypes = await run('pnpm', [
     'exec',
     'vue-tsc',

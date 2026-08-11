@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@vitejs/plugin-vue": "6.0.8",
     "nuxt": "4.4.8",
     "@lupinum/nuxt-email": "file:__NUXT_EMAIL_TARBALL__",
     "typescript": "5.9.3",
+    "vitest": "4.1.10",
     "vue": "3.5.40",
     "vue-tsc": "3.3.7"
   }
