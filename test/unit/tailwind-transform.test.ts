@@ -91,7 +91,7 @@ describe('missing head', () => {
     const withoutHead = fixture(() => h(ETailwind, null, { default: () => h('div', { class: 'md:bg-red-500' }) }))
     await expect(renderComponentToHtml(withoutHead)).rejects.toThrow(TailwindMissingHeadError)
     await expect(renderComponentToHtml(withoutHead)).rejects.toThrow(
-      'Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500.',
+      'Tailwind: <head> not found inside <ETailwind>.\nMove <EHead /> inside <ETailwind>, or remove these classes that require a <head>: md:bg-red-500.',
     )
   })
 

@@ -26,7 +26,7 @@ export interface ETailwindProps {
  * ({@link TAILWIND_NESTED_KEY}). Once Vue has rendered the subtree exactly once,
  * the marker-scoped post-render pass ({@link ../tailwind/post-render}) handles
  * structural and native elements and inserts non-inlinable CSS into `<head>`.
- * Nothing outside a `<Tailwind>` boundary is affected.
+ * Nothing outside an `<ETailwind>` boundary is affected.
  */
 export const ETailwind = defineComponent({
   name: 'ETailwind',

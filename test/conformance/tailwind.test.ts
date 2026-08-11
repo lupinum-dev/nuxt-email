@@ -63,6 +63,12 @@ function expectMatches(html: string, key: keyof typeof oracle.cases, transformOr
 }
 
 describe('eTailwind conformance', () => {
+  function vueComponentNames(message: string): string {
+    return message
+      .replaceAll('<Tailwind>', '<ETailwind>')
+      .replaceAll('<Head />', '<EHead />')
+  }
+
   it('tw-basic-inlining: utilities inlined to style, classes removed', {
     tags: ['conformance:tw-basic-inlining'],
   }, async () => {
@@ -267,7 +273,7 @@ describe('eTailwind conformance', () => {
     expect(html).toContain('<style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style>')
   })
 
-  it('throws React Email\'s exact no-head error when non-inlinable rules have nowhere to go', async () => {
+  it('uses Vue component names in the no-head error while preserving the React error contract', async () => {
     const fixture = defineComponent({
       name: 'NoHeadFixture',
       setup() {
@@ -275,7 +281,7 @@ describe('eTailwind conformance', () => {
       },
     })
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(
-      oracle.errors['tailwind-non-inlinable-without-head'],
+      vueComponentNames(oracle.errors['tailwind-non-inlinable-without-head']),
     )
   })
 
@@ -291,6 +297,6 @@ describe('eTailwind conformance', () => {
       },
     })
     const error = await renderComponentToHtml(fixture).catch(value => value)
-    expect(error.message).toBe(oracle.errors['tailwind-non-inlinable-without-head-multi'])
+    expect(error.message).toBe(vueComponentNames(oracle.errors['tailwind-non-inlinable-without-head-multi']))
   })
 })

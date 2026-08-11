@@ -14,13 +14,12 @@ export interface DefineEmailOptions {
 const EMAIL_RENDER_BRAND = Symbol('nuxt-email:render-context')
 
 /**
- * Per-render context propagated across `await` boundaries. `useSSRContext()` is
- * built on Vue's `inject()`, which loses the active component instance after the
- * first `await` in an async `<script setup>`, so `defineEmail()` called after a
- * top-level `await` (e.g. `const user = await fetchUser()` before declaring the
- * subject) would fail. `AsyncLocalStorage` follows the async execution instead, so
- * `defineEmail()` reaches the right context whether it runs before or after an
- * await, and concurrent renders each see their own store.
+ * Per-render context propagated independently of a Vue component instance.
+ * `useSSRContext()` is an injected app context and does not directly cover the
+ * standalone renderer's arbitrary async setup, nested renders, or public testing
+ * helper. `AsyncLocalStorage` follows the complete async execution instead, so
+ * `defineEmail()` reaches the right render before or after an await and concurrent
+ * renders each see their own store.
  */
 const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
 

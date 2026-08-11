@@ -244,7 +244,7 @@ describe('nested-component Tailwind', () => {
     const fixture = email(h(nested(() => h('div', { class: 'md:bg-red-500' }, 'Deep'))), { head: false })
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(TailwindMissingHeadError)
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(
-      'Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500.',
+      'Tailwind: <head> not found inside <ETailwind>.\nMove <EHead /> inside <ETailwind>, or remove these classes that require a <head>: md:bg-red-500.',
     )
   })
 
@@ -263,7 +263,7 @@ describe('nested-component Tailwind', () => {
     })
 
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(
-      'Tailwind: <head> not found inside <Tailwind>.',
+      'Tailwind: <head> not found inside <ETailwind>.',
     )
   })
 
@@ -274,7 +274,7 @@ describe('nested-component Tailwind', () => {
     ], { head: false })
 
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(
-      'Tailwind: <head> not found inside <Tailwind>.',
+      'Tailwind: <head> not found inside <ETailwind>.',
     )
   })
 

@@ -484,7 +484,7 @@
       ],
       "test": {
         "file": "test/conformance/markdown.test.ts",
-        "name": "EMarkdown > forwards fall-through attributes and applies react-dom px units to numeric container styles"
+        "name": "EMarkdown > forwards fall-through attributes and accepts standard Vue container styles"
       }
     },
     {
