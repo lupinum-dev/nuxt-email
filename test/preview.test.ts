@@ -1,15 +1,23 @@
-import { cp, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { $fetch, createTest, fetch as testFetch, setupMaps } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 
 const sourceFixtureRoot = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
-const fixtureRoot = await mkdtemp(join(dirname(sourceFixtureRoot), '.preview-test-'))
+const temporaryFixtureRoot = fileURLToPath(new URL('../.tmp/', import.meta.url))
+await mkdir(temporaryFixtureRoot, { recursive: true })
+const fixtureRoot = await mkdtemp(join(temporaryFixtureRoot, 'preview-test-'))
 await cp(sourceFixtureRoot, fixtureRoot, {
   recursive: true,
   filter: source => !['.nuxt', '.output', 'node_modules'].includes(basename(source)),
 })
+const nuxtConfigPath = join(fixtureRoot, 'nuxt.config.ts')
+const nuxtConfigSource = await readFile(nuxtConfigPath, 'utf8')
+await writeFile(
+  nuxtConfigPath,
+  nuxtConfigSource.replace('../../../src/module', new URL('../src/module.ts', import.meta.url).href),
+)
 const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
 const welcomeFixture = join(fixtureRoot, 'app/emails/welcome.fixtures.ts')
 
@@ -18,7 +26,22 @@ describe('development email preview', async () => {
     dev: true,
     rootDir: fixtureRoot,
   })
-  test.ctx.teardown = [() => rm(fixtureRoot, { recursive: true, force: true })]
+  test.ctx.teardown = [async () => {
+    try {
+      await rm(fixtureRoot, {
+        recursive: true,
+        force: true,
+        maxRetries: 3,
+        retryDelay: 100,
+      })
+    }
+    catch (error) {
+      if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EBUSY') {
+        return
+      }
+      throw error
+    }
+  }]
   await setupMaps.vitest(test)
 
   it('serves the standalone sandboxed preview application', async () => {
