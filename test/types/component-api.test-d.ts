@@ -1,5 +1,6 @@
 import type { EButtonProps } from '../../src/runtime/components/EButton'
 import type { EContainerProps } from '../../src/runtime/components/EContainer'
+import type { EFontProps } from '../../src/runtime/components/EFont'
 import type { EHeadingProps } from '../../src/runtime/components/EHeading'
 import type { EImgProps } from '../../src/runtime/components/EImg'
 import type { ELinkProps } from '../../src/runtime/components/ELink'
@@ -10,11 +11,18 @@ const button: EButtonProps = { href: 'https://example.com' }
 const image: EImgProps = { alt: '', src: 'https://example.com/logo.png' }
 const link: ELinkProps = { href: 'https://example.com' }
 const heading: EHeadingProps = { as: 'h2', style: { marginInline: 'auto' } }
+const font: EFontProps = {
+  fallbackFontFamily: ['Georgia', 'serif'],
+  fontFamily: 'Roboto',
+  fontStyle: 'italic',
+  fontWeight: 700,
+}
 
 void button
 void image
 void link
 void heading
+void font
 
 // @ts-expect-error EButton requires a destination.
 const buttonWithoutHref: EButtonProps = {}
@@ -30,6 +38,10 @@ const unsafeContainerRole: EContainerProps = { role: 'grid' }
 const unsafeSectionRole: ESectionProps = { role: 'grid' }
 // @ts-expect-error Presentation semantics are fixed by the component.
 const unsafeRowRole: ERowProps = { role: 'grid' }
+// @ts-expect-error Fallback arrays must contain at least one font.
+const emptyFontFallbacks: EFontProps = { fallbackFontFamily: [], fontFamily: 'Roboto' }
+// @ts-expect-error Font style accepts the CSS values the renderer validates.
+const unsafeFontStyle: EFontProps = { fallbackFontFamily: 'serif', fontFamily: 'Roboto', fontStyle: '</style>' }
 
 void buttonWithoutHref
 void linkWithoutHref
@@ -38,3 +50,5 @@ void reactShapedHeading
 void unsafeContainerRole
 void unsafeSectionRole
 void unsafeRowRole
+void emptyFontFallbacks
+void unsafeFontStyle

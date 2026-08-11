@@ -17,7 +17,15 @@ export { ESection } from './ESection'
 export { ETailwind } from './ETailwind'
 export { EText } from './EText'
 export type { ECodeInlineProps } from './ECodeInline'
-export type { EFontProps, FontFallback, FontFormat, FontWebFont } from './EFont'
+export type {
+  EFontProps,
+  FontFallback,
+  FontFallbackList,
+  FontFormat,
+  FontStyle,
+  FontWebFont,
+  FontWeight,
+} from './EFont'
 export type { EMarkdownProps } from './EMarkdown'
 export type { ETailwindProps } from './ETailwind'
 export type { TailwindConfig } from '../tailwind/engine/index'
