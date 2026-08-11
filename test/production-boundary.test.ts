@@ -26,6 +26,7 @@ const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
 const codeBlockFixture = fileURLToPath(new URL('./fixtures/code-block', import.meta.url))
 const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
+const testingClientImportFixture = fileURLToPath(new URL('./fixtures/testing-client-import', import.meta.url))
 const executeFile = promisify(execFile)
 const childOutputStart = 'NUXT_EMAIL_PRODUCTION_RESULT_START'
 const childOutputEnd = 'NUXT_EMAIL_PRODUCTION_RESULT_END'
@@ -269,6 +270,10 @@ describe('production server boundary', () => {
 
   it('fails clearly when application code imports renderEmail', { timeout: 120_000 }, async () => {
     await expect(buildFixture(clientImportFixture)).rejects.toThrow(/failed to find "renderEmail" imported from "#imports"/i)
+  })
+
+  it('rejects the generated testing renderer from the client graph', { timeout: 120_000 }, async () => {
+    await expect(buildFixture(testingClientImportFixture)).rejects.toThrow(/node:async_hooks|async_hooks.*externalized for browser/i)
   })
 
   it('omits preview routes and fixtures while keeping production email rendering', { timeout: 120_000 }, async () => {
