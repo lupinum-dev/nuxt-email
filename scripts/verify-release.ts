@@ -73,12 +73,18 @@ interface FreshConsumerResult {
   nuxtVersion: string
   textBytes: number
   timingsMilliseconds: Record<string, number>
+  variant: ConsumerVariant
   vueServerRendererResolution: string
 }
 
+type ConsumerVariant = 'code-block' | 'default'
+
 const executeFile = promisify(execFile)
 const packageRoot = resolve(fileURLToPath(new URL('..', import.meta.url)))
-const fixtureRoot = fileURLToPath(new URL('../test/fixtures/fresh-install', import.meta.url))
+const fixtureRoots = {
+  'code-block': fileURLToPath(new URL('../test/fixtures/fresh-install', import.meta.url)),
+  'default': fileURLToPath(new URL('../test/fixtures/fresh-install-default', import.meta.url)),
+} satisfies Record<ConsumerVariant, string>
 const maximumFreshInstallMilliseconds = 10 * 60 * 1_000
 const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
 const releaseContract = {
@@ -271,16 +277,17 @@ async function readTextOutput(directory: string): Promise<{ paths: string[], tex
 
 async function verifyFreshConsumer(
   runNumber: number,
+  variant: ConsumerVariant,
   temporaryRoot: string,
   tarballPath: string,
   workspaceStore: string,
   packedManifest: PackageManifest,
 ): Promise<FreshConsumerResult> {
   const freshInstallStartedAt = performance.now()
-  const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}`)
+  const consumerDirectory = join(temporaryRoot, `fresh-consumer-${variant}`)
   const timingsMilliseconds: Record<string, number> = {}
   const fixtureMaterializationStartedAt = performance.now()
-  await cp(fixtureRoot, consumerDirectory, { recursive: true })
+  await cp(fixtureRoots[variant], consumerDirectory, { recursive: true })
   timingsMilliseconds.fixtureMaterialization = performance.now() - fixtureMaterializationStartedAt
 
   const consumerManifestPath = join(consumerDirectory, 'package.json')
@@ -289,7 +296,7 @@ async function verifyFreshConsumer(
   consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
-  process.stdout.write('\n=== Fresh consumer ===\n')
+  process.stdout.write(`\n=== Fresh consumer: ${variant} ===\n`)
   const installStartedAt = performance.now()
   const installArguments = [
     'install',
@@ -400,22 +407,24 @@ async function verifyFreshConsumer(
 
   const prepare = await run('pnpm', ['exec', 'nuxt', 'prepare'], consumerDirectory)
   timingsMilliseconds.prepare = prepare.durationMilliseconds
-  const standaloneTests = await run('pnpm', [
-    'exec',
-    'vitest',
-    'run',
-    '--config',
-    'vitest.standalone.config.ts',
-  ], consumerDirectory)
-  timingsMilliseconds.standaloneTests = standaloneTests.durationMilliseconds
-  const configuredTests = await run('pnpm', [
-    'exec',
-    'vitest',
-    'run',
-    '--config',
-    'vitest.configured.config.ts',
-  ], consumerDirectory)
-  timingsMilliseconds.configuredTests = configuredTests.durationMilliseconds
+  if (variant === 'code-block') {
+    const standaloneTests = await run('pnpm', [
+      'exec',
+      'vitest',
+      'run',
+      '--config',
+      'vitest.standalone.config.ts',
+    ], consumerDirectory)
+    timingsMilliseconds.standaloneTests = standaloneTests.durationMilliseconds
+    const configuredTests = await run('pnpm', [
+      'exec',
+      'vitest',
+      'run',
+      '--config',
+      'vitest.configured.config.ts',
+    ], consumerDirectory)
+    timingsMilliseconds.configuredTests = configuredTests.durationMilliseconds
+  }
   const serverTypes = await run('pnpm', [
     'exec',
     'vue-tsc',
@@ -449,11 +458,20 @@ async function verifyFreshConsumer(
   const serverOutput = await readTextOutput(join(outputDirectory, 'server'))
   const productionText = `${publicOutput.text}\n${serverOutput.text}`
 
-  invariant(!publicOutput.text.includes('NUXT_EMAIL_FRESH_TEMPLATE_4D91'), 'Email template leaked into the production client bundle')
-  invariant(serverOutput.text.includes('NUXT_EMAIL_FRESH_TEMPLATE_4D91'), 'Production server bundle omitted the discovered email template')
-  invariant(serverOutput.text.includes('source.ts'), 'Production server bundle omitted the configured TypeScript grammar')
-  invariant(!serverOutput.text.includes('source.python'), 'Production server bundle included an unconfigured Python grammar')
-  invariant(!serverOutput.text.includes('bundle/web'), 'Production server bundle included Shiki full or web registries')
+  const templateSentinel = variant === 'code-block'
+    ? 'NUXT_EMAIL_FRESH_TEMPLATE_4D91'
+    : 'NUXT_EMAIL_DEFAULT_TEMPLATE_7C62'
+  invariant(!publicOutput.text.includes(templateSentinel), 'Email template leaked into the production client bundle')
+  invariant(serverOutput.text.includes(templateSentinel), 'Production server bundle omitted the discovered email template')
+  if (variant === 'code-block') {
+    invariant(serverOutput.text.includes('source.ts'), 'Production server bundle omitted the configured TypeScript grammar')
+    invariant(!serverOutput.text.includes('source.python'), 'Production server bundle included an unconfigured Python grammar')
+    invariant(!serverOutput.text.includes('bundle/web'), 'Production server bundle included Shiki full or web registries')
+  }
+  else {
+    invariant(!serverOutput.text.includes('source.ts'), 'Default production bundle included the opt-in TypeScript grammar')
+    invariant(!serverOutput.text.includes('@shikijs'), 'Default production bundle included opt-in Shiki modules')
+  }
   invariant(!productionText.includes('NUXT_EMAIL_FRESH_FIXTURE_ONLY_8B27'), 'Development email fixture leaked into the production bundle')
   invariant(!productionText.includes('NUXT_EMAIL_PREVIEW_PAGE_V01'), 'Development preview page leaked into the production bundle')
   invariant(!productionText.includes('route: \'/__email\''), 'Development preview page route leaked into production')
@@ -520,16 +538,21 @@ async function verifyFreshConsumer(
 
   invariant(JSON.stringify(rendered.first) === JSON.stringify(rendered.second), 'Two production renders were not byte-identical')
   invariant(rendered.first.html.startsWith('<!DOCTYPE html'), 'Production render did not return a complete HTML document')
-  invariant(rendered.first.html.includes('NUXT_EMAIL_FRESH_TEMPLATE_4D91'), 'Production render omitted the email template sentinel')
+  invariant(rendered.first.html.includes(templateSentinel), 'Production render omitted the email template sentinel')
   invariant(rendered.first.html.includes('Order 7319 for Ada &amp; Lin'), 'Production render did not escape and render typed props')
-  invariant(rendered.first.html.includes('data-code-theme="github-dark"'), 'Production render omitted the configured code-block theme')
-  invariant(rendered.first.html.includes('color:#F97583'), 'Production render omitted TypeScript syntax token colors')
-  invariant(rendered.first.html.includes('&lt;ready&gt;'), 'Production code block did not escape source markup')
-  invariant(!rendered.first.html.includes('<ready>'), 'Production code block emitted unescaped source markup')
-  invariant(rendered.first.html.includes('padding:16px'), 'Production code block omitted its email-safe padding')
   invariant(rendered.first.text.includes('ORDER 7319 FOR ADA & LIN'), 'Production plain text did not preserve the rendered content')
-  invariant(rendered.first.text.includes('const status: string = "<ready>"'), 'Production plain text omitted the code block')
-  invariant(!rendered.first.text.includes('1const status'), 'Production plain text leaked decorative code line numbers')
+  if (variant === 'code-block') {
+    invariant(rendered.first.html.includes('data-code-theme="github-dark"'), 'Production render omitted the configured code-block theme')
+    invariant(rendered.first.html.includes('color:#F97583'), 'Production render omitted TypeScript syntax token colors')
+    invariant(rendered.first.html.includes('&lt;ready&gt;'), 'Production code block did not escape source markup')
+    invariant(!rendered.first.html.includes('<ready>'), 'Production code block emitted unescaped source markup')
+    invariant(rendered.first.html.includes('padding:16px'), 'Production code block omitted its email-safe padding')
+    invariant(rendered.first.text.includes('const status: string = "<ready>"'), 'Production plain text omitted the code block')
+    invariant(!rendered.first.text.includes('1const status'), 'Production plain text leaked decorative code line numbers')
+  }
+  else {
+    invariant(!rendered.first.html.includes('data-code-theme='), 'Default production render included the opt-in code component')
+  }
   invariant(rendered.first.text.includes('View order https://example.com/orders/7319'), 'Production plain text did not preserve the email link')
   invariant(rendered.first.subject === 'Order 7319 confirmed', 'Production render did not preserve the computed subject')
 
@@ -549,6 +572,7 @@ async function verifyFreshConsumer(
     nuxtVersion: installedNuxtManifest.version,
     textBytes: Buffer.byteLength(rendered.first.text),
     timingsMilliseconds,
+    variant,
     vueServerRendererResolution: relative(consumerDirectory, vueServerRendererResolution).replaceAll('\\', '/'),
   }
 }
@@ -567,15 +591,17 @@ async function verifyRelease(): Promise<void> {
   }
 
   const sourceManifest = await readJson<PackageManifest>(join(packageRoot, 'package.json'))
-  const freshFixtureManifest = await readJson<{ dependencies?: Record<string, string> }>(
-    join(fixtureRoot, 'package.json'),
+  const freshFixtureManifests = await Promise.all(
+    Object.values(fixtureRoots).map(root => readJson<{ dependencies?: Record<string, string> }>(join(root, 'package.json'))),
   )
-  invariant(freshFixtureManifest.dependencies?.nuxt === '4.4.8', 'Fresh-install fixture must pin Nuxt 4.4.8')
-  invariant(
-    freshFixtureManifest.dependencies?.['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__',
-    'Fresh-install fixture must consume the scoped release tarball placeholder',
-  )
-  invariant(freshFixtureManifest.dependencies?.vue === '3.5.40', 'Fresh-install fixture must pin Vue 3.5.40')
+  for (const freshFixtureManifest of freshFixtureManifests) {
+    invariant(freshFixtureManifest.dependencies?.nuxt === '4.4.8', 'Fresh-install fixture must pin Nuxt 4.4.8')
+    invariant(
+      freshFixtureManifest.dependencies?.['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__',
+      'Fresh-install fixture must consume the scoped release tarball placeholder',
+    )
+    invariant(freshFixtureManifest.dependencies?.vue === '3.5.40', 'Fresh-install fixture must pin Vue 3.5.40')
+  }
   invariant(
     typeof sourceManifest.packageManager === 'string' && /^pnpm@\d+\.\d+\.\d+$/.test(sourceManifest.packageManager),
     'package.json must pin pnpm with packageManager before release verification',
@@ -702,6 +728,15 @@ async function verifyRelease(): Promise<void> {
     const consumers: FreshConsumerResult[] = []
     consumers.push(await verifyFreshConsumer(
       1,
+      'default',
+      temporaryRoot,
+      tarballPath,
+      workspaceStore,
+      packedManifest,
+    ))
+    consumers.push(await verifyFreshConsumer(
+      2,
+      'code-block',
       temporaryRoot,
       tarballPath,
       workspaceStore,
@@ -733,8 +768,8 @@ async function verifyRelease(): Promise<void> {
         operatingSystem: `${platform()} ${release()}`,
         architecture: arch(),
         pnpm: pnpmVersion,
-        nuxt: freshFixtureManifest.dependencies.nuxt,
-        vue: freshFixtureManifest.dependencies.vue,
+        nuxt: freshFixtureManifests[0]!.dependencies!.nuxt,
+        vue: freshFixtureManifests[0]!.dependencies!.vue,
       },
       tarball: {
         bytes: tarballBytes,
@@ -746,6 +781,7 @@ async function verifyRelease(): Promise<void> {
       packSeconds: Number((pack.durationMilliseconds / 1_000).toFixed(3)),
       consumers: consumers.map(consumer => ({
         run: consumer.run,
+        variant: consumer.variant,
         nuxt: consumer.nuxtVersion,
         requiredNetworkFallback: consumer.requiredNetworkFallback,
         isolatedResolution: {
