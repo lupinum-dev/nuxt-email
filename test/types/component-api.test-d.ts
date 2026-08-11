@@ -4,6 +4,7 @@ import type { EFontProps } from '../../src/runtime/components/EFont'
 import type { EHeadingProps } from '../../src/runtime/components/EHeading'
 import type { EImgProps } from '../../src/runtime/components/EImg'
 import type { ELinkProps } from '../../src/runtime/components/ELink'
+import type { EMarkdownProps } from '../../src/runtime/components/EMarkdown'
 import type { ERowProps } from '../../src/runtime/components/ERow'
 import type { ESectionProps } from '../../src/runtime/components/ESection'
 
@@ -17,12 +18,18 @@ const font: EFontProps = {
   fontStyle: 'italic',
   fontWeight: 700,
 }
+const markdown: EMarkdownProps = {
+  class: 'prose',
+  source: '# Hello',
+  style: [{ padding: '8px' }, 'margin:0'],
+}
 
 void button
 void image
 void link
 void heading
 void font
+void markdown
 
 // @ts-expect-error EButton requires a destination.
 const buttonWithoutHref: EButtonProps = {}
@@ -42,6 +49,8 @@ const unsafeRowRole: ERowProps = { role: 'grid' }
 const emptyFontFallbacks: EFontProps = { fallbackFontFamily: [], fontFamily: 'Roboto' }
 // @ts-expect-error Font style accepts the CSS values the renderer validates.
 const unsafeFontStyle: EFontProps = { fallbackFontFamily: 'serif', fontFamily: 'Roboto', fontStyle: '</style>' }
+// @ts-expect-error EMarkdown uses Vue's standard style attribute as its one container-style source.
+const reactShapedMarkdown: EMarkdownProps = { markdownContainerStyles: { padding: '8px' } }
 
 void buttonWithoutHref
 void linkWithoutHref
@@ -52,3 +61,4 @@ void unsafeSectionRole
 void unsafeRowRole
 void emptyFontFallbacks
 void unsafeFontStyle
+void reactShapedMarkdown

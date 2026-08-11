@@ -99,7 +99,7 @@ describe('EMarkdown', () => {
     const html = await renderComponentToHtml(markdownFixture({
       source: markdownCustomDocument,
       markdownCustomStyles: { h1: { color: 'red' }, bold: { padding: '1px 2px' } },
-      markdownContainerStyles: { padding: '8px' },
+      style: { padding: '8px' },
     }))
 
     expect(normalizeEmailHtml(html)).toBe(
@@ -109,7 +109,7 @@ describe('EMarkdown', () => {
     expect(html).toContain('<strong style="padding:1px 2px">strong</strong>')
   })
 
-  it('forwards fall-through attributes and applies react-dom px units to numeric container styles', {
+  it('forwards fall-through attributes and accepts standard Vue container styles', {
     tags: ['conformance:markdown-container-and-attrs'],
   }, async () => {
     const html = await renderComponentToHtml(markdownFixture({
@@ -117,7 +117,7 @@ describe('EMarkdown', () => {
       id: 'note',
       dir: 'rtl',
       source: markdownCustomDocument,
-      markdownContainerStyles: { padding: 8, paddingTop: 10, marginBottom: 20, lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
+      style: { padding: '8px', paddingTop: '10px', marginBottom: '20px', lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
     }))
 
     expect(normalizeEmailHtml(html)).toBe(
@@ -127,7 +127,7 @@ describe('EMarkdown', () => {
     expect(html).toContain('class="wrap"')
     expect(html).toContain('id="note"')
     expect(html).toContain('dir="rtl"')
-    // Non-unitless numerics gain px; unitless (line-height/opacity/z-index) and zero stay bare.
+    // Dimensional values carry explicit units; unitless values and zero remain numeric.
     expect(html).toContain('padding:8px')
     expect(html).toContain('padding-top:10px')
     expect(html).toContain('margin-bottom:20px')
@@ -136,6 +136,29 @@ describe('EMarkdown', () => {
     expect(html).toContain('z-index:5;')
     expect(html).toContain('height:0;')
     expect(html).not.toContain('height:0px')
+  })
+
+  it('uses Vue style serialization for object, array, and string values', async () => {
+    const html = await renderComponentToHtml(markdownFixture({
+      source: markdownCustomDocument,
+      style: [{ padding: 8, lineHeight: 2 }, 'margin-top:4px'],
+    }))
+
+    expect(html).toContain('style="padding:8;line-height:2;margin-top:4px;"')
+    expect(html).not.toContain('padding:8px')
+  })
+
+  it('applies distinct Markdown table-header and table-cell styles', async () => {
+    const html = await renderComponentToHtml(markdownFixture({
+      source: '| Header |\n| --- |\n| Cell |',
+      markdownCustomStyles: {
+        th: { color: 'red' },
+        td: { color: 'blue' },
+      },
+    }))
+
+    expect(html).toContain('<th style="color:red">Header</th>')
+    expect(html).toContain('<td style="color:blue">Cell</td>')
   })
 
   it('escapes double quotes in link/image href and title attributes', {

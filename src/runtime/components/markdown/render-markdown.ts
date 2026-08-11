@@ -167,7 +167,7 @@ export function renderMarkdown(
   renderer.tablecell = ({ tokens, align, header }) => {
     const text = renderer.parser.parseInline(tokens)
     const type = header ? 'th' : 'td'
-    const cellStyle = styleAttribute(finalStyles.td)
+    const cellStyle = styleAttribute(header ? finalStyles.th : finalStyles.td)
     const tag = align
       ? `<${type} align="${align}"${cellStyle}>`
       : `<${type}${cellStyle}>`
