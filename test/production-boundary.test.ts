@@ -181,6 +181,7 @@ describe('production server boundary', () => {
       const routeUrls = [
         'render-transactional.get.mjs',
         'render-reset.get.mjs',
+        'render-unsupported-auto-import.get.mjs',
         'render-unknown.get.mjs',
       ].map(filename => pathToFileURL(join(routeDirectory, filename)).href)
       const { stdout } = await executeFile(process.execPath, [
@@ -190,9 +191,10 @@ describe('production server boundary', () => {
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const [rendered, reset, unknown] = parseChildOutput<[
+      const [rendered, reset, unsupportedAutoImport, unknown] = parseChildOutput<[
         { html: string, text: string },
         { html: string, text: string },
+        { cause: string, name: string },
         { knownNames: string[], name: string, requestedName: string },
       ]>(stdout)
 
@@ -200,8 +202,12 @@ describe('production server boundary', () => {
       expect(rendered.html).toContain('Welcome, Ada')
       expect(rendered.text).toContain('Activate account https://example.com/activate?token=fixture&source=email')
       expect(reset.text).toContain('Use code VUE-2048 within 15 minutes.')
+      expect(unsupportedAutoImport).toEqual({
+        cause: 'ref is not defined',
+        name: 'EmailRenderError',
+      })
       expect(unknown).toMatchObject({
-        knownNames: ['account/reset-password', 'transactional'],
+        knownNames: ['account/reset-password', 'transactional', 'unsupported-auto-import'],
         name: 'UnknownEmailTemplateError',
         requestedName: 'not-registered',
       })

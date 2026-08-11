@@ -19,6 +19,7 @@ The renderer will not use a custom Vue renderer, an email intermediate represent
 ## Consequences
 
 - Vue SFCs, slots, `defineProps()`, `v-if`, and `v-for` work through standard Vue compilation.
+- Compiler macros remain available, while non-macro Vue APIs and utilities are imported explicitly; Nuxt app auto-import transforms are not copied into Nitro's standalone email graph.
 - Each render is isolated from application-global mutable state.
 - Nitro can compile and render email SFCs through supported Nuxt and Vue behavior.
 - Nuxt Email owns the one Nitro Vue-plugin registration required by its generated server imports; applications do not repeat this configuration.

@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 defineOptions({ name: 'TransactionalEmail' })
 
-defineProps<{
+const props = defineProps<{
   activationUrl: string
   firstName: string
   logoUrl: string
 }>()
+
+const greeting = computed(() => `Welcome, ${props.firstName}`)
 </script>
 
 <template>
@@ -29,7 +33,7 @@ defineProps<{
           as="h1"
           style="color:#111827;font-size:28px;line-height:34px;margin-top:24px;margin-bottom:12px"
         >
-          Welcome, {{ firstName }}
+          {{ greeting }}
         </EHeading>
         <EText style="color:#374151;font-size:16px;line-height:26px">
           Your account is ready. Confirm your email address to finish setup.
