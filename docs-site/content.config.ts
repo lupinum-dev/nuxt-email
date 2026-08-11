@@ -4,10 +4,9 @@ export default defineGinkoDocsConfig({
   site: {
     name: 'Nuxt Email',
     description:
-      'Typed Vue email authoring and deterministic server-side rendering for Nuxt.',
+      'Typed transactional email for Nuxt, with email-safe Tailwind v4.',
     url: 'https://nuxt-email.lupinum.com',
   },
   locales: ['en'],
-  defaultLocale: 'en',
   blog: false,
 })

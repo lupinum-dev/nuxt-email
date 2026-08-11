@@ -10,7 +10,7 @@ Nuxt developers building transactional email inside an existing application. The
 
 ## Product Purpose
 
-Nuxt Email makes email authoring a native, typed Nuxt workflow. Success means a developer can create an ordinary Vue SFC, see it discovered and type-checked automatically, preview its exact canonical server output, and hand the resulting HTML and text to a provider SDK with confidence. The v0.1 product is deliberately focused on authoring, rendering, and previewing; sending abstractions remain outside the core.
+Nuxt Email makes email authoring a native, typed Nuxt workflow. Success means a developer can create an ordinary Vue SFC, see it discovered and type-checked automatically, preview its exact canonical server output, and hand the resulting HTML, plain text, and optional subject to a provider SDK with confidence. The v1 product is deliberately focused on authoring, rendering, and previewing; sending abstractions remain outside the core.
 
 ## Brand Personality
 

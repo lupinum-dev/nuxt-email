@@ -5,8 +5,7 @@ Nuxt Email contains Vue adaptations of selected compatibility algorithms and
 markup strategies from React Email 6.9.0, pinned at source commit
 6eb428924c4c2774228a07cbec1977ad8898f143. The adapted surface covers button
 padding and Outlook spacing, text margin expansion, table padding placement,
-hidden preview text, the font-face declaration, inline and block code rendering
-(including the PrismJS tokenization dump and the theme CSS-value maps), Markdown
+hidden preview text, the font-face declaration, inline code rendering, Markdown
 rendering, and Tailwind class inlining. The pinned upstream source is available at
 https://github.com/resend/react-email/tree/6eb428924c4c2774228a07cbec1977ad8898f143.
 
@@ -34,18 +33,13 @@ SOFTWARE.
 Runtime libraries
 =================
 
-The following third-party libraries are used by the runtime of the code-block,
-markdown, and Tailwind components. Each is distributed under the MIT License,
+The following third-party libraries are used by the runtime of the Markdown,
+Tailwind, and opt-in syntax-highlighting components. Each is distributed under the MIT License,
 whose text is reproduced once below.
 
 - marked 15.0.12 — Markdown-to-HTML rendering in EMarkdown.
   Copyright (c) 2018+, MarkedJS (https://github.com/markedjs/)
   Copyright (c) 2011-2018, Christopher Jeffrey (https://github.com/chjj/)
-
-- prismjs 1.30.0 — syntax tokenization and grammars in ECodeBlock. The vendored
-  Prism dump and the theme CSS-value maps (dracula, oneDark, nord, and the rest)
-  originate from the PrismJS project and its theme ecosystem.
-  Copyright (c) 2012 Lea Verou
 
 - css-tree 3.2.1 — CSS parsing and generation in the Tailwind inlining engine.
   Copyright (C) 2016-2026 by Roman Dvornov
@@ -53,6 +47,12 @@ whose text is reproduced once below.
 - tailwindcss 4.1.18 — utility compilation used by ETailwind; its stylesheet CSS
   is also vendored byte-for-byte into the engine.
   Copyright (c) Tailwind Labs, Inc.
+
+- @shikijs/core, @shikijs/engine-javascript, @shikijs/langs, and
+  @shikijs/themes 4.3.1 — fine-grained TextMate syntax highlighting used only
+  when ECodeBlock is configured.
+  Copyright (c) 2021 Pine Wu
+  Copyright (c) 2023-present Anthony Fu
 
 MIT License
 

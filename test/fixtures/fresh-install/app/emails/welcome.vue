@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { defineEmail } from '@lupinum/nuxt-email/define-email'
+
 defineOptions({ name: 'FreshInstallWelcomeEmail' })
 
 interface WelcomeProps {
@@ -6,37 +8,14 @@ interface WelcomeProps {
   recipientName: string
 }
 
-defineProps<WelcomeProps>()
+const props = defineProps<WelcomeProps>()
 
-// `defineEmail` is auto-imported by the module. Exercising it here means the
-// production release probe covers the AsyncLocalStorage render-context surface,
-// not just static markup.
-defineEmail<WelcomeProps>({
-  subject: props => `Order ${props.orderNumber} confirmed`,
+defineEmail({
+  subject: () => `Order ${props.orderNumber} confirmed`,
 })
 
-// ECodeBlock's `theme` is a plain style map; a template can define one inline.
-const codeTheme: Record<string, Record<string, string>> = {
-  base: {
-    background: '#0d1117',
-    borderRadius: '8px',
-    color: '#c9d1d9',
-    fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
-    fontSize: '13px',
-    padding: '16px',
-    whiteSpace: 'pre-wrap',
-  },
-  comment: { color: '#8b949e' },
-  keyword: { color: '#ff7b72' },
-  string: { color: '#a5d6ff' },
-}
-
-// A snippet that forces real Prism tokenization (the vendored grammar registry)
-// inside the bundled production chunk — the exact surface the release blocker hid.
-const trackingSnippet = `// track your order
-const status = await fetch('/orders/7319').then(r => r.json());`
-
 const nextSteps = '### What happens next\n\nWe will email you when your order **ships**.'
+const highlightedSource = 'const status: string = "<ready>"'
 </script>
 
 <template>
@@ -54,9 +33,10 @@ const nextSteps = '### What happens next\n\nWe will email you when your order **
           <EMarkdown :source="nextSteps" />
 
           <ECodeBlock
-            :code="trackingSnippet"
-            :theme="codeTheme"
+            :code="highlightedSource"
             language="typescript"
+            line-numbers
+            style="padding:16px"
           />
 
           <EButton :href="`https://example.com/orders/${orderNumber}`">

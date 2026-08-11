@@ -1,19 +1,23 @@
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { DefineEmailWelcome } from '../fixtures/DefineEmailWelcome'
-import { defineEmail, DefineEmailOutsideRenderError } from '../../src/runtime/render/define-email'
+import {
+  defineEmail,
+  DefineEmailOutsideRenderError,
+  DuplicateEmailDefinitionError,
+} from '../../src/runtime/render/define-email'
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 
 interface SubjectProps {
   firstName: string
 }
 
-function subjectEmail(name: string, subject: (props: SubjectProps) => string): ReturnType<typeof defineComponent> {
+function subjectEmail(name: string, subject: (props: SubjectProps) => string) {
   return defineComponent({
     name,
     props: { firstName: { type: String, required: true } },
     setup(props: SubjectProps) {
-      defineEmail<SubjectProps>({ subject })
+      defineEmail({ subject: () => subject(props) })
       return () => h('html', [h('body', [h('p', `Hi ${props.firstName}`)])])
     },
   })
@@ -54,16 +58,47 @@ describe('defineEmail subject registration', () => {
     expect(second.subject).toBe('Second: Grace')
   })
 
+  it('keeps interleaved async renders isolated when they resume in reverse order', async () => {
+    let releaseFirst!: () => void
+    let releaseSecond!: () => void
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    const secondGate = new Promise<void>((resolve) => {
+      releaseSecond = resolve
+    })
+
+    const asyncEmail = (name: string, gate: Promise<void>) => defineComponent({
+      name,
+      props: { firstName: { type: String, required: true } },
+      async setup(props: SubjectProps) {
+        await gate
+        defineEmail({ subject: () => `${name}: ${props.firstName}` })
+        return () => h('html', [h('body', [h('p', props.firstName)])])
+      },
+    })
+
+    const firstRender = renderEmailComponent(asyncEmail('FirstAsync', firstGate), { firstName: 'Ada' })
+    const secondRender = renderEmailComponent(asyncEmail('SecondAsync', secondGate), { firstName: 'Grace' })
+
+    releaseSecond()
+    const second = await secondRender
+    releaseFirst()
+    const first = await firstRender
+
+    expect(first.subject).toBe('FirstAsync: Ada')
+    expect(second.subject).toBe('SecondAsync: Grace')
+  })
+
   it('resolves the subject when defineEmail runs after a top-level await in async setup', async () => {
     // Realistic pattern: `const user = await fetchUser(); defineEmail({ subject: ... })`.
-    // useSSRContext() loses the component instance across the await, so the render context is
-    // now carried through AsyncLocalStorage instead.
+    // The standalone renderer carries its metadata context across arbitrary async setup work.
     const AsyncSubjectEmail = defineComponent({
       name: 'AsyncSubjectEmail',
       props: { firstName: { type: String, required: true } },
       async setup(props: SubjectProps) {
         await new Promise(resolve => setTimeout(resolve, 1))
-        defineEmail<SubjectProps>({ subject: p => `Hi ${p.firstName}` })
+        defineEmail({ subject: () => `Hi ${props.firstName}` })
         return () => h('html', [h('body', [h('p', `Hi ${props.firstName}`)])])
       },
     })
@@ -74,7 +109,46 @@ describe('defineEmail subject registration', () => {
     expect(result.html).toContain('Hi Ada')
   })
 
-  it('lets a later defineEmail call win within a single render', async () => {
+  it('restores an outer render context after a nested render', async () => {
+    const InnerEmail = subjectEmail('NestedInnerEmail', () => 'Inner subject')
+    let innerSubject: string | undefined
+    const OuterEmail = defineComponent({
+      name: 'NestedOuterEmail',
+      async setup() {
+        innerSubject = (await renderEmailComponent(InnerEmail, { firstName: 'Inner' })).subject
+        defineEmail({ subject: () => 'Outer subject' })
+        return () => h('html', [h('body', [h('p', 'Outer body')])])
+      },
+    })
+
+    const outer = await renderEmailComponent(OuterEmail)
+
+    expect(innerSubject).toBe('Inner subject')
+    expect(outer.subject).toBe('Outer subject')
+  })
+
+  it('cleans up render context after a failed render', async () => {
+    const BrokenEmail = defineComponent({
+      name: 'BrokenContextEmail',
+      setup() {
+        defineEmail({ subject: () => 'Must not leak' })
+        throw new Error('setup failed')
+      },
+    })
+
+    await expect(renderEmailComponent(BrokenEmail)).rejects.toMatchObject({
+      cause: { message: 'setup failed' },
+    })
+    expect(() => defineEmail({ subject: () => 'orphan' }))
+      .toThrow(DefineEmailOutsideRenderError)
+
+    const next = await renderEmailComponent(subjectEmail('AfterFailureEmail', () => 'Fresh subject'), {
+      firstName: 'Ada',
+    })
+    expect(next.subject).toBe('Fresh subject')
+  })
+
+  it('rejects multiple definitions within one render', async () => {
     const Reassigned = defineComponent({
       name: 'ReassignedEmail',
       setup() {
@@ -84,13 +158,58 @@ describe('defineEmail subject registration', () => {
       },
     })
 
-    const result = await renderEmailComponent(Reassigned)
+    const error = await renderEmailComponent(Reassigned).catch(value => value)
 
-    expect(result.subject).toBe('second')
+    expect(error.cause).toBeInstanceOf(DuplicateEmailDefinitionError)
   })
 
   it('throws a typed error when called outside an email render', () => {
     expect(() => defineEmail({ subject: () => 'orphan' }))
       .toThrow(DefineEmailOutsideRenderError)
+  })
+
+  it('rejects a non-string subject returned by untyped JavaScript', async () => {
+    const InvalidSubject = defineComponent({
+      name: 'InvalidSubjectEmail',
+      setup() {
+        defineEmail({ subject: (() => 42) as unknown as () => string })
+        return () => h('html', [h('body', [h('p', 'body')])])
+      },
+    })
+
+    const error = await renderEmailComponent(InvalidSubject).catch(value => value)
+
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('defineEmail() subject must return a string; received number')
+  })
+
+  it('rejects an undefined subject returned by untyped JavaScript', async () => {
+    const InvalidSubject = defineComponent({
+      name: 'UndefinedSubjectEmail',
+      setup() {
+        defineEmail({ subject: (() => undefined) as unknown as () => string })
+        return () => h('html', [h('body', [h('p', 'body')])])
+      },
+    })
+
+    const error = await renderEmailComponent(InvalidSubject).catch(value => value)
+
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('defineEmail() subject must return a string; received undefined')
+  })
+
+  it('rejects a malformed subject declaration from untyped JavaScript', async () => {
+    const InvalidDefinition = defineComponent({
+      name: 'InvalidDefinitionEmail',
+      setup() {
+        defineEmail({ subject: null } as unknown as { subject: () => string })
+        return () => h('html', [h('body', [h('p', 'body')])])
+      },
+    })
+
+    const error = await renderEmailComponent(InvalidDefinition).catch(value => value)
+
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('defineEmail() subject must be a function returning a string.')
   })
 })

@@ -1,6 +1,6 @@
 # Phase 3 renderer measurement
 
-This is the informational baseline for the stable `LargeEmail` fixture. It is not a release threshold. Re-run `pnpm performance:measure` on a stable CI runner before introducing a regression budget.
+This is the informational baseline for the stable `LargeEmail` fixture, produced by [`test/performance/measure.ts`](../../test/performance/measure.ts) and its shared [`measureRenderer`](../../test/performance/measure-renderer.ts) helper. It is not a release threshold. Re-run `pnpm performance:measure` on a stable CI runner before introducing a regression budget.
 
 ## Environment
 

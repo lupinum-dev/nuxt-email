@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "name": "testing-client-import",
+  "type": "module"
+}

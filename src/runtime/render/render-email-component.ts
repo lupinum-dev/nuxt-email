@@ -1,5 +1,7 @@
-import type { Component } from 'vue'
+import type { Component, FunctionalComponent, PublicProps } from 'vue'
+import type { EmailComponentRegistry } from './render-component'
 import type { RenderedEmail } from './types'
+import { emailComponentRegistry } from '../components/email-component-registry'
 import { createEmailRenderContext } from './define-email'
 import { assertCompleteEmailDocument } from './document'
 import { EmailRenderError } from './errors'
@@ -19,22 +21,63 @@ function componentName(component: Component): string {
   return 'AnonymousEmail'
 }
 
-export async function renderEmailComponent(
-  component: Component,
-  props: Record<string, unknown> = {},
-): Promise<RenderedEmail> {
-  try {
-    const context = createEmailRenderContext()
-    const html = await renderComponentToHtml(component, props, context)
-    assertCompleteEmailDocument(html)
-    const subject = context.subject?.(props)
-    return {
-      html,
-      text: renderPlainText(html),
-      ...(subject === undefined ? {} : { subject }),
+type DeclaredComponentProps<ComponentType extends Component>
+  = ComponentType extends abstract new (...args: infer _Arguments) => infer Instance
+    ? Instance extends { $props: infer Props }
+      ? Omit<Props, keyof PublicProps>
+      : Record<string, unknown>
+    : ComponentType extends FunctionalComponent<infer Props>
+      ? Props
+      : Record<string, unknown>
+
+type RequiredPropKeys<Props> = {
+  [Key in keyof Props]-?: Record<never, never> extends Pick<Props, Key> ? never : Key
+}[keyof Props]
+
+type RenderEmailComponentArguments<ComponentType extends Component>
+  = keyof DeclaredComponentProps<ComponentType> extends never
+    ? [props?: Record<string, never>]
+    : RequiredPropKeys<DeclaredComponentProps<ComponentType>> extends never
+      ? [props?: DeclaredComponentProps<ComponentType>]
+      : [props: DeclaredComponentProps<ComponentType>]
+
+export interface RenderEmailComponent {
+  <ComponentType extends Component>(
+    component: ComponentType,
+    ...args: RenderEmailComponentArguments<ComponentType>
+  ): Promise<RenderedEmail>
+}
+
+export function createRenderEmailComponent(
+  componentRegistry: EmailComponentRegistry,
+): RenderEmailComponent {
+  return async (component: Component, ...args: unknown[]): Promise<RenderedEmail> => {
+    const props = (args[0] ?? {}) as Record<string, unknown>
+    try {
+      const context = createEmailRenderContext()
+      const html = await renderComponentToHtml(component, props, context, componentRegistry)
+      assertCompleteEmailDocument(html)
+      const subjectFactory = context.subject
+      if (subjectFactory === undefined) {
+        return {
+          html,
+          text: renderPlainText(html),
+        }
+      }
+      const subject = subjectFactory()
+      if (typeof subject !== 'string') {
+        throw new TypeError(`defineEmail() subject must return a string; received ${typeof subject}`)
+      }
+      return {
+        html,
+        text: renderPlainText(html),
+        subject,
+      }
+    }
+    catch (error) {
+      throw new EmailRenderError(componentName(component), error)
     }
   }
-  catch (error) {
-    throw new EmailRenderError(componentName(component), error)
-  }
 }
+
+export const renderEmailComponent = createRenderEmailComponent(emailComponentRegistry)

@@ -1,11 +1,10 @@
 import type { TailwindConfig } from '../tailwind/engine/index'
 import type { NestedTailwindHolder } from '../tailwind/nested'
 import type { DefineComponent, PropType } from 'vue'
-import { createCommentVNode, defineComponent, provide } from 'vue'
+import { createCommentVNode, defineComponent, inject, provide } from 'vue'
 import { getEmailRenderContext } from '../render/define-email'
 import { createTailwindEngine } from '../tailwind/engine/index'
 import { createTailwindRegion, TAILWIND_NESTED_KEY } from '../tailwind/nested'
-import { applyTailwind, scanTailwindTree } from '../tailwind/transform'
 
 export interface ETailwindProps {
   /** Tailwind config (everything except `content`), same shape as React Email. */
@@ -23,14 +22,11 @@ export interface ETailwindProps {
  * and pseudo-class rules into a `<style>` in the `<head>`, and rewrites residual
  * class names.
  *
- * The slot-visible subtree is inlined synchronously by the VNode transform. Classes
- * emitted inside NESTED user components (which only exist once Vue renders them
- * during SSR) are reached two other ways: E* primitives self-inline via the context
- * provided here ({@link TAILWIND_NESTED_KEY}), and plain elements are inlined
- * post-render. The region is registered on the per-render context so the post-render
- * pass ({@link ../tailwind/post-render}) can complete the head `<style>` and splice
- * nested plain elements. Nothing outside a `<Tailwind>` boundary is affected, so
- * emails that do not use it render exactly as before.
+ * E* primitives self-inline through the context provided here
+ * ({@link TAILWIND_NESTED_KEY}). Once Vue has rendered the subtree exactly once,
+ * the marker-scoped post-render pass ({@link ../tailwind/post-render}) handles
+ * structural and native elements and inserts non-inlinable CSS into `<head>`.
+ * Nothing outside an `<ETailwind>` boundary is affected.
  */
 export const ETailwind = defineComponent({
   name: 'ETailwind',
@@ -50,6 +46,10 @@ export const ETailwind = defineComponent({
     },
   },
   async setup(props, { slots }) {
+    if (inject(TAILWIND_NESTED_KEY, null)) {
+      throw new TypeError('ETailwind boundaries cannot be nested; wrap the email document in one ETailwind boundary.')
+    }
+
     // Provide the holder synchronously, before the first await: after an await the
     // active component instance is lost and provide() would no-op. The engine and
     // region are filled in below, before any child injects the holder (children
@@ -66,20 +66,16 @@ export const ETailwind = defineComponent({
 
     return () => {
       const children = slots.default?.() ?? []
-      const { classNames, hasHead } = scanTailwindTree(children)
-      const computed = engine.computeStyles(classNames)
-
-      const region = createTailwindRegion(engine, [...classNames], hasHead)
+      const region = createTailwindRegion(engine, [])
       holder.region = region
       const context = getEmailRenderContext()
       if (context) {
         (context.tailwindRegions ??= []).push(region)
       }
 
-      const applied = applyTailwind(children, computed, region.placeholder)
       return [
         createCommentVNode(region.startMarker),
-        ...applied,
+        ...children,
         createCommentVNode(region.endMarker),
       ]
     }

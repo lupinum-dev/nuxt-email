@@ -1,50 +1,13 @@
-import type { DefineComponent, PropType, VNodeChild } from 'vue'
+import type { DefineComponent, HTMLAttributes, PropType, VNodeChild } from 'vue'
 import { Comment, defineComponent, Fragment, h, isVNode, Text } from 'vue'
 import { assertSafeEmailAttributes } from './attributes'
-import type { EmailStyle } from './style'
+import type { SafeEmailAttributes } from './attributes'
 import type { StylesType } from './markdown/styles'
 import { renderMarkdown } from './markdown/render-markdown'
 
-export type EMarkdownProps = {
+export type EMarkdownProps = SafeEmailAttributes<HTMLAttributes> & {
   source?: string
   markdownCustomStyles?: StylesType
-  markdownContainerStyles?: EmailStyle
-}
-
-// react-dom's `unitlessNumbers` set (react-dom 19). react-dom serializes a numeric
-// style value as `${value}px` unless the property is unitless, the value is 0, or the
-// property is a custom property. React renders the Markdown container as
-// `<div style={markdownContainerStyles}>`, so its numeric values follow this rule; Vue
-// never appends px, so numbers would otherwise emit invalid CSS (e.g. `padding:8`).
-const UNITLESS_STYLE_PROPERTIES = new Set([
-  'animationIterationCount', 'aspectRatio', 'borderImageOutset', 'borderImageSlice',
-  'borderImageWidth', 'boxFlex', 'boxFlexGroup', 'boxOrdinalGroup', 'columnCount',
-  'columns', 'flex', 'flexGrow', 'flexPositive', 'flexShrink', 'flexNegative',
-  'flexOrder', 'gridArea', 'gridRow', 'gridRowEnd', 'gridRowSpan', 'gridRowStart',
-  'gridColumn', 'gridColumnEnd', 'gridColumnSpan', 'gridColumnStart', 'fontWeight',
-  'lineClamp', 'lineHeight', 'opacity', 'order', 'orphans', 'scale', 'tabSize',
-  'widows', 'zIndex', 'zoom', 'fillOpacity', 'floodOpacity', 'stopOpacity',
-  'strokeDasharray', 'strokeDashoffset', 'strokeMiterlimit', 'strokeOpacity',
-  'strokeWidth', 'MozAnimationIterationCount', 'MozBoxFlex', 'MozBoxFlexGroup',
-  'MozLineClamp', 'msAnimationIterationCount', 'msFlex', 'msZoom', 'msFlexGrow',
-  'msFlexNegative', 'msFlexOrder', 'msFlexPositive', 'msFlexShrink', 'msGridColumn',
-  'msGridColumnSpan', 'msGridRow', 'msGridRowSpan', 'WebkitAnimationIterationCount',
-  'WebkitBoxFlex', 'WebKitBoxFlexGroup', 'WebkitBoxOrdinalGroup', 'WebkitColumnCount',
-  'WebkitColumns', 'WebkitFlex', 'WebkitFlexGrow', 'WebkitFlexPositive',
-  'WebkitFlexShrink', 'WebkitLineClamp',
-])
-
-function withReactPxUnits(style: EmailStyle): EmailStyle {
-  const result: EmailStyle = {}
-  for (const [property, value] of Object.entries(style)) {
-    result[property] = typeof value === 'number'
-      && value !== 0
-      && !property.startsWith('--')
-      && !UNITLESS_STYLE_PROPERTIES.has(property)
-      ? `${value}px`
-      : value
-  }
-  return result
 }
 
 // Deterministically extract markdown source from the default slot. Only text and numeric
@@ -102,11 +65,6 @@ export const EMarkdown = defineComponent({
       required: false,
       default: undefined,
     },
-    markdownContainerStyles: {
-      type: Object as PropType<EmailStyle>,
-      required: false,
-      default: undefined,
-    },
   },
   setup(props, { attrs, slots }) {
     return () => {
@@ -115,18 +73,9 @@ export const EMarkdown = defineComponent({
         ? props.source
         : slotSource(slots.default?.() ?? [])
 
-      // React renders `<div {...props} style={markdownContainerStyles}>`: fall-through
-      // attributes are forwarded, but the explicit style prop always overrides any
-      // fall-through `style` (dropping it when markdownContainerStyles is undefined).
-      const attributes: Record<string, unknown> = { ...attrs }
-      delete attributes.style
-
       return h('div', {
-        ...attributes,
+        ...attrs,
         innerHTML: renderMarkdown(source, props.markdownCustomStyles),
-        ...(props.markdownContainerStyles === undefined
-          ? {}
-          : { style: withReactPxUnits(props.markdownContainerStyles) }),
       })
     }
   },

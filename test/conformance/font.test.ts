@@ -74,4 +74,58 @@ describe('EFont', () => {
     expect(html).toContain(`mso-font-alt: 'Georgia';`)
     expect(html).toContain(`font-family: 'Roboto', Georgia, serif;`)
   })
+
+  it('serializes dynamic CSS values without allowing style-element breakout', async () => {
+    const html = await renderFont({
+      fontFamily: `Safe'</style><img src=x><style>`,
+      fallbackFontFamily: 'Verdana',
+      webFont: {
+        format: 'woff2',
+        url: 'https://example.com/font.woff2?name=</style><img src=x>',
+      },
+    })
+
+    expect(html).not.toContain('</style><img')
+    expect(html).not.toContain('<img src=x>')
+    expect(html).toContain(`font-family: 'Safe\\'\\3C /style\\3E \\3C img src=x\\3E \\3C style\\3E ';`)
+    expect(html).toContain(`url('https://example.com/font.woff2?name=\\3C /style\\3E \\3C img src=x\\3E ')`)
+  })
+
+  it('preserves a safe web-font URL with query parameters byte-for-byte', async () => {
+    const html = await renderFont({
+      fontFamily: 'Roboto',
+      fallbackFontFamily: 'Verdana',
+      webFont: {
+        format: 'woff2',
+        url: 'https://example.com/roboto.woff2?v=1&source=email',
+      },
+    })
+
+    expect(html).toContain('src: url(https://example.com/roboto.woff2?v=1&source=email) format(\'woff2\');')
+  })
+
+  it.each([
+    {
+      message: 'EFont fontFamily must be a non-empty string',
+      props: { fontFamily: '', fallbackFontFamily: 'Verdana' },
+    },
+    {
+      message: 'EFont fallbackFontFamily must contain at least one fallback',
+      props: { fontFamily: 'Roboto', fallbackFontFamily: [] },
+    },
+    {
+      message: 'EFont fontStyle must be normal, italic, or oblique',
+      props: { fontFamily: 'Roboto', fallbackFontFamily: 'Verdana', fontStyle: '</style>' },
+    },
+    {
+      message: 'EFont fontWeight must be between 1 and 1000 or a supported keyword',
+      props: { fontFamily: 'Roboto', fallbackFontFamily: 'Verdana', fontWeight: '400;}</style>' },
+    },
+    {
+      message: 'EFont webFont.url must be a non-empty string',
+      props: { fontFamily: 'Roboto', fallbackFontFamily: 'Verdana', webFont: { format: 'woff2', url: '' } },
+    },
+  ])('rejects invalid CSS inputs: $message', async ({ message, props }) => {
+    await expect(renderFont(props as EFontProps)).rejects.toThrow(message)
+  })
 })

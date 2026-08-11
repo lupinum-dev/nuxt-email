@@ -41,9 +41,10 @@ describe('ECodeInline', () => {
       h(ECodeInline, { class: 'inline-code' }, { default: () => 'const x = 1;' }),
     )
 
-    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['code-inline-basic'].html))
+    expect(normalizeEmailHtml(html.replace(' data-skip-in-text="true"', '')))
+      .toBe(normalizeEmailHtml(oracle.cases['code-inline-basic'].html))
     expect(html).toContain('<code class="inline-code cino">const x = 1;</code>')
-    expect(html).toContain('<span class="inline-code cio" style="display:none;">const x = 1;</span>')
+    expect(html).toContain('<span class="inline-code cio" style="display:none;" data-skip-in-text="true">const x = 1;</span>')
   })
 
   it('emits the Orange.fr fix-up style rule byte-for-byte', async () => {
@@ -73,13 +74,14 @@ describe('ECodeInline', () => {
     // space: `class=" cino"` / `class=" cio"`. Vue's normalizeClass trims that space (and it
     // cannot be preserved through h() while the children are user VNodes). The leading space is
     // semantically insignificant, so the conformance normalizer absorbs it and the documents match.
-    expect(normalizeEmailHtml(html)).toBe(normalizeEmailHtml(oracle.cases['code-inline-no-class'].html))
+    expect(normalizeEmailHtml(html.replace(' data-skip-in-text="true"', '')))
+      .toBe(normalizeEmailHtml(oracle.cases['code-inline-no-class'].html))
     expect(html).toContain('<code class="cino">const x = 1;</code>')
-    expect(html).toContain('<span class="cio" style="display:none;">const x = 1;</span>')
+    expect(html).toContain('<span class="cio" style="display:none;" data-skip-in-text="true">const x = 1;</span>')
     expect(oracle.cases['code-inline-no-class'].html).toContain('<code class=" cino">')
   })
 
-  it('keeps both children copies so plain text repeats them, matching the oracle html', async () => {
+  it('keeps the compatibility copy out of recipient plain text', async () => {
     const html = await renderComponent(
       EText,
       null as unknown as Record<string, unknown>,
@@ -88,7 +90,28 @@ describe('ECodeInline', () => {
 
     const text = renderPlainText(html)
 
-    expect(text).toContain('const x = 1;const x = 1;')
-    expect(text).toBe(renderPlainText(oracle.cases['code-inline-basic'].html))
+    expect(text).toBe('const x = 1;')
+    expect(renderPlainText(oracle.cases['code-inline-basic'].html)).toBe('const x = 1;const x = 1;')
+  })
+
+  it('creates unique slot VNodes for the visible and compatibility copies', async () => {
+    let slotCalls = 0
+    const fixture = defineComponent({
+      name: 'CodeInlineUniqueVNodeFixture',
+      setup() {
+        return () => h(ECodeInline, {}, {
+          default: () => {
+            slotCalls++
+            return h('span', 'const x = 1;')
+          },
+        })
+      },
+    })
+
+    const html = await renderComponentToHtml(fixture)
+
+    expect(slotCalls).toBe(2)
+    expect(html).toContain('<code class="cino"><span>const x = 1;</span></code>')
+    expect(html).toContain('<span class="cio" style="display:none;" data-skip-in-text="true"><span>const x = 1;</span></span>')
   })
 })

@@ -1,5 +1,6 @@
 import type { DefineComponent, HTMLAttributes } from 'vue'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, inject } from 'vue'
+import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 import { normalizeEmailStyle } from './style'
@@ -35,10 +36,12 @@ export const EBody = defineComponent({
   name: 'EBody',
   inheritAttrs: false,
   setup(_props, { attrs, slots }) {
+    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('EBody', attrs)
       const { style, ...bodyAttributes } = attrs
-      const normalizedStyle = normalizeEmailStyle(style)
+      const effectiveStyle = resolveNestedTailwindStyle(holder, bodyAttributes, style).style
+      const normalizedStyle = normalizeEmailStyle(effectiveStyle)
       const hasUserStyle = normalizedStyle !== undefined && Object.keys(normalizedStyle).length > 0
       const dir = attrs.dir ?? 'ltr'
       const lang = attrs.lang ?? 'en'
@@ -70,7 +73,7 @@ export const EBody = defineComponent({
         }, [
           h('tbody', [
             h('tr', [
-              h('td', { dir, lang, ...(hasUserStyle ? { style } : {}) }, slots.default?.()),
+              h('td', { dir, lang, ...(hasUserStyle ? { style: effectiveStyle } : {}) }, slots.default?.()),
             ]),
           ]),
         ]),

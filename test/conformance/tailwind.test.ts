@@ -7,6 +7,7 @@ import {
   EBody,
   EButton,
   EColumn,
+  EContainer,
   EHeading,
   EHtml,
   ERow,
@@ -19,7 +20,7 @@ import { pixelBasedPreset } from '../../src/runtime/tailwind/engine/index'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { normalizeEmailHtml } from './normalize'
 
-// Same shape as scripts/generate-react-oracle.ts `tailwindEmail`: wrap
+// Same shape as tooling/generate-react-oracle.ts `tailwindEmail`: wrap
 // <ETailwind><EHtml><EHead/><EBody>{body}</EBody></EHtml></ETailwind>.
 function tailwindEmail(
   config: TailwindConfig | undefined,
@@ -62,6 +63,12 @@ function expectMatches(html: string, key: keyof typeof oracle.cases, transformOr
 }
 
 describe('eTailwind conformance', () => {
+  function vueComponentNames(message: string): string {
+    return message
+      .replaceAll('<Tailwind>', '<ETailwind>')
+      .replaceAll('<Head />', '<EHead />')
+  }
+
   it('tw-basic-inlining: utilities inlined to style, classes removed', {
     tags: ['conformance:tw-basic-inlining'],
   }, async () => {
@@ -103,6 +110,30 @@ describe('eTailwind conformance', () => {
     }))
     expectMatches(html, 'tw-row-classes', stripColumnDataId)
     expect(html).toContain('style="width:100%;background-color:rgb(243,244,246);"')
+  })
+
+  it('moves Tailwind row padding to a presentation cell while retaining table styles', async () => {
+    const html = await render(undefined, h(ERow, { class: 'bg-gray-100 p-4' }, {
+      default: () => h(EColumn, null, { default: () => 'Cell' }),
+    }))
+
+    expect(html).toContain('style="background-color:rgb(243,244,246);"')
+    expect(html).toContain('<td style="padding:1rem;"><table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">')
+  })
+
+  it.each([
+    ['EContainer', EContainer],
+    ['ESection', ESection],
+    ['ERow', ERow],
+  ] as const)('keeps responsive %s padding as a documented table media rule', async (name, component) => {
+    const content = name === 'ERow'
+      ? h(EColumn, null, { default: () => 'Cell' })
+      : 'Content'
+    const html = await render(undefined, h(component, { class: 'md:p-4' }, { default: () => content }))
+
+    expect(html).toContain('class="md_p-4"')
+    expect(html).toContain('@media (min-width:48rem){.md_p-4{padding:1rem!important}}')
+    expect(html).not.toContain('<td style="padding:1rem;')
   })
 
   it('tw-column-classes: column cell padding and alignment', {
@@ -242,7 +273,7 @@ describe('eTailwind conformance', () => {
     expect(html).toContain('<style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style>')
   })
 
-  it('throws React Email\'s exact no-head error when non-inlinable rules have nowhere to go', async () => {
+  it('uses Vue component names in the no-head error while preserving the React error contract', async () => {
     const fixture = defineComponent({
       name: 'NoHeadFixture',
       setup() {
@@ -250,7 +281,7 @@ describe('eTailwind conformance', () => {
       },
     })
     await expect(renderComponentToHtml(fixture)).rejects.toThrow(
-      oracle.errors['tailwind-non-inlinable-without-head'],
+      vueComponentNames(oracle.errors['tailwind-non-inlinable-without-head']),
     )
   })
 
@@ -266,6 +297,6 @@ describe('eTailwind conformance', () => {
       },
     })
     const error = await renderComponentToHtml(fixture).catch(value => value)
-    expect(error.message).toBe(oracle.errors['tailwind-non-inlinable-without-head-multi'])
+    expect(error.message).toBe(vueComponentNames(oracle.errors['tailwind-non-inlinable-without-head-multi']))
   })
 })

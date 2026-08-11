@@ -1,0 +1,12 @@
+{
+  "name": "nuxt-email-default-fresh-install",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "nuxt": "4.4.8",
+    "@lupinum/nuxt-email": "file:__NUXT_EMAIL_TARBALL__",
+    "typescript": "5.9.3",
+    "vue": "3.5.40",
+    "vue-tsc": "3.3.7"
+  }
+}

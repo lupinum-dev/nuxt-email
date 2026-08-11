@@ -1,10 +1,25 @@
 import type NuxtEmail from '../../src/module'
+import type { RenderedEmail } from '../../src/module'
 
 type NuxtEmailOptions = Parameters<typeof NuxtEmail>[0]
 
 const noOptions: NuxtEmailOptions = {}
 void noOptions
 
-// @ts-expect-error nuxt-email has no module options
+const codeBlockOptions: NuxtEmailOptions = {
+  codeBlock: {
+    languages: ['typescript', 'vue'],
+    theme: 'github-dark',
+  },
+}
+void codeBlockOptions
+
+const rendered: RenderedEmail = {
+  html: '<html><body>Hello</body></html>',
+  text: 'Hello',
+}
+void rendered
+
+// @ts-expect-error unsupported module options are rejected
 const arbitraryOptions: NuxtEmailOptions = { arbitrary: true }
 void arbitraryOptions

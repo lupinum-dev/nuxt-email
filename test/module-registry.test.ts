@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { loadNuxt } from '@nuxt/kit'
 import { afterEach, describe, expect, it } from 'vitest'
 import NuxtEmail from '../src/module'
+import { EMAIL_COMPONENT_NAMES } from '../src/runtime/components/email-component-names'
 
 const temporaryDirectories: string[] = []
 const workspaceDirectory = fileURLToPath(new URL('..', import.meta.url))
@@ -25,6 +26,128 @@ afterEach(async () => {
 })
 
 describe('Nuxt email registry regeneration', () => {
+  it('discovers templates from a custom Nuxt srcDir', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const srcDir = join(rootDir, 'custom-source')
+    await mkdir(join(srcDir, 'emails'), { recursive: true })
+    await writeFile(join(srcDir, 'emails/custom.vue'), '<template><html><body>Custom</body></html></template>')
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: false,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+        srcDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const registry = (nuxt.options.nitro as { virtual?: Record<string, unknown> })
+        .virtual?.['#nuxt-email/registry']
+      expect(registry).toBeTypeOf('function')
+      const source = await (registry as () => string | Promise<string>)()
+      expect(source).toContain('["custom"]')
+      expect(source).not.toContain('["welcome"]')
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
+  it('does not merge email templates from inherited Nuxt layers', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const layerDir = join(rootDir, 'layer')
+    await mkdir(join(layerDir, 'app/emails'), { recursive: true })
+    await writeFile(join(layerDir, 'nuxt.config.ts'), 'export default defineNuxtConfig({})')
+    await writeFile(join(layerDir, 'app/emails/layer-only.vue'), '<template><html><body>Layer</body></html></template>')
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: false,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        extends: [layerDir],
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const registry = (nuxt.options.nitro as { virtual?: Record<string, unknown> })
+        .virtual?.['#nuxt-email/registry']
+      expect(registry).toBeTypeOf('function')
+      const source = await (registry as () => string | Promise<string>)()
+      expect(source).toContain('["welcome"]')
+      expect(source).not.toContain('["layer-only"]')
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
+  it('installs only the intended server-side authoring surface', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: true,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const components: Array<{ export: string, filePath: string, mode: string, pascalName: string }> = []
+      await nuxt.callHook('components:dirs', [])
+      await nuxt.callHook('components:extend', components as never)
+      const emailComponents = components
+        .filter(component => component.filePath.replaceAll('\\', '/').includes('/runtime/components/E'))
+        .map(component => ({
+          export: component.export,
+          mode: component.mode,
+          pascalName: component.pascalName,
+        }))
+        .sort((left, right) => left.pascalName.localeCompare(right.pascalName))
+
+      expect(emailComponents).toEqual([...EMAIL_COMPONENT_NAMES].sort().map(componentName => ({
+        export: componentName,
+        mode: 'server',
+        pascalName: componentName,
+      })))
+
+      const nitroOptions = nuxt.options.nitro as {
+        alias?: Record<string, string>
+        externals?: { inline?: unknown[] }
+      }
+      const nitroAlias = nitroOptions.alias
+      expect(nitroAlias?.['@lupinum/nuxt-email/define-email']?.replaceAll('\\', '/'))
+        .toMatch(/\/runtime\/define-email\.(?:js|ts)$/)
+      expect(nitroAlias?.['@lupinum/nuxt-email/errors']?.replaceAll('\\', '/'))
+        .toMatch(/\/runtime\/errors\.(?:js|ts)$/)
+      expect(nitroAlias?.['#nuxt-email/testing']?.replaceAll('\\', '/'))
+        .toMatch(/\/runtime\/testing\/index\.(?:js|ts)$/)
+      for (const specifier of [
+        '@lupinum/nuxt-email/define-email',
+        '@lupinum/nuxt-email/errors',
+      ]) {
+        expect(nitroOptions.externals?.inline).toContain(nitroAlias?.[specifier])
+      }
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
   it('updates its one runtime registry and generated types for add, rename, and delete events', async () => {
     const rootDir = await temporaryNuxtDirectory()
     const nuxt = await loadNuxt({

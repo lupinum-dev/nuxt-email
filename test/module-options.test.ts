@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -36,6 +36,26 @@ afterEach(async () => {
 })
 
 describe('Nuxt email module options', () => {
+  it('uses the published package identity and compatibility range', async () => {
+    const packageManifest = JSON.parse(
+      await readFile(join(workspaceDirectory, 'package.json'), 'utf8'),
+    ) as { name: string, peerDependencies: { nuxt: string } }
+
+    const getMeta = NuxtEmail.getMeta
+    expect(getMeta).toBeTypeOf('function')
+    if (getMeta === undefined) {
+      throw new TypeError('Nuxt module metadata is unavailable')
+    }
+
+    await expect(getMeta()).resolves.toMatchObject({
+      compatibility: {
+        nuxt: packageManifest.peerDependencies.nuxt,
+      },
+      configKey: 'nuxtEmail',
+      name: packageManifest.name,
+    })
+  })
+
   it('installs without options', async () => {
     const nuxt = await loadFixtureNuxt()
 
@@ -52,7 +72,58 @@ describe('Nuxt email module options', () => {
 
     try {
       await expect(nuxt.ready()).rejects.toMatchObject({
-        message: 'nuxt-email does not accept module options; received: arbitrary',
+        message: 'nuxt-email received unsupported module options: arbitrary',
+        name: 'TypeError',
+      })
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
+  it('accepts a closed code-block language and theme configuration', async () => {
+    const nuxt = await loadFixtureNuxt({
+      codeBlock: {
+        languages: ['typescript', 'vue'],
+        theme: 'github-dark',
+      },
+    })
+
+    try {
+      await expect(nuxt.ready()).resolves.toBeUndefined()
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
+  it.each([
+    [
+      { codeBlock: { languages: [], theme: 'github-dark' } },
+      'nuxt-email codeBlock.languages must be a non-empty array',
+    ],
+    [
+      { codeBlock: { languages: ['not-a-real-language'], theme: 'github-dark' } },
+      'nuxt-email codeBlock language "not-a-real-language" is not available in Shiki',
+    ],
+    [
+      { codeBlock: { languages: ['typescript', 'typescript'], theme: 'github-dark' } },
+      'nuxt-email codeBlock language "typescript" is configured more than once',
+    ],
+    [
+      { codeBlock: { languages: ['typescript'], theme: 'not-a-real-theme' } },
+      'nuxt-email codeBlock theme "not-a-real-theme" is not available in Shiki',
+    ],
+    [
+      { codeBlock: { languages: ['typescript'], theme: 'github-dark', futureMode: true } },
+      'nuxt-email codeBlock received unknown option: futureMode',
+    ],
+  ])('rejects invalid code-block configuration %#', async (options, message) => {
+    const nuxt = await loadFixtureNuxt(options)
+
+    try {
+      await expect(nuxt.ready()).rejects.toMatchObject({
+        message,
         name: 'TypeError',
       })
     }

@@ -3,7 +3,7 @@ import { defineComponent, h, inject } from 'vue'
 import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
-import { textStyle } from './text-margins'
+import { textStyle } from './EText.margins'
 
 export type ETextProps = SafeEmailAttributes<HTMLAttributes>
 

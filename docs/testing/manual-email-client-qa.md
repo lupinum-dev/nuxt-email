@@ -1,6 +1,6 @@
 # Manual email-client QA
 
-This checklist is the external release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/transactional.vue`. Automated conformance tests must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email v0.1; the tester sends the rendered `html` and `text` with an account they control.
+This checklist is the external v1 release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/transactional.vue`. Automated conformance tests must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email; the tester sends the rendered `html`, `text`, and optional `subject` with an account they control.
 
 ## Fixed fixture coverage
 
@@ -8,11 +8,11 @@ The fixture contains preview text, an explicit document title, a remote logo URL
 
 ## Run procedure
 
-1. Check out the release-candidate commit and record its full commit hash.
+1. Check out the v1 candidate commit and record its full commit hash.
 2. Run the repository verification commands and save the results with the release artifact.
 3. Render `transactional.vue` with the committed fixture props through `renderEmail('transactional', props)`.
 4. Replace only the fixture `logoUrl` with an HTTPS image URL controlled by the tester if image loading must be verified.
-5. Send the exact rendered HTML and plain text to test mailboxes through a provider SDK chosen by the tester.
+5. Send the exact rendered HTML, plain text, and subject when present to test mailboxes through a provider SDK chosen by the tester.
 6. Inspect the same message in Gmail web, Apple Mail on macOS or iOS, and Outlook for Windows.
 7. Record client versions, screenshots, defects, and the final accept/reject decision below.
 
@@ -41,4 +41,4 @@ The fixture contains preview text, an explicit document title, a remote logo URL
 | Defects or accepted limitations | Pending user-run QA |
 | Final decision | Pending user-run QA |
 
-Manual QA is intentionally not marked complete by local automated tests. The v0.1 release candidate can be prepared locally; publishing approval remains with the user after this record is completed.
+Manual QA is intentionally not marked complete by local automated tests. A pre-1.0 candidate can be prepared locally; v1 publishing approval remains with the owner after this record is completed.

@@ -8,10 +8,7 @@ import { EText } from '../../src/runtime/components/EText'
 import { ETailwind } from '../../src/runtime/components/ETailwind'
 import { createTailwindEngine } from '../../src/runtime/tailwind/engine/index'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
-import {
-  scanTailwindTree,
-  TailwindMissingHeadError,
-} from '../../src/runtime/tailwind/transform'
+import { TailwindMissingHeadError } from '../../src/runtime/tailwind/errors'
 
 function fixture(render: () => unknown): Component {
   return defineComponent({
@@ -27,26 +24,6 @@ function emailWith(body: unknown, head: unknown = h(EHead)): Component {
     default: () => h(EHtml, null, { default: () => [head, h(EBody, null, { default: () => body })] }),
   }))
 }
-
-describe('scanTailwindTree', () => {
-  it('collects class tokens in tree order (duplicates kept) and detects a head', () => {
-    const tree = h(EHtml, null, {
-      default: () => [
-        h(EHead),
-        h(EBody, null, { default: () => h('div', { class: 'a b a' }, h('span', { class: 'c' })) }),
-      ],
-    })
-    const { classNames, hasHead } = scanTailwindTree([tree])
-    expect(classNames).toEqual(['a', 'b', 'a', 'c'])
-    expect(hasHead).toBe(true)
-  })
-
-  it('reports no head when none exists in the subtree', () => {
-    const { classNames, hasHead } = scanTailwindTree([h('div', { class: 'md:bg-red-500' })])
-    expect(classNames).toEqual(['md:bg-red-500'])
-    expect(hasHead).toBe(false)
-  })
-})
 
 describe('computed.nonInlinableClassNames', () => {
   it('returns only the original names of classes that produced non-inlinable rules', async () => {
@@ -114,7 +91,7 @@ describe('missing head', () => {
     const withoutHead = fixture(() => h(ETailwind, null, { default: () => h('div', { class: 'md:bg-red-500' }) }))
     await expect(renderComponentToHtml(withoutHead)).rejects.toThrow(TailwindMissingHeadError)
     await expect(renderComponentToHtml(withoutHead)).rejects.toThrow(
-      'Tailwind: <head> not found inside <Tailwind>.\nMove <Head /> inside <Tailwind>, or remove these classes that require a <head>: md:bg-red-500.',
+      'Tailwind: <head> not found inside <ETailwind>.\nMove <EHead /> inside <ETailwind>, or remove these classes that require a <head>: md:bg-red-500.',
     )
   })
 

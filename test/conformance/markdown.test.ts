@@ -99,7 +99,7 @@ describe('EMarkdown', () => {
     const html = await renderComponentToHtml(markdownFixture({
       source: markdownCustomDocument,
       markdownCustomStyles: { h1: { color: 'red' }, bold: { padding: '1px 2px' } },
-      markdownContainerStyles: { padding: '8px' },
+      style: { padding: '8px' },
     }))
 
     expect(normalizeEmailHtml(html)).toBe(
@@ -109,7 +109,7 @@ describe('EMarkdown', () => {
     expect(html).toContain('<strong style="padding:1px 2px">strong</strong>')
   })
 
-  it('forwards fall-through attributes and applies react-dom px units to numeric container styles', {
+  it('forwards fall-through attributes and accepts standard Vue container styles', {
     tags: ['conformance:markdown-container-and-attrs'],
   }, async () => {
     const html = await renderComponentToHtml(markdownFixture({
@@ -117,7 +117,7 @@ describe('EMarkdown', () => {
       id: 'note',
       dir: 'rtl',
       source: markdownCustomDocument,
-      markdownContainerStyles: { padding: 8, paddingTop: 10, marginBottom: 20, lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
+      style: { padding: '8px', paddingTop: '10px', marginBottom: '20px', lineHeight: 2, opacity: 0, zIndex: 5, height: 0 },
     }))
 
     expect(normalizeEmailHtml(html)).toBe(
@@ -127,7 +127,7 @@ describe('EMarkdown', () => {
     expect(html).toContain('class="wrap"')
     expect(html).toContain('id="note"')
     expect(html).toContain('dir="rtl"')
-    // Non-unitless numerics gain px; unitless (line-height/opacity/z-index) and zero stay bare.
+    // Dimensional values carry explicit units; unitless values and zero remain numeric.
     expect(html).toContain('padding:8px')
     expect(html).toContain('padding-top:10px')
     expect(html).toContain('margin-bottom:20px')
@@ -136,6 +136,29 @@ describe('EMarkdown', () => {
     expect(html).toContain('z-index:5;')
     expect(html).toContain('height:0;')
     expect(html).not.toContain('height:0px')
+  })
+
+  it('uses Vue style serialization for object, array, and string values', async () => {
+    const html = await renderComponentToHtml(markdownFixture({
+      source: markdownCustomDocument,
+      style: [{ padding: 8, lineHeight: 2 }, 'margin-top:4px'],
+    }))
+
+    expect(html).toContain('style="padding:8;line-height:2;margin-top:4px;"')
+    expect(html).not.toContain('padding:8px')
+  })
+
+  it('applies distinct Markdown table-header and table-cell styles', async () => {
+    const html = await renderComponentToHtml(markdownFixture({
+      source: '| Header |\n| --- |\n| Cell |',
+      markdownCustomStyles: {
+        th: { color: 'red' },
+        td: { color: 'blue' },
+      },
+    }))
+
+    expect(html).toContain('<th style="color:red">Header</th>')
+    expect(html).toContain('<td style="color:blue">Cell</td>')
   })
 
   it('escapes double quotes in link/image href and title attributes', {
@@ -171,5 +194,61 @@ describe('EMarkdown', () => {
 
     await expect(renderComponentToHtml(fixture))
       .rejects.toThrow('EMarkdown default slot must contain text only')
+  })
+
+  it.each([
+    '<script>alert(1)</script>',
+    '<img src=x onerror="alert(1)">',
+    '<!-- hidden raw HTML -->',
+  ])('rejects raw HTML in Markdown source: %s', async (source) => {
+    await expect(renderComponentToHtml(markdownFixture({ source })))
+      .rejects.toThrow('EMarkdown does not support raw HTML')
+  })
+
+  it.each([
+    '[x](javascript:alert(1))',
+    '[x](javascript&#58;alert(1))',
+    '[x](&#106;avascript:alert(1))',
+    '[x](java&#10;script:alert(1))',
+    '[x](vbscript:msgbox(1))',
+    '![x](data:text/html;base64,PHNjcmlwdD4=)',
+  ])('rejects unsafe Markdown URL schemes: %s', async (source) => {
+    await expect(renderComponentToHtml(markdownFixture({ source })))
+      .rejects.toThrow(/EMarkdown (?:image|link) URL uses an unsupported scheme/)
+  })
+
+  it('escapes HTML-looking code spans and fences instead of activating them', async () => {
+    const source = [
+      '`<img src=x onerror=alert(1)>`',
+      '',
+      '```html',
+      '<script>alert(1)</script>',
+      '```',
+    ].join('\n')
+
+    const html = await renderComponentToHtml(markdownFixture({ source }))
+
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(html).not.toContain('<script>')
+    expect(html).not.toContain('<img src=x')
+  })
+
+  it('keeps common email-safe absolute and relative Markdown destinations', async () => {
+    const source = [
+      '[Web](https://example.com)',
+      '[Email](mailto:hello@example.com)',
+      '[Phone](tel:+431234)',
+      '[Relative](/account)',
+      '![Inline attachment](cid:logo)',
+    ].join(' ')
+
+    const html = await renderComponentToHtml(markdownFixture({ source }))
+
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('href="mailto:hello@example.com"')
+    expect(html).toContain('href="tel:+431234"')
+    expect(html).toContain('href="/account"')
+    expect(html).toContain('src="cid:logo"')
   })
 })

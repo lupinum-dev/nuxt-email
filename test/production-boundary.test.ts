@@ -24,8 +24,21 @@ interface BuildResult {
 
 const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
+const codeBlockFixture = fileURLToPath(new URL('./fixtures/code-block', import.meta.url))
 const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
+const testingClientImportFixture = fileURLToPath(new URL('./fixtures/testing-client-import', import.meta.url))
 const executeFile = promisify(execFile)
+const childOutputStart = 'NUXT_EMAIL_PRODUCTION_RESULT_START'
+const childOutputEnd = 'NUXT_EMAIL_PRODUCTION_RESULT_END'
+
+function parseChildOutput<T>(output: string): T {
+  const start = output.indexOf(childOutputStart)
+  const end = output.indexOf(childOutputEnd, start + childOutputStart.length)
+  if (start < 0 || end < 0) {
+    throw new Error(`Production render returned no framed result: ${output}`)
+  }
+  return JSON.parse(output.slice(start + childOutputStart.length, end)) as T
+}
 
 async function collectFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true })
@@ -127,9 +140,13 @@ describe('production server boundary', () => {
       expect(result.clientModuleIds.length).toBeGreaterThan(0)
       expect(result.clientModuleIds.filter(id => (
         id.includes('/app/emails/')
-        || id.includes('/src/runtime/render/')
-        || id.includes('/src/runtime/server/')
+        || id.includes('/src/runtime/')
+        || id.includes('/css-tree/')
         || id.includes('/html-to-text/')
+        || id.includes('/htmlparser2/')
+        || id.includes('/marked/')
+        || id.includes('/prismjs/')
+        || id.includes('/tailwindcss/')
         || id.includes('/@vue/server-renderer/')
         || id.includes('/@vue+server-renderer@')
       ))).toEqual([])
@@ -142,8 +159,10 @@ describe('production server boundary', () => {
 
       expect(clientOutput).not.toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(clientOutput).not.toContain('/app/emails/')
-      expect(clientOutput).not.toContain('/src/runtime/render/')
+      expect(clientOutput).not.toContain('/src/runtime/')
+      expect(clientOutput).not.toContain('css-tree')
       expect(clientOutput).not.toContain('html-to-text')
+      expect(clientOutput).not.toContain('tailwindcss')
 
       const serverFiles = (await collectFiles(join(result.outputDir, 'server')))
         .filter(path => /\.(?:js|json|map|mjs)$/.test(path))
@@ -153,32 +172,43 @@ describe('production server boundary', () => {
 
       expect(serverOutput).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(serverOutput).toContain('html-to-text')
+      expect(serverOutput).not.toContain('Prism.languages')
+      expect(serverOutput).not.toContain('ECodeBlock')
+      expect(serverOutput).not.toContain('@shikijs')
+      expect(serverOutput).not.toContain('createHighlighterCore')
+      expect(serverFiles.some(path => path.includes('/ECodeBlock-'))).toBe(false)
 
       const routeDirectory = join(result.outputDir, 'server/chunks/routes/api')
       const routeUrls = [
         'render-transactional.get.mjs',
         'render-reset.get.mjs',
+        'render-unsupported-auto-import.get.mjs',
         'render-unknown.get.mjs',
       ].map(filename => pathToFileURL(join(routeDirectory, filename)).href)
       const { stdout } = await executeFile(process.execPath, [
         '--input-type=module',
         '--eval',
-        `const routes = await Promise.all(${JSON.stringify(routeUrls)}.map(url => import(url))); console.log(JSON.stringify(await Promise.all(routes.map(route => route.default()))))`,
+        `const routes = await Promise.all(${JSON.stringify(routeUrls)}.map(url => import(url))); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await Promise.all(routes.map(route => route.default()))) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const [rendered, reset, unknown] = JSON.parse(stdout) as [
+      const [rendered, reset, unsupportedAutoImport, unknown] = parseChildOutput<[
         { html: string, text: string },
         { html: string, text: string },
+        { cause: string, name: string },
         { knownNames: string[], name: string, requestedName: string },
-      ]
+      ]>(stdout)
 
       expect(rendered.html).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(rendered.html).toContain('Welcome, Ada')
       expect(rendered.text).toContain('Activate account https://example.com/activate?token=fixture&source=email')
       expect(reset.text).toContain('Use code VUE-2048 within 15 minutes.')
+      expect(unsupportedAutoImport).toEqual({
+        cause: 'ref is not defined',
+        name: 'EmailRenderError',
+      })
       expect(unknown).toMatchObject({
-        knownNames: ['account/reset-password', 'transactional'],
+        knownNames: ['account/reset-password', 'transactional', 'unsupported-auto-import'],
         name: 'UnknownEmailTemplateError',
         requestedName: 'not-registered',
       })
@@ -188,8 +218,62 @@ describe('production server boundary', () => {
     }
   })
 
+  it('bundles and renders only explicitly enabled code-block grammars', { timeout: 120_000 }, async () => {
+    const result = await buildFixture(codeBlockFixture)
+
+    try {
+      const serverFiles = (await collectFiles(join(result.outputDir, 'server')))
+        .filter(path => /\.(?:js|json|map|mjs)$/.test(path))
+      const serverOutput = (
+        await Promise.all(serverFiles.map(path => readFile(path, 'utf8')))
+      ).join('\n')
+
+      expect(serverOutput).toContain('ECodeBlock')
+      expect(serverOutput).toContain('source.ts')
+      expect(serverOutput).not.toContain('source.python')
+      expect(serverOutput).not.toContain('bundle/web')
+
+      const routePath = serverFiles.find(path => (
+        path.replaceAll('\\', '/').endsWith('/chunks/routes/api/render-code.get.mjs')
+      ))
+      expect(routePath).toBeDefined()
+      const routeUrl = pathToFileURL(routePath!).href
+      const { stdout } = await executeFile(process.execPath, [
+        '--input-type=module',
+        '--eval',
+        `const route = await import(${JSON.stringify(routeUrl)}); const handler = typeof route.default === 'function' ? route.default : Object.values(route).find(value => value && typeof value === 'object' && typeof value.default === 'function')?.default; if (typeof handler !== 'function') throw new TypeError('Built code-block route exposed no handler'); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await handler()) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
+      ], {
+        env: { ...process.env, NODE_ENV: 'production' },
+      })
+      const rendered = parseChildOutput<{
+        concurrentEqual: boolean
+        configuredTest: { html: string, text: string }
+        production: { html: string, text: string }
+      }>(stdout)
+      const { configuredTest, production } = rendered
+
+      expect(rendered.concurrentEqual).toBe(true)
+      expect(configuredTest).toEqual(production)
+      expect(production.html).toContain('data-code-theme="github-dark"')
+      expect(production.html).toContain('color:#F97583')
+      expect(production.html).toContain('color:#9ECBFF')
+      expect(production.html).toContain('padding:16px')
+      expect(production.html).not.toContain('width:100%')
+      expect(production.html).toContain('&lt;script&gt;')
+      expect(production.html).not.toContain('<script>')
+      expect(production.text).toBe('const answer: string = "<script>"')
+    }
+    finally {
+      await rm(result.temporaryDirectory, { recursive: true, force: true })
+    }
+  })
+
   it('fails clearly when application code imports renderEmail', { timeout: 120_000 }, async () => {
     await expect(buildFixture(clientImportFixture)).rejects.toThrow(/failed to find "renderEmail" imported from "#imports"/i)
+  })
+
+  it('rejects the generated testing renderer from the client graph', { timeout: 120_000 }, async () => {
+    await expect(buildFixture(testingClientImportFixture)).rejects.toThrow(/node:async_hooks|async_hooks.*externalized for browser/i)
   })
 
   it('omits preview routes and fixtures while keeping production email rendering', { timeout: 120_000 }, async () => {
@@ -211,7 +295,7 @@ describe('production server boundary', () => {
       const productionOutput = `${publicOutput}\n${serverOutput}`
 
       expect(outputPaths.filter(path => path.includes('/__email'))).toEqual([])
-      expect(outputPaths.filter(path => /preview-(?:page|render|templates)\.get/.test(path))).toEqual([])
+      expect(outputPaths.filter(path => path.includes('dev-preview'))).toEqual([])
       expect(outputPaths.filter(path => path.includes('.fixtures.'))).toEqual([])
 
       expect(serverOutput).not.toContain('route: \'/__email\'')
@@ -219,9 +303,9 @@ describe('production server boundary', () => {
       expect(serverOutput).not.toContain('route: \'/__email/render\'')
       expect(productionOutput).not.toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
       expect(productionOutput).not.toContain('NUXT_EMAIL_FIXTURE_ONLY_93D1')
-      expect(productionOutput).not.toContain('preview-page.get')
-      expect(productionOutput).not.toContain('preview-render.get')
-      expect(productionOutput).not.toContain('preview-templates.get')
+      expect(productionOutput).not.toContain('dev-preview/page.get')
+      expect(productionOutput).not.toContain('dev-preview/render.get')
+      expect(productionOutput).not.toContain('dev-preview/templates.get')
       expect(productionOutput).not.toContain('welcome.fixtures')
       expect(productionOutput).not.toContain('broken.fixtures')
 
@@ -237,11 +321,11 @@ describe('production server boundary', () => {
       const { stdout } = await executeFile(process.execPath, [
         '--input-type=module',
         '--eval',
-        `const route = await import(${JSON.stringify(pathToFileURL(directRenderRoute).href)}); console.log(JSON.stringify(await route.default()))`,
+        `const route = await import(${JSON.stringify(pathToFileURL(directRenderRoute).href)}); const payload = ${JSON.stringify(childOutputStart)} + JSON.stringify(await route.default()) + ${JSON.stringify(childOutputEnd)}; process.stdout.write(payload, () => process.exit(0))`,
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const rendered = JSON.parse(stdout) as { html: string, text: string }
+      const rendered = parseChildOutput<{ html: string, text: string }>(stdout)
 
       expect(rendered.html).toContain('Welcome, Ada')
       expect(rendered.html).toContain('PREVIEW_VERSION_ONE')

@@ -2,7 +2,7 @@
   <main>
     <header>
       <p class="product-name">
-        nuxt-email <span>v0.1 playground</span>
+        nuxt-email <span>playground</span>
       </p>
       <h1>Write once. Inspect the exact server output.</h1>
       <p class="lede">

@@ -39,8 +39,8 @@ describe('Nuxt Email module integration', async () => {
     }>('/api/render-unknown')
 
     expect(result).toEqual({
-      knownNames: ['account/reset-password', 'transactional'],
-      message: 'Unknown email template "not-registered"; known templates: account/reset-password, transactional',
+      knownNames: ['account/reset-password', 'transactional', 'unsupported-auto-import'],
+      message: 'Unknown email template "not-registered"; known templates: account/reset-password, transactional, unsupported-auto-import',
       name: 'UnknownEmailTemplateError',
       requestedName: 'not-registered',
     })

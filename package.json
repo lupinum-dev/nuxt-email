@@ -1,11 +1,11 @@
 {
-  "name": "nuxt-email",
+  "name": "@lupinum/nuxt-email",
   "version": "0.1.0",
-  "description": "Typed Vue email authoring and server-side rendering for Nuxt",
+  "description": "Typed transactional email for Nuxt with email-safe Tailwind v4",
   "keywords": [
     "email",
     "nuxt",
-    "ssr",
+    "tailwindcss",
     "transactional-email",
     "vue"
   ],
@@ -14,6 +14,9 @@
     "type": "git",
     "url": "git+https://github.com/Mat4m0/nuxt-email.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "homepage": "https://github.com/Mat4m0/nuxt-email#readme",
   "bugs": {
     "url": "https://github.com/Mat4m0/nuxt-email/issues"
@@ -21,77 +24,83 @@
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "engines": {
-    "node": "^22.12.0 || ^24.11.0"
+    "node": "^22.18.0 || ^24.11.0 || ^26.0.0"
   },
   "exports": {
     ".": {
-      "types": "./dist/types.d.mts",
+      "types": "./dist/module.d.mts",
       "import": "./dist/module.mjs"
     },
     "./testing": {
       "types": "./dist/runtime/testing/index.d.ts",
       "import": "./dist/runtime/testing/index.js"
+    },
+    "./define-email": {
+      "types": "./dist/runtime/define-email.d.ts",
+      "import": "./dist/runtime/define-email.js"
+    },
+    "./errors": {
+      "types": "./dist/runtime/errors.d.ts",
+      "import": "./dist/runtime/errors.js"
     }
   },
   "main": "./dist/module.mjs",
-  "types": "./dist/types.d.mts",
+  "types": "./dist/module.d.mts",
   "files": [
     "CHANGELOG.md",
-    "docs/*.md",
-    "docs/conformance",
-    "docs/performance",
-    "docs/testing",
     "dist",
     "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
-    "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./scripts/conformance-reporter.ts",
-    "conformance:write": "NUXT_EMAIL_CONFORMANCE_REPORT=write vitest run test/conformance --reporter=default --reporter=./scripts/conformance-reporter.ts",
+    "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
+    "conformance:write": "NUXT_EMAIL_CONFORMANCE_REPORT=write vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
     "prepack": "nuxt-module-build build",
     "dev": "pnpm dev:prepare && nuxt dev playground",
     "dev:build": "nuxt build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxt prepare playground",
-    "oracle:check": "node --import tsx scripts/generate-react-oracle.ts --check",
-    "oracle:write": "node --import tsx scripts/generate-react-oracle.ts --write",
-    "performance:measure": "node --expose-gc --import tsx scripts/measure-renderer.ts",
-    "proofs:generate": "node --import tsx scripts/generate-proofs.ts",
-    "proofs:send": "node --import tsx scripts/send-proofs.ts",
+    "oracle:check": "node --import tsx test/conformance/tooling/generate-react-oracle.ts --check",
+    "oracle:write": "node --import tsx test/conformance/tooling/generate-react-oracle.ts --write",
+    "performance:measure": "node --expose-gc --import tsx test/performance/measure.ts",
+    "proofs:generate": "node --import tsx scripts/proofs/generate.ts",
+    "proofs:send": "node --import tsx scripts/proofs/send.ts",
     "release:verify": "node --import tsx scripts/verify-release.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
+    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
   },
   "peerDependencies": {
-    "nuxt": "^4.4.8",
-    "vue": "^3.5.0"
+    "nuxt": ">=4.4.8 <4.5.0",
+    "vue": "^3.5.35"
   },
   "dependencies": {
-    "@nuxt/kit": "^4.4.8",
+    "@nuxt/kit": ">=4.4.8 <4.5.0",
+    "@shikijs/core": "4.3.1",
+    "@shikijs/engine-javascript": "4.3.1",
+    "@shikijs/langs": "4.3.1",
+    "@shikijs/themes": "4.3.1",
     "@vitejs/plugin-vue": "6.0.8",
     "css-tree": "3.2.1",
-    "h3": "1.15.8",
+    "h3": "1.15.11",
     "html-to-text": "9.0.5",
     "htmlparser2": "^10.1.0",
     "marked": "15.0.12",
-    "prismjs": "1.30.0",
     "tailwindcss": "4.1.18"
   },
   "devDependencies": {
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "^4.4.8",
+    "@nuxt/schema": "4.4.8",
     "@nuxt/test-utils": "^4.0.3",
     "@react-email/render": "2.1.0",
     "@types/css-tree": "2.3.11",
     "@types/html-to-text": "9.0.4",
     "@types/node": "latest",
-    "@types/prismjs": "1.26.6",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^10.4.1",
-    "nuxt": "^4.4.8",
+    "nuxt": "4.4.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-email": "6.9.0",

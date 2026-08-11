@@ -1,11 +1,99 @@
-import type { Component } from 'vue'
+import type { Component, FunctionalComponent } from 'vue'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { fileURLToPath } from 'node:url'
 import { createCommentVNode, defineComponent, Fragment, h, resolveComponent } from 'vue'
 import { describe, expect, it } from 'vitest'
+import * as emailComponents from '../../src/runtime/components'
+import { EMAIL_COMPONENT_NAMES } from '../../src/runtime/components/email-component-names'
 import { EmailRenderError } from '../../src/runtime/render/errors'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
 import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
 
+const executeFile = promisify(execFile)
+const workspaceDirectory = fileURLToPath(new URL('../..', import.meta.url))
+
 describe('component rendering', () => {
+  it('registers the supported email components for compiled no-import templates', async () => {
+    const NoImportEmail = defineComponent({
+      name: 'NoImportEmail',
+      setup() {
+        const EHtml = resolveComponent('EHtml')
+        const EBody = resolveComponent('EBody')
+        const EText = resolveComponent('EText')
+        return () => h(EHtml, null, {
+          default: () => h(EBody, null, {
+            default: () => h(EText, null, { default: () => 'Hello' }),
+          }),
+        })
+      },
+    })
+
+    expect(Object.keys(emailComponents).sort()).toEqual([...EMAIL_COMPONENT_NAMES].sort())
+    await expect(renderEmailComponent(NoImportEmail)).resolves.toMatchObject({ text: 'Hello' })
+  })
+
+  it('rejects unresolved E-prefixed components instead of emitting fake email markup', async () => {
+    const UnconfiguredEmail = defineComponent({
+      name: 'UnconfiguredEmail',
+      setup() {
+        const ECodeBlock = resolveComponent('ECodeBlock')
+        return () => h('html', [
+          h('body', [
+            h(ECodeBlock, { code: 'const answer = 42', language: 'typescript' }),
+          ]),
+        ])
+      },
+    })
+
+    const error = await renderEmailComponent(UnconfiguredEmail).catch(value => value)
+
+    expect(error).toBeInstanceOf(EmailRenderError)
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe(
+      'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
+    )
+  })
+
+  it('rejects unresolved E-prefixed components when Vue production warnings are disabled', async () => {
+    const script = `
+      import { defineComponent, h, resolveComponent } from 'vue'
+      import { renderEmailComponent } from './src/runtime/render/render-email-component.ts'
+      const Email = defineComponent({
+        name: 'ProductionUnresolvedEmail',
+        setup() {
+          const ECodeBlock = resolveComponent('ECodeBlock')
+          return () => h('html', [h('body', [h(ECodeBlock, { code: 'x', language: 'typescript' })])])
+        },
+      })
+      try {
+        await renderEmailComponent(Email)
+        process.stdout.write('resolved')
+      }
+      catch (error) {
+        process.stdout.write(JSON.stringify({
+          cause: error.cause instanceof Error ? error.cause.message : String(error.cause),
+          name: error.name,
+        }))
+      }
+    `
+    const { stdout } = await executeFile(process.execPath, [
+      '--import',
+      'tsx',
+      '--input-type=module',
+      '--eval',
+      script,
+    ], {
+      cwd: workspaceDirectory,
+      env: { ...process.env, NODE_ENV: 'production' },
+    })
+
+    expect(JSON.parse(stdout)).toEqual({
+      cause: 'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
+      name: 'EmailRenderError',
+    })
+  })
+
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {
     const FragmentEmail = defineComponent({
       name: 'FragmentEmail',
@@ -53,22 +141,13 @@ describe('component rendering', () => {
     expect(first.text).toBe('Hello')
   })
 
-  it('resolves the public E-components as globals for compiled Nuxt email SFCs', async () => {
-    const GlobalComponentEmail = defineComponent({
-      name: 'GlobalComponentEmail',
-      setup: () => () => h(resolveComponent('EHtml'), null, {
-        default: () => h(resolveComponent('EBody'), null, {
-          default: () => h(resolveComponent('EText'), null, {
-            default: () => 'Global primitives work',
-          }),
-        }),
-      }),
-    })
+  it('accepts typed functional-component props when no runtime declaration exists', async () => {
+    const FunctionalEmail: FunctionalComponent<{ name: string }> = props =>
+      h('html', [h('body', [h('p', `Hi ${props.name}`)])])
 
-    const result = await renderEmailComponent(GlobalComponentEmail)
+    const result = await renderEmailComponent(FunctionalEmail, { name: 'Ada' })
 
-    expect(result.html).toContain('<html dir="ltr" lang="en">')
-    expect(result.text).toBe('Global primitives work')
+    expect(result.text).toBe('Hi Ada')
   })
 
   it.each([
@@ -101,7 +180,7 @@ describe('component rendering', () => {
       setup: () => () => h('html', [h('body')]),
     })
 
-    const error = await renderEmailComponent(RequiredPropsEmail).catch(value => value)
+    const error = await renderEmailComponent(RequiredPropsEmail, {} as never).catch(value => value)
 
     expect(error).toBeInstanceOf(EmailRenderError)
     expect(error.cause).toBeInstanceOf(TypeError)
