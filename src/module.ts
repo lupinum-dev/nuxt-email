@@ -135,7 +135,8 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     nuxt.hook('builder:watch', async (event, path) => {
-      if (!['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)) {
+      const structureChanged = ['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)
+      if (event !== 'change' && !structureChanged) {
         return
       }
 
@@ -145,11 +146,12 @@ export default defineNuxtModule<ModuleOptions>({
         return
       }
 
-      const nextTemplates = await loadTemplates()
-      templates = nextTemplates
-      await updateTemplates({
-        filter: template => template.filename === typeTemplate.filename,
-      })
+      if (structureChanged) {
+        templates = await loadTemplates()
+        await updateTemplates({
+          filter: template => template.filename === typeTemplate.filename,
+        })
+      }
       await reloadRegistry()
     })
 
