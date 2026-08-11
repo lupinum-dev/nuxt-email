@@ -134,16 +134,13 @@ export default defineEventHandler(async () => {
 })
 ```
 
-The result is exactly:
+The canonical result type is available as a type-only root import:
 
 ```ts
-interface RenderedEmail {
-  html: string
-  text: string
-  /** Present only when the template declared a subject with `defineEmail`. */
-  subject?: string
-}
+import type { RenderedEmail } from '@lupinum/nuxt-email'
 ```
+
+It contains `html`, `text`, and an optional `subject` present only when the template declared one with `defineEmail`.
 
 Do not import `renderEmail` into Vue components or other client code. Nuxt Email does not send mail, choose providers, or manage recipients. It can declare a `subject` (via `defineEmail`), but the application still owns delivery: pass the returned `html`, `text`, and optional `subject` to the provider SDK alongside that provider's own `from` and `to` fields. See the [renderer contract](https://nuxt-email.lupinum.com/docs/reference/render-email).
 

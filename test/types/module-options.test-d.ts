@@ -1,4 +1,5 @@
 import type NuxtEmail from '../../src/module'
+import type { RenderedEmail } from '../../src/module'
 
 type NuxtEmailOptions = Parameters<typeof NuxtEmail>[0]
 
@@ -12,6 +13,12 @@ const codeBlockOptions: NuxtEmailOptions = {
   },
 }
 void codeBlockOptions
+
+const rendered: RenderedEmail = {
+  html: '<html><body>Hello</body></html>',
+  text: 'Hello',
+}
+void rendered
 
 // @ts-expect-error unsupported module options are rejected
 const arbitraryOptions: NuxtEmailOptions = { arbitrary: true }
