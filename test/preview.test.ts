@@ -1,4 +1,4 @@
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { $fetch, createTest, fetch as testFetch, setupMaps } from '@nuxt/test-utils/e2e'
@@ -11,6 +11,7 @@ await cp(sourceFixtureRoot, fixtureRoot, {
   filter: source => !['.nuxt', '.output', 'node_modules'].includes(basename(source)),
 })
 const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
+const welcomeFixture = join(fixtureRoot, 'app/emails/welcome.fixtures.ts')
 
 describe('development email preview', async () => {
   const test = createTest({
@@ -127,4 +128,72 @@ describe('development email preview', async () => {
     // Rebuild latency under a fully parallel suite exceeds the 5s default budget,
     // and the poll window must fit inside the test's own timeout.
   }, 30_000)
+
+  it('refreshes edited fixture data without restarting the development server', async () => {
+    const originalSource = await readFile(welcomeFixture, 'utf8')
+    const updatedSource = originalSource.replace('firstName: \'Ada\'', 'firstName: \'Grace\'')
+
+    try {
+      await writeFile(welcomeFixture, updatedSource)
+      await expect.poll(async () => {
+        const result = await $fetch<{ html: string }>(
+          '/sub/__email/render?name=welcome&format=json',
+        )
+        return result.html
+      }, {
+        interval: 100,
+        timeout: 20_000,
+      }).toContain('Welcome, Grace')
+    }
+    finally {
+      await writeFile(welcomeFixture, originalSource)
+    }
+  }, 30_000)
+
+  it('regenerates the registry for real add, rename, and delete events', async () => {
+    const emailDirectory = join(fixtureRoot, 'app/emails')
+    const addedTemplate = join(emailDirectory, 'dynamic.vue')
+    const addedFixture = join(emailDirectory, 'dynamic.fixtures.ts')
+    const renamedTemplate = join(emailDirectory, 'renamed-dynamic.vue')
+    const renamedFixture = join(emailDirectory, 'renamed-dynamic.fixtures.ts')
+    const templateSource = '<template><EHtml><EBody><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EBody></EHtml></template>'
+    const fixtureSource = 'export default {}\n'
+    const templateNames = async () => {
+      const result = await $fetch<{ templates: Array<{ name: string }> }>(
+        '/sub/__email/api/templates',
+      )
+      return result.templates.map(template => template.name)
+    }
+
+    try {
+      await writeFile(addedFixture, fixtureSource)
+      await writeFile(addedTemplate, templateSource)
+      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+        .toContain('dynamic')
+      await expect.poll(async () => {
+        const result = await $fetch<{ html: string }>(
+          '/sub/__email/render?name=dynamic&format=json',
+        )
+        return result.html
+      }, { interval: 100, timeout: 20_000 }).toContain('DYNAMIC_REGISTRY_TEMPLATE')
+
+      await rename(addedFixture, renamedFixture)
+      await rename(addedTemplate, renamedTemplate)
+      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+        .toContain('renamed-dynamic')
+      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+        .not.toContain('dynamic')
+
+      await rm(renamedTemplate)
+      await rm(renamedFixture)
+      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+        .not.toContain('renamed-dynamic')
+    }
+    finally {
+      await rm(addedTemplate, { force: true })
+      await rm(addedFixture, { force: true })
+      await rm(renamedTemplate, { force: true })
+      await rm(renamedFixture, { force: true })
+    }
+  }, 60_000)
 })
