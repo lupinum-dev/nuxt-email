@@ -35,17 +35,19 @@ Nuxt `4.4.8` is the verified compatibility baseline. Nuxt `4.5.x` is explicitly 
 In an existing supported Nuxt application:
 
 ```bash
+npx nuxt module add @lupinum/nuxt-email
+```
+
+Or install and register it manually:
+
+```bash
 pnpm add @lupinum/nuxt-email
 ```
 
-Register the module:
-
 ```ts
 // nuxt.config.ts
-import NuxtEmail from '@lupinum/nuxt-email'
-
 export default defineNuxtConfig({
-  modules: [NuxtEmail],
+  modules: ['@lupinum/nuxt-email'],
 })
 ```
 
@@ -53,18 +55,17 @@ Syntax-highlighted code blocks are deliberately opt-in. Configure one Shiki them
 
 ```ts
 export default defineNuxtConfig({
-  modules: [
-    [NuxtEmail, {
-      codeBlock: {
-        languages: ['typescript', 'vue'],
-        theme: 'github-dark',
-      },
-    }],
-  ],
+  modules: ['@lupinum/nuxt-email'],
+  nuxtEmail: {
+    codeBlock: {
+      languages: ['typescript', 'vue'],
+      theme: 'github-dark',
+    },
+  },
 })
 ```
 
-Without `codeBlock`, `ECodeBlock` is not registered and Shiki is absent from the production bundle. Follow the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation) for the supported setup.
+Without `codeBlock`, `ECodeBlock` is not registered and Shiki is not loaded or included in the production bundle. Shiki remains an installation-time dependency; this option removes its module-setup and deployed-bundle cost, not its package download. Follow the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation) for the supported setup.
 
 ## Author a Vue email
 
