@@ -42,7 +42,11 @@ export interface ModuleOptions {
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
-    name: 'nuxt-email',
+    name: '@lupinum/nuxt-email',
+    configKey: 'nuxtEmail',
+    compatibility: {
+      nuxt: '>=4.4.8 <4.5.0',
+    },
   },
   async setup(options, nuxt) {
     const optionNames = Object.keys(options).filter(name => name !== 'codeBlock').sort()

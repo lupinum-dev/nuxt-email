@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -36,6 +36,26 @@ afterEach(async () => {
 })
 
 describe('Nuxt email module options', () => {
+  it('uses the published package identity and compatibility range', async () => {
+    const packageManifest = JSON.parse(
+      await readFile(join(workspaceDirectory, 'package.json'), 'utf8'),
+    ) as { name: string, peerDependencies: { nuxt: string } }
+
+    const getMeta = NuxtEmail.getMeta
+    expect(getMeta).toBeTypeOf('function')
+    if (getMeta === undefined) {
+      throw new TypeError('Nuxt module metadata is unavailable')
+    }
+
+    await expect(getMeta()).resolves.toMatchObject({
+      compatibility: {
+        nuxt: packageManifest.peerDependencies.nuxt,
+      },
+      configKey: 'nuxtEmail',
+      name: packageManifest.name,
+    })
+  })
+
   it('installs without options', async () => {
     const nuxt = await loadFixtureNuxt()
 
