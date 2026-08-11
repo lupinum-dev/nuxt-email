@@ -284,7 +284,7 @@ async function verifyFreshConsumer(
   packedManifest: PackageManifest,
 ): Promise<FreshConsumerResult> {
   const freshInstallStartedAt = performance.now()
-  const consumerDirectory = join(temporaryRoot, `fresh-consumer-${variant}`)
+  const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}-${variant}`)
   const timingsMilliseconds: Record<string, number> = {}
   const fixtureMaterializationStartedAt = performance.now()
   await cp(fixtureRoots[variant], consumerDirectory, { recursive: true })

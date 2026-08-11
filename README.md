@@ -28,7 +28,7 @@ The package identity is **`@lupinum/nuxt-email`**. The repository is still pre-1
 - Nuxt `>=4.4.8 <4.5.0`.
 - Vue `^3.5.35`.
 
-Nuxt `4.4.8` is the verified compatibility baseline. Nuxt `4.5.x` is explicitly excluded because `@nuxt/vite-builder@4.5.0` imports an undeclared `unplugin` dependency before this module loads. Widen the peer range only after an isolated consumer passes. CI covers Node 22, 24, and 26. Other Node majors, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the support contract.
+Nuxt `4.4.8` is the verified compatibility baseline. Nuxt `4.5.x` is explicitly excluded: an exact Nuxt `4.5.2` no-hoist consumer still fails before this module loads because `@nuxt/vite-builder` imports an undeclared `unplugin` dependency. Widen the peer range only after an isolated consumer passes without a dependency shim. CI covers Node 22, 24, and 26. Other Node majors, Nuxt 3, Nuxt 5, edge runtimes, and client-side email rendering are outside the support contract.
 
 ## Install and configure
 
