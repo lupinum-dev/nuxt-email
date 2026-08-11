@@ -1,10 +1,16 @@
+import { Script } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import {
   PREVIEW_PAGE_CSP,
   PREVIEW_PAGE_HTML,
 } from '../../../src/runtime/dev-preview/page.get'
+import { PREVIEW_PAGE_CLIENT } from '../../../src/runtime/dev-preview/page-script'
 
 describe('development preview page', () => {
+  it('ships syntactically valid client JavaScript', () => {
+    expect(() => new Script(PREVIEW_PAGE_CLIENT)).not.toThrow()
+  })
+
   it('ships as one self-contained accessible product surface', () => {
     expect(PREVIEW_PAGE_HTML).toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
     expect(PREVIEW_PAGE_HTML).toContain('role="tablist"')
@@ -36,7 +42,11 @@ describe('development preview page', () => {
     expect(PREVIEW_PAGE_HTML).toContain('document.execCommand(\'copy\')')
     expect(PREVIEW_PAGE_HTML).toContain('previousStillExists')
     expect(PREVIEW_PAGE_HTML).toContain('new URLSearchParams({ name: name, format: \'json\' })')
-    expect(PREVIEW_PAGE_HTML).toContain('return \'/__email/render?\' + query.toString()')
+    expect(PREVIEW_PAGE_HTML).toContain('var previewRoot = window.location.pathname')
+    expect(PREVIEW_PAGE_HTML).toContain(`previewRoot = previewRoot.slice(0, -1)`)
+    expect(PREVIEW_PAGE_HTML).toContain(`return previewUrl('/render?' + query.toString())`)
+    expect(PREVIEW_PAGE_HTML).toContain(`fetchJson(previewUrl('/api/templates'))`)
+    expect(PREVIEW_PAGE_HTML).not.toContain(`return '/__email/render?'`)
   })
 
   it('restores the preview iframe after a failed render recovers', () => {

@@ -35,6 +35,14 @@ export const PREVIEW_PAGE_CLIENT = `
         title: document.getElementById('viewer-title'),
         viewportButtons: Array.from(document.querySelectorAll('.viewport-toggle .segment'))
       }
+      var previewRoot = window.location.pathname
+      while (previewRoot.endsWith('/')) {
+        previewRoot = previewRoot.slice(0, -1)
+      }
+
+      function previewUrl(path) {
+        return previewRoot + path
+      }
 
       function setStatus(message, statusState) {
         if (elements.status.dataset.state === statusState && elements.statusText.textContent === message) {
@@ -46,12 +54,12 @@ export const PREVIEW_PAGE_CLIENT = `
 
       function rawRenderUrl(name) {
         var query = new URLSearchParams({ name: name, revision: String(state.revision) })
-        return '/__email/render?' + query.toString()
+        return previewUrl('/render?' + query.toString())
       }
 
       function jsonRenderUrl(name) {
         var query = new URLSearchParams({ name: name, format: 'json' })
-        return '/__email/render?' + query.toString()
+        return previewUrl('/render?' + query.toString())
       }
 
       function updatePreviewFrame() {
@@ -238,7 +246,7 @@ export const PREVIEW_PAGE_CLIENT = `
         }
 
         try {
-          var list = await fetchJson('/__email/api/templates')
+          var list = await fetchJson(previewUrl('/api/templates'))
           var previousName = state.selectedName
           updateTemplateOptions(list.templates)
           if (previousName !== state.selectedName) {

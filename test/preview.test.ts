@@ -21,7 +21,7 @@ describe('development email preview', async () => {
   await setupMaps.vitest(test)
 
   it('serves the standalone sandboxed preview application', async () => {
-    const response = await testFetch('/__email')
+    const response = await testFetch('/sub/__email')
     const html = await response.text()
 
     expect(html).toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
@@ -38,7 +38,7 @@ describe('development email preview', async () => {
   it('lists every canonical template and its fixture availability', async () => {
     const result = await $fetch<{
       templates: Array<{ name: string, hasFixture: boolean }>
-    }>('/__email/api/templates')
+    }>('/sub/__email/api/templates')
 
     expect(result.templates).toEqual([
       { name: 'broken', hasFixture: true },
@@ -49,10 +49,10 @@ describe('development email preview', async () => {
 
   it('matches canonical direct rendering in JSON and raw HTML views', async () => {
     const preview = await $fetch<{ name: string, html: string, text: string, bytes: number }>(
-      '/__email/render?name=welcome&format=json',
+      '/sub/__email/render?name=welcome&format=json',
     )
-    const direct = await $fetch<{ html: string, text: string }>('/api/direct-render')
-    const raw = await testFetch('/__email/render?name=welcome')
+    const direct = await $fetch<{ html: string, text: string }>('/sub/api/direct-render')
+    const raw = await testFetch('/sub/__email/render?name=welcome')
     const rawHtml = await raw.text()
 
     const { bytes, ...previewOutput } = preview
@@ -67,7 +67,7 @@ describe('development email preview', async () => {
 
   it('reports the exact UTF-8 byte size of the rendered html for the Gmail clipping budget', async () => {
     const preview = await $fetch<{ html: string, bytes: number }>(
-      '/__email/render?name=welcome&format=json',
+      '/sub/__email/render?name=welcome&format=json',
     )
 
     expect(preview.bytes).toBe(Buffer.byteLength(preview.html, 'utf8'))
@@ -76,14 +76,14 @@ describe('development email preview', async () => {
 
   it('omits the subject for templates that do not call defineEmail', async () => {
     const welcome = await $fetch<{ subject?: string }>(
-      '/__email/render?name=welcome&format=json',
+      '/sub/__email/render?name=welcome&format=json',
     )
 
     expect(welcome).not.toHaveProperty('subject')
   })
 
   it('returns actionable development errors and rejects fixtureless templates', async () => {
-    const broken = await testFetch('/__email/render?name=broken&format=json')
+    const broken = await testFetch('/sub/__email/render?name=broken&format=json')
     const brokenBody = await broken.json() as {
       data: {
         error: {
@@ -95,7 +95,7 @@ describe('development email preview', async () => {
         }
       }
     }
-    const fixtureless = await testFetch('/__email/render?name=without-fixture&format=json')
+    const fixtureless = await testFetch('/sub/__email/render?name=without-fixture&format=json')
 
     expect(broken.status).toBe(500)
     expect(brokenBody.data.error.componentName).toBe('broken')
@@ -113,7 +113,7 @@ describe('development email preview', async () => {
       await writeFile(welcomeTemplate, updatedSource)
       await expect.poll(async () => {
         const result = await $fetch<{ html: string }>(
-          '/__email/render?name=welcome&format=json',
+          '/sub/__email/render?name=welcome&format=json',
         )
         return result.html
       }, {
