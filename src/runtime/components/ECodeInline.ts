@@ -33,8 +33,6 @@ export const ECodeInline = defineComponent({
       assertSafeEmailAttributes('ECodeInline', attrs)
       const { class: className, style, ...attributes } = attrs
       const userClass = typeof className === 'string' && className ? className : ''
-      const children = slots.default?.()
-
       const codeProps: Record<string, unknown> = {
         ...attributes,
         class: `${userClass} cino`,
@@ -46,14 +44,14 @@ export const ECodeInline = defineComponent({
       return [
         h('style', ORANGE_FR_STYLE),
         // Does not render on Orange.fr
-        h('code', codeProps, children),
+        h('code', codeProps, slots.default?.()),
         // Renders only on Orange.fr
         h('span', {
           ...attributes,
           'class': `${userClass} cio`,
           'style': mergeEmailStyles({ display: 'none' }, style),
           'data-skip-in-text': 'true',
-        }, children),
+        }, slots.default?.()),
       ]
     }
   },

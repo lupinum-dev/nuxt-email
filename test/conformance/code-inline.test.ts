@@ -93,4 +93,25 @@ describe('ECodeInline', () => {
     expect(text).toBe('const x = 1;')
     expect(renderPlainText(oracle.cases['code-inline-basic'].html)).toBe('const x = 1;const x = 1;')
   })
+
+  it('creates unique slot VNodes for the visible and compatibility copies', async () => {
+    let slotCalls = 0
+    const fixture = defineComponent({
+      name: 'CodeInlineUniqueVNodeFixture',
+      setup() {
+        return () => h(ECodeInline, {}, {
+          default: () => {
+            slotCalls++
+            return h('span', 'const x = 1;')
+          },
+        })
+      },
+    })
+
+    const html = await renderComponentToHtml(fixture)
+
+    expect(slotCalls).toBe(2)
+    expect(html).toContain('<code class="cino"><span>const x = 1;</span></code>')
+    expect(html).toContain('<span class="cio" style="display:none;" data-skip-in-text="true"><span>const x = 1;</span></span>')
+  })
 })
