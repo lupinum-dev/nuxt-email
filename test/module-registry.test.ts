@@ -26,6 +26,71 @@ afterEach(async () => {
 })
 
 describe('Nuxt email registry regeneration', () => {
+  it('discovers templates from a custom Nuxt srcDir', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const srcDir = join(rootDir, 'custom-source')
+    await mkdir(join(srcDir, 'emails'), { recursive: true })
+    await writeFile(join(srcDir, 'emails/custom.vue'), '<template><html><body>Custom</body></html></template>')
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: false,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+        srcDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const registry = (nuxt.options.nitro as { virtual?: Record<string, unknown> })
+        .virtual?.['#nuxt-email/registry']
+      expect(registry).toBeTypeOf('function')
+      const source = await (registry as () => string | Promise<string>)()
+      expect(source).toContain('["custom"]')
+      expect(source).not.toContain('["welcome"]')
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
+  it('does not merge email templates from inherited Nuxt layers', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const layerDir = join(rootDir, 'layer')
+    await mkdir(join(layerDir, 'app/emails'), { recursive: true })
+    await writeFile(join(layerDir, 'nuxt.config.ts'), 'export default defineNuxtConfig({})')
+    await writeFile(join(layerDir, 'app/emails/layer-only.vue'), '<template><html><body>Layer</body></html></template>')
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: false,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        extends: [layerDir],
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const registry = (nuxt.options.nitro as { virtual?: Record<string, unknown> })
+        .virtual?.['#nuxt-email/registry']
+      expect(registry).toBeTypeOf('function')
+      const source = await (registry as () => string | Promise<string>)()
+      expect(source).toContain('["welcome"]')
+      expect(source).not.toContain('["layer-only"]')
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
   it('installs only the intended server-side authoring surface', async () => {
     const rootDir = await temporaryNuxtDirectory()
     const nuxt = await loadNuxt({

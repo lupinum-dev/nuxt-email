@@ -70,6 +70,8 @@ Without `codeBlock`, `ECodeBlock` is not registered and Shiki is absent from the
 
 Every `.vue` file under `app/emails/` is a template. Nested paths become slash-separated names; for example, `app/emails/account/reset-password.vue` is named `account/reset-password`. `app/emails/components/` is reserved for application-owned supporting components and is not discovered as templates.
 
+Discovery follows Nuxt's active `srcDir` (`src/emails/` when `srcDir: 'src/'`). It intentionally does not merge email templates from inherited layers; the active application owns one registry.
+
 ```vue
 <!-- app/emails/welcome.vue -->
 <script setup lang="ts">
