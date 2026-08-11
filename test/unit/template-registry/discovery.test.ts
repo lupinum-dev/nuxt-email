@@ -12,6 +12,7 @@ import {
 } from '../../../src/template-registry/discovery-errors'
 
 const temporaryDirectories: string[] = []
+const normalizedPath = (value: string): string => value.replaceAll('\\', '/')
 
 async function temporaryDirectory(): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'nuxt-email-discovery-'))
@@ -42,15 +43,15 @@ describe('email template discovery', () => {
     expect(templates).toEqual([
       {
         name: 'account/reset-password',
-        sourcePath: join(emailDirectory, 'account/reset-password.vue'),
+        sourcePath: normalizedPath(join(emailDirectory, 'account/reset-password.vue')),
       },
       {
         name: 'account/verify',
-        sourcePath: join(emailDirectory, 'account/verify.vue'),
+        sourcePath: normalizedPath(join(emailDirectory, 'account/verify.vue')),
       },
       {
         name: 'z-last',
-        sourcePath: join(emailDirectory, 'z-last.vue'),
+        sourcePath: normalizedPath(join(emailDirectory, 'z-last.vue')),
       },
     ])
   })
@@ -74,6 +75,6 @@ describe('email template discovery', () => {
     const sourcePath = join(emailDirectory, 'welcome.vue')
 
     expect(() => templatesFromSourcePaths(emailDirectory, [sourcePath, sourcePath]))
-      .toThrowError(new DuplicateEmailTemplateError('welcome', [sourcePath, sourcePath]))
+      .toThrowError(new DuplicateEmailTemplateError('welcome', [normalizedPath(sourcePath), normalizedPath(sourcePath)]))
   })
 })
