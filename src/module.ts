@@ -134,7 +134,8 @@ export default defineNuxtModule<ModuleOptions>({
       }
     })
 
-    nuxt.hook('builder:watch', async (event, path) => {
+    let registryUpdates = Promise.resolve()
+    nuxt.hook('builder:watch', (event, path) => {
       const structureChanged = ['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)
       if (event !== 'change' && !structureChanged) {
         return
@@ -146,13 +147,18 @@ export default defineNuxtModule<ModuleOptions>({
         return
       }
 
-      if (structureChanged) {
-        templates = await loadTemplates()
-        await updateTemplates({
-          filter: template => template.filename === typeTemplate.filename,
-        })
+      const update = async () => {
+        if (structureChanged) {
+          templates = await loadTemplates()
+          await updateTemplates({
+            filter: template => template.filename === typeTemplate.filename,
+          })
+        }
+        await reloadRegistry()
       }
-      await reloadRegistry()
+      const queuedUpdate = registryUpdates.then(update, update)
+      registryUpdates = queuedUpdate.catch(() => {})
+      return queuedUpdate
     })
 
     const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions

@@ -22,7 +22,10 @@ const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
 const welcomeFixture = join(fixtureRoot, 'app/emails/welcome.fixtures.ts')
 
 async function renderedHtmlDuringReload(name: string) {
-  const response = await testFetch(`/sub/__email/render?name=${name}&format=json`)
+  const response = await testFetch(`/sub/__email/render?name=${name}&format=json`, {
+    signal: AbortSignal.timeout(1_000),
+  }).catch(() => undefined)
+  if (!response) return ''
   if (response.status === 500) return ''
   if (!response.ok) {
     throw new Error(`Preview render returned HTTP ${response.status}.`)
@@ -31,7 +34,10 @@ async function renderedHtmlDuringReload(name: string) {
 }
 
 async function templateNamesDuringReload() {
-  const response = await testFetch('/sub/__email/api/templates')
+  const response = await testFetch('/sub/__email/api/templates', {
+    signal: AbortSignal.timeout(1_000),
+  }).catch(() => undefined)
+  if (!response) return []
   if (response.status === 500) return []
   if (!response.ok) {
     throw new Error(`Preview registry returned HTTP ${response.status}.`)
