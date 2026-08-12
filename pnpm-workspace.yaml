@@ -17,3 +17,8 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+
+minimumReleaseAgeExclude:
+  # Reviewed Lupinum release candidates. Remove after 2026-08-14.
+  - '@lupinum/ginko-content@0.4.0-rc.1'
+  - '@lupinum/ginko-docs@0.3.0-rc.3'

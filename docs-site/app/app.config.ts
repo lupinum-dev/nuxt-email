@@ -9,7 +9,10 @@ export default {
       logo: { light: '/logo-light.svg', dark: '/logo-dark.svg' },
       docsSidebarSwitcher: 'tabs',
     },
-    social: { github: 'https://github.com/lupinum-dev/nuxt-email' },
+    social: {
+      github: 'https://github.com/lupinum-dev/nuxt-email',
+      discord: 'https://discord.gg/RPH6SeA36N',
+    },
     repository: {
       url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
