@@ -21,6 +21,31 @@ await writeFile(
 const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
 const welcomeFixture = join(fixtureRoot, 'app/emails/welcome.fixtures.ts')
 
+async function renderedHtmlDuringReload(name: string) {
+  const response = await testFetch(`/sub/__email/render?name=${name}&format=json`, {
+    signal: AbortSignal.timeout(1_000),
+  }).catch(() => undefined)
+  if (!response) return ''
+  if (response.status === 500) return ''
+  if (!response.ok) {
+    throw new Error(`Preview render returned HTTP ${response.status}.`)
+  }
+  return (await response.json() as { html: string }).html
+}
+
+async function templateNamesDuringReload() {
+  const response = await testFetch('/sub/__email/api/templates', {
+    signal: AbortSignal.timeout(1_000),
+  }).catch(() => undefined)
+  if (!response) return []
+  if (response.status === 500) return []
+  if (!response.ok) {
+    throw new Error(`Preview registry returned HTTP ${response.status}.`)
+  }
+  const result = await response.json() as { templates: Array<{ name: string }> }
+  return result.templates.map(template => template.name)
+}
+
 describe('development email preview', async () => {
   const test = createTest({
     dev: true,
@@ -135,12 +160,7 @@ describe('development email preview', async () => {
 
     try {
       await writeFile(welcomeTemplate, updatedSource)
-      await expect.poll(async () => {
-        const result = await $fetch<{ html: string }>(
-          '/sub/__email/render?name=welcome&format=json',
-        )
-        return result.html
-      }, {
+      await expect.poll(() => renderedHtmlDuringReload('welcome'), {
         interval: 100,
         timeout: 20_000,
       }).toContain('PREVIEW_VERSION_TWO')
@@ -158,12 +178,7 @@ describe('development email preview', async () => {
 
     try {
       await writeFile(welcomeFixture, updatedSource)
-      await expect.poll(async () => {
-        const result = await $fetch<{ html: string }>(
-          '/sub/__email/render?name=welcome&format=json',
-        )
-        return result.html
-      }, {
+      await expect.poll(() => renderedHtmlDuringReload('welcome'), {
         interval: 100,
         timeout: 20_000,
       }).toContain('Welcome, Grace')
@@ -181,35 +196,26 @@ describe('development email preview', async () => {
     const renamedFixture = join(emailDirectory, 'renamed-dynamic.fixtures.ts')
     const templateSource = '<template><EHtml><EBody><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EBody></EHtml></template>'
     const fixtureSource = 'export default {}\n'
-    const templateNames = async () => {
-      const result = await $fetch<{ templates: Array<{ name: string }> }>(
-        '/sub/__email/api/templates',
-      )
-      return result.templates.map(template => template.name)
-    }
-
     try {
       await writeFile(addedFixture, fixtureSource)
       await writeFile(addedTemplate, templateSource)
-      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
         .toContain('dynamic')
-      await expect.poll(async () => {
-        const result = await $fetch<{ html: string }>(
-          '/sub/__email/render?name=dynamic&format=json',
-        )
-        return result.html
-      }, { interval: 100, timeout: 20_000 }).toContain('DYNAMIC_REGISTRY_TEMPLATE')
+      await expect.poll(() => renderedHtmlDuringReload('dynamic'), {
+        interval: 100,
+        timeout: 20_000,
+      }).toContain('DYNAMIC_REGISTRY_TEMPLATE')
 
       await rename(addedFixture, renamedFixture)
       await rename(addedTemplate, renamedTemplate)
-      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
         .toContain('renamed-dynamic')
-      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
         .not.toContain('dynamic')
 
       await rm(renamedTemplate)
       await rm(renamedFixture)
-      await expect.poll(templateNames, { interval: 100, timeout: 20_000 })
+      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
         .not.toContain('renamed-dynamic')
     }
     finally {

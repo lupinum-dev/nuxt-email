@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — pre-1.0 candidate
+## v0.1.0
 
 Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the unscoped npm package is unrelated. Manual email-client QA and external beta evidence remain release gates.
 
@@ -36,7 +36,7 @@ Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the un
 
 ### Intentional scope
 
-- Supported behavior is reported per case in the generated [conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md); this release does not claim full React Email compatibility.
+- Supported behavior is reported per case in the generated [conformance report](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/conformance/report.md); this release does not claim full React Email compatibility.
 - Provider adapters, send endpoints, JSX, React streaming, edge runtimes, raw HTML, configurable discovery paths, and a public registry protocol are not part of v1. `codeBlock` is the sole module option.
 - Sending remains application-owned: callers pass `{ html, text, subject? }` to their selected provider SDK.
 

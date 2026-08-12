@@ -37,11 +37,13 @@ jobs:
           - 26.0.0
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
@@ -67,11 +69,12 @@ jobs:
 
       - name: Check out the pinned React Email oracle source
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: resend/react-email
           ref: 6eb428924c4c2774228a07cbec1977ad8898f143
           fetch-depth: 0
+          persist-credentials: false
           path: .oracle/react-email
 
       - name: React Email oracle reproducibility
@@ -82,7 +85,17 @@ jobs:
 
       - name: Package build, contents, and fresh-install smoke test
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
-        run: pnpm release:verify
+        run: pnpm release:artifact
+
+      - name: Retain the certified package
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: nuxt-email-release
+          path: .release
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
 
   # The documentation site is a separate workspace member with a heavy prerender
   # (Sharp-backed OG images), so it runs once on Linux with an explicit heap budget.
@@ -94,11 +107,13 @@ jobs:
       NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24.x
           cache: pnpm

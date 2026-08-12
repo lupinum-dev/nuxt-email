@@ -205,18 +205,18 @@ Through Nuxt Email's canonical discovery path, fixtures, preview handlers, and p
 
 ## Email-client proofs
 
-The [proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/proofs/README.md) renders a representative batch of emails to `.html`, `.txt`, and valid `.eml` (`multipart/alternative`, quoted-printable, CRLF) messages that open directly in a desktop client, with an optional Resend send path:
+The [proof kit](https://github.com/lupinum-dev/nuxt-email/blob/main/scripts/proofs/README.md) renders a representative batch of emails to `.html`, `.txt`, and valid `.eml` (`multipart/alternative`, quoted-printable, CRLF) messages that open directly in a desktop client, with an optional Resend send path:
 
 ```bash
 pnpm proofs:generate   # write release-artifacts/proofs/
 pnpm proofs:send       # optional: POST the batch to Resend (no key ⇒ prints instructions)
 ```
 
-Delivering that batch and completing the [client QA checklist](https://github.com/Mat4m0/nuxt-email/blob/main/docs/release/client-qa-checklist.md) in real clients is a release gate.
+Delivering that batch and completing the [client QA checklist](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md) in real clients is a release gate.
 
 ## Compatibility and limits
 
-Nuxt Email does not claim full React Email compatibility. The generated [conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md) is the source of truth for runnable reference cases, intentional divergences, and unsupported components; provenance is recorded separately in the [license policy](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/provenance.md).
+Nuxt Email does not claim full React Email compatibility. The generated [conformance report](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/conformance/report.md) is the source of truth for runnable reference cases, intentional divergences, and unsupported components; provenance is recorded separately in the [license policy](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/conformance/provenance.md).
 
 The pre-1.0 surface intentionally excludes provider adapters, send endpoints, raw-HTML primitives, configurable discovery paths, and a public registry API. `codeBlock` is the only module option. Sending and subject/recipient delivery remain application-owned.
 
@@ -240,12 +240,12 @@ The [documentation site](https://nuxt-email.lupinum.com/docs) is the canonical s
 
 Repository-only engineering and release evidence remains on GitHub:
 
-- [Runtime dependency and license review](https://github.com/Mat4m0/nuxt-email/blob/main/docs/runtime-dependencies.md)
-- [Future feature roadmap](https://github.com/Mat4m0/nuxt-email/blob/main/docs/roadmap.md)
-- [Generated conformance report](https://github.com/Mat4m0/nuxt-email/blob/main/docs/conformance/report.md)
-- [Manual email-client QA](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/manual-email-client-qa.md)
-- [External beta record](https://github.com/Mat4m0/nuxt-email/blob/main/docs/testing/external-beta.md)
-- [Email-client proof kit](https://github.com/Mat4m0/nuxt-email/blob/main/scripts/proofs/README.md)
+- [Runtime dependency and license review](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/runtime-dependencies.md)
+- [Future feature roadmap](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/roadmap.md)
+- [Generated conformance report](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/conformance/report.md)
+- [Manual email-client QA](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/testing/manual-email-client-qa.md)
+- [External beta record](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/testing/external-beta.md)
+- [Email-client proof kit](https://github.com/lupinum-dev/nuxt-email/blob/main/scripts/proofs/README.md)
 - [Changelog](./CHANGELOG.md)
 
 ## Local development
@@ -266,3 +266,14 @@ pnpm release:verify
 ```
 
 `pnpm dev` starts the local playground. `pnpm release:verify` builds and inspects the package, then materializes, installs, prepares, type-checks, builds, and server-renders a fresh application at the supported Nuxt baseline. Publication still requires that complete gate, the recorded real-client QA, and external beta sign-off.
+
+## Support and license
+
+Open a [GitHub issue](https://github.com/lupinum-dev/nuxt-email/issues) for a
+reproducible defect. Discuss usage with the community in the
+[Lupinum OSS Discord](https://discord.gg/RPH6SeA36N). Report vulnerabilities
+through the process in the
+[security policy](https://github.com/lupinum-dev/nuxt-email/blob/main/SECURITY.md).
+
+Nuxt Email is developed by [Lupinum OG](https://lupinum.com) and released under
+the [MIT License](./LICENSE).

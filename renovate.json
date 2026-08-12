@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "minimumReleaseAge": "3 days",
+  "rangeStrategy": "replace",
+  "schedule": ["before 6am on Monday"],
+  "packageRules": [
+    {
+      "description": "Keep Nuxt and Vue updates together",
+      "groupName": "Nuxt ecosystem",
+      "matchPackageNames": ["nuxt", "@nuxt/**", "vue", "vue-router"]
+    }
+  ]
+}
