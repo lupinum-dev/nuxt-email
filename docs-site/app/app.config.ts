@@ -9,9 +9,9 @@ export default {
       logo: { light: '/logo-light.svg', dark: '/logo-dark.svg' },
       docsSidebarSwitcher: 'tabs',
     },
-    social: { github: 'https://github.com/Mat4m0/nuxt-email' },
+    social: { github: 'https://github.com/lupinum-dev/nuxt-email' },
     repository: {
-      url: 'https://github.com/Mat4m0/nuxt-email',
+      url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
       contentDirectory: 'docs-site/content',
     },
@@ -31,7 +31,7 @@ export default {
       },
       secondary: {
         label: { en: 'View on GitHub' },
-        to: { en: 'https://github.com/Mat4m0/nuxt-email' },
+        to: { en: 'https://github.com/lupinum-dev/nuxt-email' },
       },
       hero: {
         media: {

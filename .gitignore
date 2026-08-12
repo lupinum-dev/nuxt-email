@@ -36,6 +36,7 @@ coverage
 
 # Verified release artifacts
 release-artifacts
+.release
 
 # Explicitly checked out React Email oracle source
 .oracle

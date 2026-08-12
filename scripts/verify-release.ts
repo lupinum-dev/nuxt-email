@@ -91,7 +91,7 @@ const releaseContract = {
   name: '@lupinum/nuxt-email',
   node: '^22.18.0 || ^24.11.0 || ^26.0.0',
   nuxt: '>=4.4.8 <4.5.0',
-  repository: 'git+https://github.com/Mat4m0/nuxt-email.git',
+  repository: 'git+https://github.com/lupinum-dev/nuxt-email.git',
   vue: '^3.5.35',
 } as const
 
@@ -223,8 +223,8 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.repository?.type === 'git', 'Packed package repository type must be git')
   invariant(packed.repository?.url === releaseContract.repository, 'Packed package repository URL differs from the release repository')
   invariant(packed.publishConfig?.access === 'public', 'Packed scoped package must publish with public access')
-  invariant(packed.homepage === 'https://github.com/Mat4m0/nuxt-email#readme', 'Packed package homepage differs from the release homepage')
-  invariant(packed.bugs?.url === 'https://github.com/Mat4m0/nuxt-email/issues', 'Packed package issue URL differs from the release issue tracker')
+  invariant(packed.homepage === 'https://nuxt-email.lupinum.com', 'Packed package homepage differs from the release homepage')
+  invariant(packed.bugs?.url === 'https://github.com/lupinum-dev/nuxt-email/issues', 'Packed package issue URL differs from the release issue tracker')
 
   invariant(
     JSON.stringify(Object.keys(packed.exports ?? {}).sort())
