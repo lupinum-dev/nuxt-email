@@ -56,6 +56,8 @@ Do not bypass the dependency release-age policy for convenience.
 8. Approve the `npm` environment after you inspect the certified artifact.
 9. Verify npm provenance, the dist-tag, and the GitHub release.
 
+Prereleases use the shared `next` dist-tag. Stable releases use `latest`.
+
 The protected publish job must download the certified tarball. It must not check
 out source, install dependencies, or run repository scripts while it has an
 OIDC publication token.
