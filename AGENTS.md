@@ -47,6 +47,8 @@ Use these focused commands:
 - `pnpm test:conformance` runs the conformance suite.
 - `pnpm conformance:check` checks the generated conformance report.
 - `pnpm oracle:check` checks the pinned React Email oracle.
+- `pnpm verify` runs the normal handoff gate.
+- `pnpm audit:all` audits the complete workspace dependency graph.
 - `pnpm release:verify` builds and tests the installable package.
 - `pnpm docs:build` builds the package and then the public documentation.
 
