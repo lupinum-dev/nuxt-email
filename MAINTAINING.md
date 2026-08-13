@@ -70,3 +70,27 @@ publishing is configured.
 Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
 publish a forward fix with a new version.
+
+## Audit external settings
+
+Review these settings in January and July, and after an ownership or release
+workflow change.
+
+GitHub must have:
+
+- a protected `main` branch with pull requests, linear history, resolved review
+  threads, and the repository's required CI checks;
+- squash merge as the only merge method, auto-merge enabled, and merged branches
+  deleted automatically;
+- protected release tags;
+- an `npm` environment that allows only `main`, requires a reviewer, and has no
+  package token;
+- private vulnerability reporting, secret scanning, push protection, automated
+  security fixes, and CodeQL Default Setup for JavaScript and TypeScript;
+- Renovate for routine dependency updates and CodeRabbit as an advisory reviewer.
+
+npm must bind `@lupinum/nuxt-email` to `publish.yml` and the `npm` environment
+through trusted publishing.
+
+Vercel must deploy `docs-site/` from `main` to `nuxt-email.lupinum.com` and
+create pull-request previews.
