@@ -25,6 +25,7 @@ interface PackageManifest {
   name?: unknown
   version?: unknown
   description?: unknown
+  author?: unknown
   license?: unknown
   type?: unknown
   main?: unknown
@@ -208,6 +209,10 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.private !== true, 'Packed release package cannot be private')
   invariant(typeof packed.description === 'string' && packed.description.trim().length > 0, 'Packed package needs a description')
   invariant(packed.license === 'MIT', 'Packed package license must be MIT')
+  invariant(
+    packed.author === 'Lupinum OG <info@lupinum.com> (https://lupinum.com)',
+    'Packed package author must identify Lupinum OG',
+  )
   invariant(packed.type === 'module', 'Packed package must declare ESM with type="module"')
   invariant(packed.main === './dist/module.mjs', 'Packed package main entry must be ./dist/module.mjs')
   invariant(packed.types === './dist/module.d.mts', 'Packed package types entry must be ./dist/module.d.mts')
