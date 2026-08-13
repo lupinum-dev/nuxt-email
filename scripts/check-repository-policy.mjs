@@ -125,8 +125,11 @@ if (vercel.outputDirectory !== null) {
 if (vercel.buildCommand !== 'pnpm --dir .. docs:build') {
   throw new Error('Vercel must build the package before the docs app.')
 }
-if (!vercel.installCommand?.includes('pnpm --dir .. install --frozen-lockfile')) {
-  throw new Error('Vercel must install the locked root workspace.')
+if (vercel.installCommand !== 'corepack enable && corepack prepare pnpm@11.13.1 --activate && pnpm --dir .. install --frozen-lockfile') {
+  throw new Error('Vercel must install the locked root workspace with the pinned package manager.')
+}
+if (!maintaining.includes('`ENABLE_EXPERIMENTAL_COREPACK=1`')) {
+  throw new Error('MAINTAINING.md must document the non-secret Vercel Corepack setting.')
 }
 
 process.stdout.write('Repository policy check passed.\n')
