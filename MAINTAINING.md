@@ -103,4 +103,5 @@ npm must bind `@lupinum/nuxt-email` to `publish.yml` and the `npm` environment
 through trusted publishing.
 
 Vercel must deploy `docs-site/` from `main` to `nuxt-email.lupinum.com` and
-create pull-request previews.
+create pull-request previews. `docs-site/vercel.json` owns the exact pnpm
+installer because Vercel does not provide pnpm 11 by default.
