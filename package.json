@@ -66,7 +66,6 @@
     "proofs:generate": "node --import tsx scripts/proofs/generate.ts",
     "proofs:send": "node --import tsx scripts/proofs/send.ts",
     "release:verify": "node --import tsx scripts/verify-release.ts",
-    "release:notes": "changelogen --output CHANGELOG.md",
     "release:prepare": "changelogen --bump --clean --hideAuthorEmail",
     "release:artifact": "pnpm release:verify --output .release/lupinum-nuxt-email.tgz && node scripts/write-release-manifest.mjs",
     "lint": "eslint .",
