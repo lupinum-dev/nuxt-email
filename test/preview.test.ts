@@ -49,6 +49,10 @@ async function templateNamesDuringReload() {
 describe('development email preview', async () => {
   const test = createTest({
     dev: true,
+    // Keep this outside the Windows ephemeral range and separate from the
+    // production-mode fixture. This avoids the probe-then-bind port race in
+    // Nuxt Test Utils on Windows.
+    port: 32_082,
     rootDir: fixtureRoot,
   })
   test.ctx.teardown = [async () => {
