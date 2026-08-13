@@ -47,7 +47,7 @@ export default defineNuxtModule<ModuleOptions>({
     name: '@lupinum/nuxt-email',
     configKey: 'nuxtEmail',
     compatibility: {
-      nuxt: '>=4.4.8 <4.5.0',
+      nuxt: '>=4.5.1 <5',
     },
   },
   async setup(options, nuxt) {

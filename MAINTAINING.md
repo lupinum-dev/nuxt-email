@@ -26,8 +26,23 @@ pnpm conformance:check
 Build the documentation when public behavior or examples change:
 
 ```bash
-pnpm --dir docs-site build
+pnpm docs:build
 ```
+
+## Quick fixes
+
+Keep one cause and one verification path in the pull request. Add a regression
+test when the defect can return. Run `pnpm verify` before handoff.
+
+## Large changes
+
+Open an issue first. Split the work by public behavior. Keep rendering,
+conformance evidence, tests, and documentation aligned.
+
+## Documentation changes
+
+Follow [docs/WRITING.md](./docs/WRITING.md). Run `pnpm docs:build` and
+`pnpm verify` before merge.
 
 ## Review dependencies
 
@@ -77,6 +92,13 @@ Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
 publish a forward fix with a new version.
 
+## Respond to a credential incident
+
+Stop release workflows and revoke the affected credential or trusted-publisher
+binding. Review GitHub audit logs, workflow changes, tags, releases, and npm
+access. Restore publishing only after the source commit and retained artifact
+are verified.
+
 ## Audit external settings
 
 Review these settings in January and July, and after an ownership or release
@@ -102,6 +124,8 @@ GitHub must have:
 npm must bind `@lupinum/nuxt-email` to `publish.yml` and the `npm` environment
 through trusted publishing.
 
-Vercel must deploy `docs-site/` from `main` to `nuxt-email.lupinum.com` and
-create pull-request previews. `docs-site/vercel.json` owns the exact pnpm
-installer because Vercel does not provide pnpm 11 by default.
+Vercel must deploy the `docs/` app from `main` to `nuxt-email.lupinum.com` and
+create pull-request previews. Set the Vercel Root Directory to `docs`. Enable
+source files outside the Root Directory so the app can build the local package.
+Do not set an Output Directory override; Nuxt emits the Vercel Build Output API
+files. `docs/vercel.json` owns the exact pnpm installer and build contract.

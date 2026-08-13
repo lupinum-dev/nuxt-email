@@ -54,6 +54,7 @@
   ],
   "scripts": {
     "changelog": "changelogen --no-output",
+    "audit:all": "pnpm audit",
     "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
     "conformance:write": "NUXT_EMAIL_CONFORMANCE_REPORT=write vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
     "prepack": "nuxt-module-build build",
@@ -63,9 +64,11 @@
     "oracle:check": "node --import tsx test/conformance/tooling/generate-react-oracle.ts --check",
     "oracle:write": "node --import tsx test/conformance/tooling/generate-react-oracle.ts --write",
     "performance:measure": "node --expose-gc --import tsx test/performance/measure.ts",
+    "docs:build": "pnpm prepack && pnpm --dir docs build",
     "proofs:generate": "node --import tsx scripts/proofs/generate.ts",
     "proofs:send": "node --import tsx scripts/proofs/send.ts",
-    "release:verify": "node --import tsx scripts/verify-release.ts",
+    "repo:check": "node scripts/check-repository-policy.mjs",
+    "release:verify": "pnpm verify && node --import tsx scripts/verify-release.ts",
     "release:prepare": "changelogen --bump --clean --hideAuthorEmail",
     "release:artifact": "pnpm release:verify --output .release/lupinum-nuxt-email.tgz && node scripts/write-release-manifest.mjs",
     "lint": "eslint .",
@@ -73,13 +76,14 @@
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
     "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
+    ,"verify": "pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build"
   },
   "peerDependencies": {
-    "nuxt": ">=4.4.8 <4.5.0",
+    "nuxt": ">=4.5.1 <5",
     "vue": "^3.5.35"
   },
   "dependencies": {
-    "@nuxt/kit": ">=4.4.8 <4.5.0",
+    "@nuxt/kit": ">=4.5.1 <5",
     "@shikijs/core": "4.3.1",
     "@shikijs/engine-javascript": "4.3.1",
     "@shikijs/langs": "4.3.1",
@@ -95,7 +99,7 @@
   "devDependencies": {
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "4.4.8",
+    "@nuxt/schema": "4.5.2",
     "@nuxt/test-utils": "^4.0.3",
     "@react-email/render": "2.1.0",
     "@types/css-tree": "2.3.11",
@@ -105,7 +109,8 @@
     "@types/react-dom": "19.2.3",
     "changelogen": "0.6.2",
     "eslint": "^10.4.1",
-    "nuxt": "4.5.1",
+    "nuxt": "4.5.2",
+    "pkg-pr-new": "0.0.87",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-email": "6.9.0",

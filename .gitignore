@@ -22,6 +22,7 @@ dist
 .output
 .data
 .vercel_build_output
+.vercel
 .build-*
 .netlify
 
@@ -37,6 +38,7 @@ coverage
 # Verified release artifacts
 release-artifacts
 .release
+.package-preview
 
 # Explicitly checked out React Email oracle source
 .oracle

@@ -22,7 +22,7 @@ export default {
     repository: {
       url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
-      contentDirectory: 'docs-site/content',
+      contentDirectory: 'docs/content',
     },
     landing: {
       eyebrow: {

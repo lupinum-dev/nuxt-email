@@ -126,7 +126,7 @@ importers:
         specifier: ^3.3.3
         version: 3.3.7(typescript@5.9.3)
 
-  docs-site:
+  docs:
     dependencies:
       '@lupinum/ginko-content':
         specifier: 0.4.0-rc.1
