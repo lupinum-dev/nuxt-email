@@ -47,14 +47,20 @@ Do not bypass the dependency release-age policy for convenience.
 ## Prepare a release
 
 1. Use Conventional Commits on protected `main`.
-2. Update the version in `package.json`.
-3. Generate and review `CHANGELOG.md` with Changelogen.
-4. Run `pnpm release:verify` from a clean commit.
-5. Complete the real-client QA checklist for release-facing render changes.
-6. Merge the release pull request after every required check passes.
-7. Start the protected publish workflow from `main`.
-8. Approve the `npm` environment after you inspect the certified artifact.
-9. Verify npm provenance, the dist-tag, and the GitHub release.
+2. Prepare the version and changelog:
+
+   ```bash
+   pnpm release:prepare -- -r 0.1.0-rc.1
+   ```
+
+   Replace the example version. Review the generated text. The command does not
+   commit, tag, push, or publish.
+3. Run `pnpm release:verify` from a clean commit.
+4. Complete the real-client QA checklist for release-facing render changes.
+5. Merge the release pull request after every required check passes.
+6. Start the protected publish workflow from `main`.
+7. Approve the `npm` environment after you inspect the certified artifact.
+8. Verify npm provenance, the dist-tag, and the GitHub release.
 
 Prereleases use the shared `next` dist-tag. Stable releases use `latest`.
 
