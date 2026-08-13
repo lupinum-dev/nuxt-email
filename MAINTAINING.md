@@ -128,6 +128,6 @@ Vercel must deploy the `docs/` app from `main` to `nuxt-email.lupinum.com` and
 create pull-request previews. Set the Vercel Root Directory to `docs`. Enable
 source files outside the Root Directory so the app can build the local package.
 Do not set an Output Directory override; Nuxt emits the Vercel Build Output API
-files. Set the non-secret build environment variable
-`ENABLE_EXPERIMENTAL_COREPACK=1` for Production, Preview, and Development.
-`docs/vercel.json` owns the exact pinned pnpm installer and build contract.
+files. Do not set an Install Command override. Vercel detects pnpm from the
+repository lockfile and installs the workspace. `docs/vercel.json` owns the
+exact build contract.
