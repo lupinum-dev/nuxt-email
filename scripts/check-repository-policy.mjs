@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 
+import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
+const trackedFiles = new Set(execFileSync('git', ['ls-files'], {
+  cwd: root,
+  encoding: 'utf8',
+}).trim().split('\n'))
 
 for (const path of [
   '.github/ISSUE_TEMPLATE/bug.md',
@@ -13,7 +18,26 @@ for (const path of [
   '.github/ISSUE_TEMPLATE/proposal.md',
   '.github/pull_request_template.md',
 ]) {
-  if (!existsSync(resolve(root, path))) throw new Error(`${path} is required.`)
+  if (!trackedFiles.has(path)) throw new Error(`${path} must be tracked.`)
+}
+
+const pullRequestTemplate = readFileSync(resolve(root, '.github/pull_request_template.md'), 'utf8')
+for (const marker of [
+  '- [ ] I ran `pnpm verify`, or I explained why it does not apply.',
+  '- [ ] I updated versions, migration guidance, and compatibility notes when the public contract changed.',
+]) {
+  if (!pullRequestTemplate.includes(marker)) throw new Error(`Pull request template is missing: ${marker}`)
+}
+
+const docsAppConfig = readFileSync(resolve(root, 'docs/app/app.config.ts'), 'utf8')
+for (const marker of [
+  "plausible: { scriptId: 'vkwO2ZsNQtpycIOZdf5cy' }",
+  'feedback: { enabled: true }',
+  'https://discord.gg/RPH6SeA36N',
+  'https://lupinum.com/impressum',
+  'https://lupinum.com/datenschutz',
+]) {
+  if (!docsAppConfig.includes(marker)) throw new Error(`Documentation app config is missing: ${marker}`)
 }
 
 function requireMatch(pattern, message) {
