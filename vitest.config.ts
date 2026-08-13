@@ -1,5 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config'
-import oracle from './test/conformance/oracle/react-email-6.9.0.json'
+import oracle from './test/conformance/oracle/react-email-6.9.0.json' with { type: 'json' }
 
 export default defineConfig({
   test: {

@@ -8,6 +8,7 @@ const root = resolve(import.meta.dirname, '..')
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
+const moduleSource = readFileSync(resolve(root, 'src/module.ts'), 'utf8')
 const trackedFiles = new Set(execFileSync('git', ['ls-files'], {
   cwd: root,
   encoding: 'utf8',
@@ -132,6 +133,15 @@ if (packageJson.scripts?.['docs:build'] !== 'nuxt-module-build prepare && pnpm p
 }
 if (!ciWorkflow.includes('run: pnpm docs:build')) {
   throw new Error('CI must use the root docs:build contract.')
+}
+if (packageJson.dependencies?.['unplugin-vue'] !== '7.2.0') {
+  throw new Error('The package must pin the Rollup-compatible Vue SFC compiler.')
+}
+if (packageJson.dependencies?.['@vitejs/plugin-vue']) {
+  throw new Error('@vitejs/plugin-vue must not ship as the Nitro Rollup compiler.')
+}
+if (!moduleSource.includes('from \'unplugin-vue/rollup\'')) {
+  throw new Error('Nitro must compile email SFCs with the Rollup adapter.')
 }
 if ('installCommand' in vercel) {
   throw new Error('Vercel must detect pnpm from the repository lockfile.')

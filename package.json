@@ -75,8 +75,8 @@
     "test": "vitest run",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit"
-    ,"verify": "pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build"
+    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
+    "verify": "pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build"
   },
   "peerDependencies": {
     "nuxt": ">=4.5.1 <5",
@@ -88,13 +88,13 @@
     "@shikijs/engine-javascript": "4.3.1",
     "@shikijs/langs": "4.3.1",
     "@shikijs/themes": "4.3.1",
-    "@vitejs/plugin-vue": "6.0.8",
     "css-tree": "3.2.1",
     "h3": "1.15.11",
     "html-to-text": "9.0.5",
     "htmlparser2": "^10.1.0",
     "marked": "15.0.12",
-    "tailwindcss": "4.1.18"
+    "tailwindcss": "4.1.18",
+    "unplugin-vue": "7.2.0"
   },
   "devDependencies": {
     "@nuxt/eslint-config": "^1.15.2",
@@ -107,6 +107,7 @@
     "@types/node": "latest",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-vue": "6.0.8",
     "changelogen": "0.6.2",
     "eslint": "^10.4.1",
     "nuxt": "4.5.2",

@@ -273,7 +273,9 @@ describe('production server boundary', () => {
   })
 
   it('rejects the generated testing renderer from the client graph', { timeout: 120_000 }, async () => {
-    await expect(buildFixture(testingClientImportFixture)).rejects.toThrow(/node:async_hooks|async_hooks.*externalized for browser/i)
+    await expect(buildFixture(testingClientImportFixture)).rejects.toThrow(
+      /resolving "#nuxt-email\/testing"|missing "#nuxt-email\/testing" specifier/i,
+    )
   })
 
   it('omits preview routes and fixtures while keeping production email rendering', { timeout: 120_000 }, async () => {
