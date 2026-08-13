@@ -49,6 +49,10 @@ async function templateNamesDuringReload() {
 describe('development email preview', async () => {
   const test = createTest({
     dev: true,
+    // Keep this outside the Windows ephemeral range and separate from the
+    // production-mode fixture. This avoids the probe-then-bind port race in
+    // Nuxt Test Utils on Windows.
+    port: 32_082,
     rootDir: fixtureRoot,
   })
   test.ctx.teardown = [async () => {
@@ -156,14 +160,14 @@ describe('development email preview', async () => {
 
   it('reflects template edits without restarting the development server', async () => {
     const originalSource = await readFile(welcomeTemplate, 'utf8')
-    const updatedSource = originalSource.replace('PREVIEW_VERSION_ONE', 'PREVIEW_VERSION_TWO')
+    const updatedSource = originalSource.replace('PREVIEW_VERSION_ONE', 'PREVIEW_VERSION_TWO_AFTER_RELOAD')
 
     try {
       await writeFile(welcomeTemplate, updatedSource)
       await expect.poll(() => renderedHtmlDuringReload('welcome'), {
         interval: 100,
         timeout: 20_000,
-      }).toContain('PREVIEW_VERSION_TWO')
+      }).toContain('PREVIEW_VERSION_TWO_AFTER_RELOAD')
     }
     finally {
       await writeFile(welcomeTemplate, originalSource)

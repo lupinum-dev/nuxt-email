@@ -10,7 +10,7 @@ import {
   updateTemplates,
   useNitro,
 } from '@nuxt/kit'
-import vue from '@vitejs/plugin-vue'
+import vueRollup from 'unplugin-vue/rollup'
 import type { CodeBlockOptions } from './code-block/options'
 import { attachPreviewFixtures } from './dev-preview/fixtures'
 import { EMAIL_COMPONENT_NAMES } from './runtime/components/email-component-names'
@@ -47,7 +47,7 @@ export default defineNuxtModule<ModuleOptions>({
     name: '@lupinum/nuxt-email',
     configKey: 'nuxtEmail',
     compatibility: {
-      nuxt: '>=4.4.8 <4.5.0',
+      nuxt: '>=4.5.1 <5',
     },
   },
   async setup(options, nuxt) {
@@ -162,8 +162,6 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions
-    const nuxtAlias = (nuxt.options.alias ??= {})
-    nuxtAlias['#nuxt-email/testing'] = renderEmailComponentPath
     const nitro = (nuxtOptions.nitro ??= {})
     const alias = (nitro.alias ??= {})
     alias['#nuxt-email/testing'] = renderEmailComponentPath
@@ -186,7 +184,7 @@ export default defineNuxtModule<ModuleOptions>({
     nitro.rollupConfig ??= {}
     const existingPlugins = nitro.rollupConfig.plugins
     nitro.rollupConfig.plugins = existingPlugins
-      ? [existingPlugins, vue()]
-      : [vue()]
+      ? [existingPlugins, vueRollup()]
+      : [vueRollup()]
   },
 })

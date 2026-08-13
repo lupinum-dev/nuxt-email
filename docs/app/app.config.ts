@@ -8,15 +8,21 @@ export default {
       },
       logo: { light: '/logo-light.svg', dark: '/logo-dark.svg' },
       docsSidebarSwitcher: 'tabs',
+      legalLinks: [
+        { label: { en: 'Legal notice' }, to: 'https://lupinum.com/impressum' },
+        { label: { en: 'Privacy' }, to: 'https://lupinum.com/datenschutz' },
+      ],
     },
     social: {
       github: 'https://github.com/lupinum-dev/nuxt-email',
       discord: 'https://discord.gg/RPH6SeA36N',
     },
+    feedback: { enabled: true },
+    analytics: { plausible: { scriptId: 'vkwO2ZsNQtpycIOZdf5cy' } },
     repository: {
       url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
-      contentDirectory: 'docs-site/content',
+      contentDirectory: 'docs/content',
     },
     landing: {
       eyebrow: {

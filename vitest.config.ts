@@ -1,5 +1,5 @@
 import { configDefaults, defineConfig } from 'vitest/config'
-import oracle from './test/conformance/oracle/react-email-6.9.0.json'
+import oracle from './test/conformance/oracle/react-email-6.9.0.json' with { type: 'json' }
 
 export default defineConfig({
   test: {
@@ -7,6 +7,7 @@ export default defineConfig({
     // two fixtures concurrently can exhaust macOS file handles and random ports.
     exclude: [
       ...configDefaults.exclude,
+      '.oracle/**',
       'test/fixtures/fresh-install/**',
       'test/fixtures/fresh-install-default/**',
     ],

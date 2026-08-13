@@ -4,6 +4,9 @@ import { setup, $fetch } from '@nuxt/test-utils/e2e'
 
 describe('Nuxt Email module integration', async () => {
   await setup({
+    // Nuxt Test Utils probes and then reopens a random port. Windows can assign
+    // that released ephemeral port to another process before Nuxt starts.
+    port: 32_081,
     rootDir: fileURLToPath(new URL('./fixtures/basic', import.meta.url)),
   })
 

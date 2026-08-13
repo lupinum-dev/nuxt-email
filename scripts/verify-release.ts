@@ -25,6 +25,7 @@ interface PackageManifest {
   name?: unknown
   version?: unknown
   description?: unknown
+  author?: unknown
   license?: unknown
   type?: unknown
   main?: unknown
@@ -90,7 +91,7 @@ const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
 const releaseContract = {
   name: '@lupinum/nuxt-email',
   node: '^22.18.0 || ^24.11.0 || ^26.0.0',
-  nuxt: '>=4.4.8 <4.5.0',
+  nuxt: '>=4.5.1 <5',
   repository: 'git+https://github.com/lupinum-dev/nuxt-email.git',
   vue: '^3.5.35',
 } as const
@@ -208,6 +209,10 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(packed.private !== true, 'Packed release package cannot be private')
   invariant(typeof packed.description === 'string' && packed.description.trim().length > 0, 'Packed package needs a description')
   invariant(packed.license === 'MIT', 'Packed package license must be MIT')
+  invariant(
+    packed.author === 'Lupinum OG <info@lupinum.com> (https://lupinum.com)',
+    'Packed package author must identify Lupinum OG',
+  )
   invariant(packed.type === 'module', 'Packed package must declare ESM with type="module"')
   invariant(packed.main === './dist/module.mjs', 'Packed package main entry must be ./dist/module.mjs')
   invariant(packed.types === './dist/module.d.mts', 'Packed package types entry must be ./dist/module.d.mts')
@@ -301,7 +306,6 @@ async function verifyFreshConsumer(
   const installArguments = [
     'install',
     '--no-frozen-lockfile',
-    '--no-hoist',
     '--package-import-method=copy',
     '--store-dir',
     workspaceStore,
@@ -595,7 +599,7 @@ async function verifyRelease(): Promise<void> {
     Object.values(fixtureRoots).map(root => readJson<{ dependencies?: Record<string, string> }>(join(root, 'package.json'))),
   )
   for (const freshFixtureManifest of freshFixtureManifests) {
-    invariant(freshFixtureManifest.dependencies?.nuxt === '4.4.8', 'Fresh-install fixture must pin Nuxt 4.4.8')
+    invariant(freshFixtureManifest.dependencies?.nuxt === '4.5.2', 'Fresh-install fixture must pin Nuxt 4.5.2')
     invariant(
       freshFixtureManifest.dependencies?.['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__',
       'Fresh-install fixture must consume the scoped release tarball placeholder',
@@ -682,7 +686,7 @@ async function verifyRelease(): Promise<void> {
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
-    for (const requiredText of ['# Nuxt Email', '@lupinum/nuxt-email', 'renderEmail']) {
+    for (const requiredText of ['<h1 align="center">Nuxt Email</h1>', '@lupinum/nuxt-email', 'renderEmail']) {
       invariant(packedReadme.includes(requiredText), `Packed README is missing required text: ${requiredText}`)
     }
     for (const scaffoldText of [

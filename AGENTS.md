@@ -13,7 +13,7 @@ accepted design decision.
 
 - `src/` contains the published Nuxt module and server runtime.
 - `test/` contains unit, conformance, fixture, and package tests.
-- `docs-site/` contains the public Ginko Docs site.
+- `docs/` contains the public Ginko Docs site and versioned engineering records.
 - `docs/` contains conformance evidence and release checklists.
 - `playground/` contains the development application.
 - `scripts/` contains release verification and proof generation.
@@ -48,7 +48,7 @@ Use these focused commands:
 - `pnpm conformance:check` checks the generated conformance report.
 - `pnpm oracle:check` checks the pinned React Email oracle.
 - `pnpm release:verify` builds and tests the installable package.
-- `pnpm --dir docs-site build` builds the public documentation.
+- `pnpm docs:build` builds the package and then the public documentation.
 
 Run the smallest relevant check while you work. Run lint, types, and tests
 before handoff. Run `pnpm release:verify` for package or release changes.

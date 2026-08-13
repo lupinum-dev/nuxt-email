@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Exact package version, for example 0.1.0-rc.1
+        description: Exact package version from package.json
         required: true
         type: string
 
@@ -105,7 +105,7 @@ jobs:
             echo "Version $RELEASE_VERSION already exists on npm" >&2
             exit 1
           fi
-          case "$RELEASE_VERSION" in *-*) npm_tag="${RELEASE_VERSION#*-}"; npm_tag="${npm_tag%%.*}" ;; *) npm_tag=latest ;; esac
+          case "$RELEASE_VERSION" in *-*) npm_tag=next ;; *) npm_tag=latest ;; esac
           npm publish .release/lupinum-nuxt-email.tgz --access public --tag "$npm_tag" --ignore-scripts --provenance
 
   github-release:

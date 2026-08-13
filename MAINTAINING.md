@@ -26,8 +26,23 @@ pnpm conformance:check
 Build the documentation when public behavior or examples change:
 
 ```bash
-pnpm --dir docs-site build
+pnpm docs:build
 ```
+
+## Quick fixes
+
+Keep one cause and one verification path in the pull request. Add a regression
+test when the defect can return. Run `pnpm verify` before handoff.
+
+## Large changes
+
+Open an issue first. Split the work by public behavior. Keep rendering,
+conformance evidence, tests, and documentation aligned.
+
+## Documentation changes
+
+Follow [docs/WRITING.md](./docs/WRITING.md). Run `pnpm docs:build` and
+`pnpm verify` before merge.
 
 ## Review dependencies
 
@@ -47,14 +62,22 @@ Do not bypass the dependency release-age policy for convenience.
 ## Prepare a release
 
 1. Use Conventional Commits on protected `main`.
-2. Update the version in `package.json`.
-3. Generate and review `CHANGELOG.md` with Changelogen.
-4. Run `pnpm release:verify` from a clean commit.
-5. Complete the real-client QA checklist for release-facing render changes.
-6. Merge the release pull request after every required check passes.
-7. Start the protected publish workflow from `main`.
-8. Approve the `npm` environment after you inspect the certified artifact.
-9. Verify npm provenance, the dist-tag, and the GitHub release.
+2. Prepare the version and changelog:
+
+   ```bash
+   pnpm release:prepare -- -r 0.1.0-rc.1
+   ```
+
+   Replace the example version. Review the generated text. The command does not
+   commit, tag, push, or publish.
+3. Run `pnpm release:verify` from a clean commit.
+4. Complete the real-client QA checklist for release-facing render changes.
+5. Merge the release pull request after every required check passes.
+6. Start the protected publish workflow from `main`.
+7. Approve the `npm` environment after you inspect the certified artifact.
+8. Verify npm provenance, the dist-tag, and the GitHub release.
+
+Prereleases use the shared `next` dist-tag. Stable releases use `latest`.
 
 The protected publish job must download the certified tarball. It must not check
 out source, install dependencies, or run repository scripts while it has an
@@ -68,3 +91,43 @@ publishing is configured.
 Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
 publish a forward fix with a new version.
+
+## Respond to a credential incident
+
+Stop release workflows and revoke the affected credential or trusted-publisher
+binding. Review GitHub audit logs, workflow changes, tags, releases, and npm
+access. Restore publishing only after the source commit and retained artifact
+are verified.
+
+## Audit external settings
+
+Review these settings in January and July, and after an ownership or release
+workflow change.
+
+GitHub must have:
+
+- a protected `main` branch with pull requests, linear history, resolved review
+  threads, and the repository's required CI checks;
+- squash merge as the only merge method, auto-merge enabled, and merged branches
+  deleted automatically;
+- GitHub Actions restricted to full commit-SHA references, with default
+  workflow permissions read-only;
+- Issues enabled for public reports, with Wikis and Discussions disabled so
+  versioned repository documentation remains authoritative;
+- protected release tags;
+- an `npm` environment that allows only `main`, requires a reviewer, and has no
+  package token;
+- private vulnerability reporting, secret scanning, push protection, automated
+  security fixes, and CodeQL Default Setup for JavaScript and TypeScript;
+- Renovate for routine dependency updates and CodeRabbit as an advisory reviewer.
+
+npm must bind `@lupinum/nuxt-email` to `publish.yml` and the `npm` environment
+through trusted publishing.
+
+Vercel must deploy the `docs/` app from `main` to `nuxt-email.lupinum.com` and
+create pull-request previews. Set the Vercel Root Directory to `docs`. Enable
+source files outside the Root Directory so the app can build the local package.
+Do not set an Output Directory override; Nuxt emits the Vercel Build Output API
+files. Do not set an Install Command override. Vercel detects pnpm from the
+repository lockfile and installs the workspace. `docs/vercel.json` owns the
+exact build contract.

@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
-const generatedTsconfigPath = fileURLToPath(new URL('./.nuxt/tsconfig.json', import.meta.url))
+const generatedTsconfigPath = fileURLToPath(new URL('./.nuxt/tsconfig.server.json', import.meta.url))
 const generatedTsconfig = JSON.parse(readFileSync(generatedTsconfigPath, 'utf8')) as {
   compilerOptions?: { paths?: Record<string, string[]> }
 }
