@@ -306,7 +306,6 @@ async function verifyFreshConsumer(
   const installArguments = [
     'install',
     '--no-frozen-lockfile',
-    '--no-hoist',
     '--package-import-method=copy',
     '--store-dir',
     workspaceStore,
