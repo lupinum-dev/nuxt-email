@@ -33,6 +33,6 @@ allowBuilds:
   vue-demi: true
 
 minimumReleaseAgeExclude:
-  # Reviewed first-party release candidates. Remove after 2026-08-15.
-  - '@lupinum/ginko-content@0.4.0-rc.1'
-  - '@lupinum/ginko-docs@0.3.0-rc.3'
+  # Reviewed first-party releases required by the docs app. Remove after 2026-08-14 17:36 Europe/Vienna.
+  - '@lupinum/ginko-content@0.4.0-rc.2'
+  - '@lupinum/ginko-docs@0.3.0-rc.5'
