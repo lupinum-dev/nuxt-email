@@ -6,6 +6,8 @@ import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
+const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
+const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
 const trackedFiles = new Set(execFileSync('git', ['ls-files'], {
   cwd: root,
   encoding: 'utf8',
@@ -31,7 +33,7 @@ for (const marker of [
 
 const docsAppConfig = readFileSync(resolve(root, 'docs/app/app.config.ts'), 'utf8')
 for (const marker of [
-  "plausible: { scriptId: 'vkwO2ZsNQtpycIOZdf5cy' }",
+  'plausible: { scriptId: \'vkwO2ZsNQtpycIOZdf5cy\' }',
   'feedback: { enabled: true }',
   'https://discord.gg/RPH6SeA36N',
   'https://lupinum.com/impressum',
@@ -52,8 +54,8 @@ requireMatch(/license-MIT/u, 'README must show the MIT badge.')
 requireMatch(/https:\/\/nuxt-email\.lupinum\.com/u, 'README must link to the canonical documentation site.')
 requireMatch(/https:\/\/github\.com\/lupinum-dev\/nuxt-email/u, 'README must link to the canonical repository.')
 
-const h1Count =
-  (readme.match(/^# /gmu)?.length ?? 0) + (readme.match(/<h1\b/gu)?.length ?? 0)
+const h1Count
+  = (readme.match(/^# /gmu)?.length ?? 0) + (readme.match(/<h1\b/gu)?.length ?? 0)
 if (h1Count !== 1) throw new Error(`README must contain one H1, found ${h1Count}.`)
 
 const sections = [
@@ -72,8 +74,8 @@ const sections = [
   'Support and security',
   'License',
 ]
-const positions = sections.map((section) => readme.indexOf(`## ${section}`))
-if (positions.some((position) => position === -1)) {
+const positions = sections.map(section => readme.indexOf(`## ${section}`))
+if (positions.includes(-1)) {
   throw new Error('README is missing a required public section.')
 }
 if (positions.some((position, index) => index > 0 && position < positions[index - 1])) {
@@ -86,9 +88,9 @@ for (const match of readme.matchAll(/^## (.+)$/gmu)) {
     .split(/\s+/u)
     .slice(1)
     .filter(
-      (word) =>
-        /^[A-Z][A-Za-z-]*$/u.test(word) &&
-        !['Email', 'Nuxt'].includes(word),
+      word =>
+        /^[A-Z][A-Za-z-]*$/u.test(word)
+        && !['Email', 'Nuxt'].includes(word),
     )
   if (unexpected.length > 0) {
     throw new Error(`README heading is not sentence case: ${heading}`)
@@ -124,6 +126,12 @@ if (vercel.outputDirectory !== null) {
 }
 if (vercel.buildCommand !== 'pnpm --dir .. docs:build') {
   throw new Error('Vercel must build the package before the docs app.')
+}
+if (packageJson.scripts?.['docs:build'] !== 'nuxt-module-build prepare && pnpm prepack && pnpm --dir docs build') {
+  throw new Error('docs:build must prepare the Nuxt module before the cold package build.')
+}
+if (!ciWorkflow.includes('run: pnpm docs:build')) {
+  throw new Error('CI must use the root docs:build contract.')
 }
 if ('installCommand' in vercel) {
   throw new Error('Vercel must detect pnpm from the repository lockfile.')
