@@ -18,7 +18,7 @@ export default {
       discord: 'https://discord.gg/RPH6SeA36N',
     },
     feedback: { enabled: true },
-    analytics: { plausible: { scriptId: 'XxT9ZOr0ZLg10B4KV40xH' } },
+    analytics: { plausible: { scriptId: 'vkwO2ZsNQtpycIOZdf5cy' } },
     repository: {
       url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
