@@ -38,13 +38,15 @@ if (packedManifest.name !== manifest.name || packedManifest.version !== manifest
 }
 
 const evidence = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   packageName: manifest.name,
   packageVersion: manifest.version,
+  channel: manifest.version.includes('-') ? 'next' : 'latest',
   commit,
   sourceClean: true,
   tarball: basename(tarballPath),
   bytes: tarball.byteLength,
+  sha1: createHash('sha1').update(tarball).digest('hex'),
   sha256: createHash('sha256').update(tarball).digest('hex'),
 }
 
