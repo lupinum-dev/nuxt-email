@@ -88,6 +88,12 @@ publishing is configured.
 
 ## Recover a release
 
+Rerun the protected publish workflow with the same version when npm or GitHub
+fails after publication starts. The workflow skips an existing npm version only
+when its SHA-1 matches the certified tarball. It then requires matching
+provenance and the expected dist-tag before it creates or repairs the GitHub
+release.
+
 Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
 publish a forward fix with a new version.

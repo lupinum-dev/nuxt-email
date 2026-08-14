@@ -26,16 +26,17 @@ jobs:
       run-id: ${{ steps.ci.outputs.run-id }}
 
     steps:
-      - name: Require protected main and a new version tag
+      - name: Require protected main and a safe release tag
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           test "$GITHUB_REF" = refs/heads/main
           node -e "if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(process.env.RELEASE_VERSION)) throw new Error('Invalid release version')"
-          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" >/dev/null 2>&1; then
-            echo "Tag v$RELEASE_VERSION already exists" >&2
-            exit 1
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -n "$tag_sha" ]; then
+            test "$tag_sha" = "$GITHUB_SHA"
+            gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null
           fi
 
       - name: Find successful CI for this commit
@@ -62,7 +63,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          node -e "const fs=require('node:fs');const crypto=require('node:crypto');const m=require('./.release/release-artifact.json');const file='.release/lupinum-nuxt-email.tgz';const digest=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');if(m.schemaVersion!==1||m.packageName!=='@lupinum/nuxt-email'||m.packageVersion!==process.env.RELEASE_VERSION||m.commit!==process.env.GITHUB_SHA||m.sourceClean!==true||m.tarball!=='lupinum-nuxt-email.tgz'||m.sha256!==digest)throw new Error('Artifact failed exact-SHA validation')"
+          node -e "const fs=require('node:fs');const crypto=require('node:crypto');const m=require('./.release/release-artifact.json');const file='.release/lupinum-nuxt-email.tgz';const bytes=fs.readFileSync(file);const channel=m.packageVersion.includes('-')?'next':'latest';if(m.schemaVersion!==2||m.packageName!=='@lupinum/nuxt-email'||m.packageVersion!==process.env.RELEASE_VERSION||m.channel!==channel||m.commit!==process.env.GITHUB_SHA||m.sourceClean!==true||m.tarball!=='lupinum-nuxt-email.tgz'||m.sha1!==crypto.createHash('sha1').update(bytes).digest('hex')||m.sha256!==crypto.createHash('sha256').update(bytes).digest('hex'))throw new Error('Artifact failed exact-SHA validation')"
           sha256sum --check .release/SHA256SUMS
           awk -v version="v$RELEASE_VERSION" '$0 == "## " version { capture=1 } capture && /^## / && $0 != "## " version { exit } capture' CHANGELOG.md > .release/release-notes.md
           test -s .release/release-notes.md
@@ -97,16 +98,51 @@ jobs:
           name: verified-nuxt-email-release
           path: .release
 
-      - name: Publish the certified tarball
+      - name: Publish or verify the certified tarball
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          if npm view "@lupinum/nuxt-email@$RELEASE_VERSION" version >/dev/null 2>&1; then
-            echo "Version $RELEASE_VERSION already exists on npm" >&2
-            exit 1
-          fi
-          case "$RELEASE_VERSION" in *-*) npm_tag=next ;; *) npm_tag=latest ;; esac
-          npm publish .release/lupinum-nuxt-email.tgz --access public --tag "$npm_tag" --ignore-scripts --provenance
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process'
+          import { readFileSync } from 'node:fs'
+
+          const fail = message => { throw new Error(message) }
+          const run = (args, inherit = false) => spawnSync('npm', args, {
+            encoding: 'utf8',
+            stdio: inherit ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+          })
+          const view = (spec, field) => {
+            const result = run(['view', spec, field, '--json'])
+            if (result.status === 0) return JSON.parse(result.stdout.trim() || 'null')
+            if (/E404|404 Not Found/.test(result.stderr)) return null
+            fail(`npm view failed for ${spec} ${field}: ${result.stderr.trim()}`)
+          }
+
+          const manifest = JSON.parse(readFileSync('.release/release-artifact.json', 'utf8'))
+          if (manifest.packageVersion !== process.env.RELEASE_VERSION) fail('Release version differs.')
+          const npmVersion = run(['--version']).stdout.trim().split('.').map(Number)
+          if (npmVersion[0] < 11 || (npmVersion[0] === 11 && npmVersion[1] < 5)) fail('npm 11.5 or newer is required.')
+
+          const spec = `${manifest.packageName}@${manifest.packageVersion}`
+          const existing = view(spec, 'dist.shasum')
+          if (existing && existing !== manifest.sha1) fail(`${spec} exists with different bytes.`)
+          if (!existing) {
+            const result = run([
+              'publish', `.release/${manifest.tarball}`, '--access', 'public',
+              '--tag', manifest.channel, '--ignore-scripts', '--provenance',
+            ], true)
+            if (result.status !== 0) fail(`npm publish failed for ${spec}.`)
+          }
+
+          for (let attempt = 0; attempt < 12; attempt += 1) {
+            const shasum = view(spec, 'dist.shasum')
+            const attestations = view(spec, 'dist.attestations')
+            const channel = view(manifest.packageName, `dist-tags.${manifest.channel}`)
+            if (shasum === manifest.sha1 && attestations && channel === manifest.packageVersion) process.exit(0)
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)
+          }
+          fail(`${spec} did not expose matching bytes, provenance, and ${manifest.channel}.`)
+          NODE
 
   github-release:
     name: Create GitHub release
@@ -128,11 +164,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          prerelease=()
-          case "$RELEASE_VERSION" in *-*) prerelease=(--prerelease) ;; esac
-          gh release create "v$RELEASE_VERSION" .release/lupinum-nuxt-email.tgz \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "v$RELEASE_VERSION" \
-            --notes-file .release/release-notes.md \
-            "${prerelease[@]}"
+          if gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" --jq '.object.sha')"
+            test "$tag_sha" = "$GITHUB_SHA"
+            gh release upload "v$RELEASE_VERSION" .release/lupinum-nuxt-email.tgz --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --title "v$RELEASE_VERSION" --notes-file .release/release-notes.md
+          else
+            prerelease=()
+            case "$RELEASE_VERSION" in *-*) prerelease=(--prerelease) ;; esac
+            gh release create "v$RELEASE_VERSION" .release/lupinum-nuxt-email.tgz \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "v$RELEASE_VERSION" \
+              --notes-file .release/release-notes.md \
+              "${prerelease[@]}"
+          fi
