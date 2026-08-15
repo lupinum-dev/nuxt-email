@@ -12,6 +12,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const workflow = readFileSync(new URL('../.github/workflows/publish.yml', import.meta.url), 'utf8')
+assert(
+  workflow.includes('git/matching-refs/tags/v$RELEASE_VERSION'),
+  'The release preflight must treat a missing tag as an empty match, not as API error output.',
+)
 const publishJob = /^ {2}publish:\n([\s\S]*?)(?=^ {2}[a-z][a-z-]*:\n)/m.exec(workflow)?.[1]
 assert(publishJob, 'publish.yml is missing the isolated publish job.')
 assert(publishJob.includes('environment: npm'), 'The publish job must use the npm environment.')

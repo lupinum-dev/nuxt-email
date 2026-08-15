@@ -38,7 +38,8 @@ jobs:
         run: |
           test "$GITHUB_REF" = refs/heads/main
           node -e "if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(process.env.RELEASE_VERSION)) throw new Error('Invalid release version')"
-          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" --jq '.object.sha' 2>/dev/null || true)"
+          tag_ref="refs/tags/v$RELEASE_VERSION"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$RELEASE_VERSION" --jq ".[] | select(.ref == \"$tag_ref\") | .object.sha")"
           if [ -n "$tag_sha" ]; then
             test "$tag_sha" = "$GITHUB_SHA"
             gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null
