@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.1.1
+
+[Compare changes](https://github.com/lupinum-dev/nuxt-email/compare/e45025a...v0.1.1)
+
+### Changed
+
+- Isolated the package-preview watcher test from the normal unit-test process. This change prevents an open watcher from delaying test completion. ([#9](https://github.com/lupinum-dev/nuxt-email/pull/9))
+
+### Release reliability
+
+- Added exact-byte recovery for a first package version that was published from a certified artifact before npm trusted publishing was available. The workflow rejects different package bytes and requires explicit bootstrap authorization. ([#8](https://github.com/lupinum-dev/nuxt-email/pull/8), [#10](https://github.com/lupinum-dev/nuxt-email/pull/10), [#11](https://github.com/lupinum-dev/nuxt-email/pull/11))
+- Made package previews reliable after a cold start on Windows. ([#12](https://github.com/lupinum-dev/nuxt-email/pull/12))
+- Corrected missing-tag handling and artifact checksum verification in the protected release workflow. ([#13](https://github.com/lupinum-dev/nuxt-email/pull/13), [#14](https://github.com/lupinum-dev/nuxt-email/pull/14))
+
+### Compatibility
+
+- The runtime files are unchanged from `0.1.0`. This patch aligns the published package metadata with the current certified source and establishes the normal trusted-publishing path for later releases.
+
 ## v0.1.0
 
 Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the unscoped npm package is unrelated. Manual email-client QA and external beta evidence remain release gates.

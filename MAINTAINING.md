@@ -65,7 +65,7 @@ Do not bypass the dependency release-age policy for convenience.
 2. Prepare the version and changelog:
 
    ```bash
-   pnpm release:prepare -- -r 0.1.0-rc.1
+   pnpm release:prepare -r 0.1.0-rc.1
    ```
 
    Replace the example version. Review the generated text. The command does not
