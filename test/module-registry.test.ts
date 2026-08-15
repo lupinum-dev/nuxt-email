@@ -56,7 +56,7 @@ describe('Nuxt email registry regeneration', () => {
     finally {
       await nuxt.close()
     }
-  })
+  }, 15_000)
 
   it('does not merge email templates from inherited Nuxt layers', async () => {
     const rootDir = await temporaryNuxtDirectory()

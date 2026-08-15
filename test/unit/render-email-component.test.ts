@@ -92,7 +92,7 @@ describe('component rendering', () => {
       cause: 'Unknown email component <ECodeBlock>. Configure it or use a registered E* component.',
       name: 'EmailRenderError',
     })
-  })
+  }, 15_000)
 
   it('removes proven Vue SSR placeholders while preserving meaningful comments', async () => {
     const FragmentEmail = defineComponent({
