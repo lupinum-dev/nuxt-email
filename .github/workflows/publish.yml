@@ -86,6 +86,8 @@ jobs:
       actions: read
       contents: read
       id-token: write
+    outputs:
+      bootstrap: ${{ steps.publish.outputs.bootstrap }}
 
     steps:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -99,12 +101,13 @@ jobs:
           path: .release
 
       - name: Publish or verify the certified tarball
+        id: publish
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process'
-          import { readFileSync } from 'node:fs'
+          import { appendFileSync, readFileSync } from 'node:fs'
 
           const fail = message => { throw new Error(message) }
           const run = (args, inherit = false) => spawnSync('npm', args, {
@@ -126,22 +129,46 @@ jobs:
           const spec = `${manifest.packageName}@${manifest.packageVersion}`
           const existing = view(spec, 'dist.shasum')
           if (existing && existing !== manifest.sha1) fail(`${spec} exists with different bytes.`)
-          if (!existing) {
+          let mode
+          if (existing) {
+            const attestations = view(spec, 'dist.attestations')
+            const published = view(manifest.packageName, 'versions')
+            const versions = Array.isArray(published) ? published : [published]
+            if (!attestations && (versions.length !== 1 || versions[0] !== manifest.packageVersion)) {
+              fail(`${spec} is not the first package version and has no provenance.`)
+            }
+            mode = attestations ? 'oidc' : 'bootstrap'
+          } else {
             const result = run([
               'publish', `.release/${manifest.tarball}`, '--access', 'public',
               '--tag', manifest.channel, '--ignore-scripts', '--provenance',
             ], true)
             if (result.status !== 0) fail(`npm publish failed for ${spec}.`)
+            mode = 'oidc'
           }
 
           for (let attempt = 0; attempt < 12; attempt += 1) {
             const shasum = view(spec, 'dist.shasum')
             const attestations = view(spec, 'dist.attestations')
             const channel = view(manifest.packageName, `dist-tags.${manifest.channel}`)
-            if (shasum === manifest.sha1 && attestations && channel === manifest.packageVersion) process.exit(0)
+            const published = mode === 'bootstrap' ? view(manifest.packageName, 'versions') : null
+            const versions = Array.isArray(published) ? published : [published]
+            const remainsFirstVersion = mode !== 'bootstrap' || (
+              versions.length === 1 && versions[0] === manifest.packageVersion
+            )
+            if (
+              shasum === manifest.sha1 &&
+              channel === manifest.packageVersion &&
+              remainsFirstVersion &&
+              (mode === 'bootstrap' || (mode === 'oidc' && attestations))
+            ) {
+              appendFileSync(process.env.GITHUB_OUTPUT, `bootstrap=${String(mode === 'bootstrap')}\n`)
+              appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nPublication mode: ${mode}.\n`)
+              process.exit(0)
+            }
             Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)
           }
-          fail(`${spec} did not expose matching bytes, provenance, and ${manifest.channel}.`)
+          fail(`${spec} did not expose the required bytes, provenance mode, and ${manifest.channel}.`)
           NODE
 
   github-release:
@@ -163,7 +190,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
+          BOOTSTRAP_RELEASE: ${{ needs.publish.outputs.bootstrap }}
         run: |
+          if [ "$BOOTSTRAP_RELEASE" = true ]; then
+            cat >> .release/release-notes.md <<'NOTICE'
+
+          > [!NOTE]
+          > This first npm version was created from the exact CI-certified artifact before npm trusted publishing could be configured. npm does not provide GitHub OIDC provenance for this bootstrap publication. The protected workflow verified the registry bytes. Later versions use trusted publishing with provenance.
+          NOTICE
+          fi
           if gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" --jq '.object.sha')"
             test "$tag_sha" = "$GITHUB_SHA"

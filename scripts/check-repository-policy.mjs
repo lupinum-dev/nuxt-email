@@ -147,4 +147,6 @@ if ('installCommand' in vercel) {
   throw new Error('Vercel must detect pnpm from the repository lockfile.')
 }
 
+await import('./test-publish-workflow.mjs')
+
 process.stdout.write('Repository policy check passed.\n')

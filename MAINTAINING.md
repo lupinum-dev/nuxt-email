@@ -90,9 +90,12 @@ publishing is configured.
 
 Rerun the protected publish workflow with the same version when npm or GitHub
 fails after publication starts. The workflow skips an existing npm version only
-when its SHA-1 matches the certified tarball. It then requires matching
-provenance and the expected dist-tag before it creates or repairs the GitHub
-release.
+when its SHA-1 matches the certified tarball. A provenance-free package is
+accepted only when this is its sole first version, created interactively before
+trusted publishing could be configured. The GitHub release records that
+bootstrap exception. Every version first published by the workflow requires
+OIDC provenance. The workflow also requires the expected dist-tag before it
+creates or repairs the GitHub release.
 
 Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
