@@ -16,6 +16,10 @@ assert(
   workflow.includes('git/matching-refs/tags/v$RELEASE_VERSION'),
   'The release preflight must treat a missing tag as an empty match, not as API error output.',
 )
+assert(
+  workflow.includes('(cd .release && sha256sum --check SHA256SUMS)'),
+  'The release preflight must verify checksums from the artifact directory.',
+)
 const publishJob = /^ {2}publish:\n([\s\S]*?)(?=^ {2}[a-z][a-z-]*:\n)/m.exec(workflow)?.[1]
 assert(publishJob, 'publish.yml is missing the isolated publish job.')
 assert(publishJob.includes('environment: npm'), 'The publish job must use the npm environment.')

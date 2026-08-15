@@ -70,7 +70,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           node -e "const fs=require('node:fs');const crypto=require('node:crypto');const m=require('./.release/release-artifact.json');const file='.release/lupinum-nuxt-email.tgz';const bytes=fs.readFileSync(file);const channel=m.packageVersion.includes('-')?'next':'latest';if(m.schemaVersion!==2||m.packageName!=='@lupinum/nuxt-email'||m.packageVersion!==process.env.RELEASE_VERSION||m.channel!==channel||m.commit!==process.env.GITHUB_SHA||m.sourceClean!==true||m.tarball!=='lupinum-nuxt-email.tgz'||m.sha1!==crypto.createHash('sha1').update(bytes).digest('hex')||m.sha256!==crypto.createHash('sha256').update(bytes).digest('hex'))throw new Error('Artifact failed exact-SHA validation')"
-          sha256sum --check .release/SHA256SUMS
+          (cd .release && sha256sum --check SHA256SUMS)
           awk -v version="v$RELEASE_VERSION" '$0 == "## " version { capture=1 } capture && /^## / && $0 != "## " version { exit } capture' CHANGELOG.md > .release/release-notes.md
           test -s .release/release-notes.md
 
