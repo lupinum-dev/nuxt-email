@@ -1,6 +1,6 @@
 # React Email conformance report
 
-Nuxt Email 0.1.0 is compared against React Email 6.9.0 and @react-email/render 2.1.0. Compatibility is reported per behavior; no global compatibility percentage is claimed.
+Nuxt Email 0.1.1 is compared against React Email 6.9.0 and @react-email/render 2.1.0. Compatibility is reported per behavior; no global compatibility percentage is claimed.
 
 ## Summary
 
