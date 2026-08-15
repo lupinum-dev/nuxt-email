@@ -55,6 +55,10 @@ describe('development email preview', async () => {
     // ports and the probe-then-bind race in Nuxt Test Utils on Windows.
     port: 32_181,
     rootDir: fixtureRoot,
+    // A cold Windows development build can take more than the test utility's
+    // 120-second default when hosted runners are under load. Keep a finite
+    // budget below the 240-second Windows setup timeout.
+    serverStartTimeout: 180_000,
     // Nuxt Test Utils removes the build directory during teardown. Keep it
     // outside the copied fixture so that cleanup never removes nested paths
     // concurrently on macOS.
