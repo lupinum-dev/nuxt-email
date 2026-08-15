@@ -7,6 +7,11 @@ on:
         description: Exact package version from package.json
         required: true
         type: string
+      allow_bootstrap:
+        description: Authorize exact first-version recovery without npm provenance
+        required: false
+        default: false
+        type: boolean
 
 permissions: {}
 
@@ -103,6 +108,7 @@ jobs:
       - name: Publish or verify the certified tarball
         id: publish
         env:
+          ALLOW_BOOTSTRAP: ${{ inputs.allow_bootstrap }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           node --input-type=module <<'NODE'
@@ -136,6 +142,9 @@ jobs:
             const versions = Array.isArray(published) ? published : [published]
             if (!attestations && (versions.length !== 1 || versions[0] !== manifest.packageVersion)) {
               fail(`${spec} is not the first package version and has no provenance.`)
+            }
+            if (!attestations && process.env.ALLOW_BOOTSTRAP !== 'true') {
+              fail(`${spec} requires explicit bootstrap authorization.`)
             }
             mode = attestations ? 'oidc' : 'bootstrap'
           } else {

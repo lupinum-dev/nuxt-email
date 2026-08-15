@@ -97,6 +97,9 @@ bootstrap exception. Every version first published by the workflow requires
 OIDC provenance. The workflow also requires the expected dist-tag before it
 creates or repairs the GitHub release.
 
+Set the `allow_bootstrap` dispatch input only for the known first-version
+recovery. The workflow rejects every other existing package without provenance.
+
 Do not unpublish unless npm policy and a confirmed security incident require
 it. Deprecate a defective version, restore the last known-good dist-tag, and
 publish a forward fix with a new version.
