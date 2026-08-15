@@ -39,6 +39,7 @@ const publishScript = dedent(publishLines.slice(publishStart + 1, publishEnd).jo
 )
 
 runScenario('matching bootstrap bytes', {
+  allowBootstrap: true,
   existing: true,
   expectedBootstrap: true,
   expectedPublishes: 0,
@@ -59,14 +60,20 @@ runScenario('wrong dist-tag fails', {
   expectedError: 'did not expose the required bytes',
 })
 runScenario('later provenance-free version fails', {
+  allowBootstrap: true,
   existing: true,
   extraVersion: true,
   expectedError: 'is not the first package version and has no provenance',
 })
 runScenario('a bootstrap package must remain the sole version', {
+  allowBootstrap: true,
   existing: true,
   laterVersionDuringVerification: true,
   expectedError: 'did not expose the required bytes',
+})
+runScenario('bootstrap recovery requires explicit authorization', {
+  existing: true,
+  expectedError: 'requires explicit bootstrap authorization',
 })
 runScenario('new provenance-free publication fails', {
   publishProvenance: false,
@@ -137,6 +144,7 @@ function runScenario(name, options) {
       encoding: 'utf8',
       env: {
         ...process.env,
+        ALLOW_BOOTSTRAP: options.allowBootstrap ? 'true' : 'false',
         PATH: `${binDir}:${process.env.PATH}`,
         FAKE_NPM_STATE: statePath,
         GITHUB_OUTPUT: outputPath,

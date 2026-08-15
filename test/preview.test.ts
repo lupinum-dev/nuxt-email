@@ -8,6 +8,7 @@ const sourceFixtureRoot = fileURLToPath(new URL('./fixtures/preview', import.met
 const temporaryFixtureRoot = fileURLToPath(new URL('../.tmp/', import.meta.url))
 await mkdir(temporaryFixtureRoot, { recursive: true })
 const fixtureRoot = await mkdtemp(join(temporaryFixtureRoot, 'preview-test-'))
+const buildRoot = join(temporaryFixtureRoot, `${basename(fixtureRoot)}-build`)
 await cp(sourceFixtureRoot, fixtureRoot, {
   recursive: true,
   filter: source => !['.nuxt', '.output', 'node_modules'].includes(basename(source)),
@@ -49,11 +50,17 @@ async function templateNamesDuringReload() {
 describe('development email preview', async () => {
   const test = createTest({
     dev: true,
-    // Keep this outside the Windows ephemeral range and separate from the
-    // production-mode fixture. This avoids the probe-then-bind port race in
-    // Nuxt Test Utils on Windows.
-    port: 32_082,
+    // Keep this outside the Windows ephemeral range and away from the
+    // production-mode fixture on 32081. This avoids both adjacent internal
+    // ports and the probe-then-bind race in Nuxt Test Utils on Windows.
+    port: 32_181,
     rootDir: fixtureRoot,
+    // Nuxt Test Utils removes the build directory during teardown. Keep it
+    // outside the copied fixture so that cleanup never removes nested paths
+    // concurrently on macOS.
+    nuxtConfig: {
+      buildDir: buildRoot,
+    },
   })
   test.ctx.teardown = [async () => {
     try {
