@@ -18,6 +18,9 @@ const trackedFiles = new Set(execFileSync('git', ['ls-files'], {
 if (!ciWorkflow.includes('node scripts/verify-action-shas.mjs')) {
   throw new Error('CI must verify pinned Action commits upstream.')
 }
+if (ciWorkflow.includes('GITHUB_TOKEN')) {
+  throw new Error('Action verification must not receive GITHUB_TOKEN.')
+}
 if (renovate.minimumReleaseAge !== '1 day') {
   throw new Error('Renovate must match the 24-hour pnpm quarantine.')
 }
