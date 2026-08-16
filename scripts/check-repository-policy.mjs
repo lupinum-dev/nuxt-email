@@ -9,10 +9,26 @@ const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
 const moduleSource = readFileSync(resolve(root, 'src/module.ts'), 'utf8')
+const workspacePolicy = readFileSync(resolve(root, 'pnpm-workspace.yaml'), 'utf8')
+const renovate = JSON.parse(readFileSync(resolve(root, 'renovate.json'), 'utf8'))
 const trackedFiles = new Set(execFileSync('git', ['ls-files'], {
   cwd: root,
   encoding: 'utf8',
 }).trim().split('\n'))
+if (!ciWorkflow.includes('node scripts/verify-action-shas.mjs')) {
+  throw new Error('CI must verify pinned Action commits upstream.')
+}
+if (renovate.minimumReleaseAge !== '1 day') {
+  throw new Error('Renovate must match the 24-hour pnpm quarantine.')
+}
+
+for (const policy of [
+  'minimumReleaseAge: 1440',
+  'minimumReleaseAgeStrict: true',
+  'minimumReleaseAgeIgnoreMissingTime: false',
+]) {
+  if (!workspacePolicy.includes(policy)) throw new Error(`pnpm-workspace.yaml is missing: ${policy}`)
+}
 
 for (const path of [
   '.github/ISSUE_TEMPLATE/bug.md',

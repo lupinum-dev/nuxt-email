@@ -3,6 +3,8 @@ packages:
   - docs
 
 minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
 
 enableGlobalVirtualStore: false
 
