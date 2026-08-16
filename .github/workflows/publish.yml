@@ -86,7 +86,7 @@ jobs:
     name: Publish to npm
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 30
     environment: npm
     permissions:
       actions: read
@@ -129,6 +129,10 @@ jobs:
           }
 
           const manifest = JSON.parse(readFileSync('.release/release-artifact.json', 'utf8'))
+          const pollAttempts = Number(process.env.REGISTRY_POLL_ATTEMPTS ?? 240)
+          const pollDelayMs = Number(process.env.REGISTRY_POLL_DELAY_MS ?? 5000)
+          if (!Number.isSafeInteger(pollAttempts) || pollAttempts < 1) fail('Invalid registry poll attempt count.')
+          if (!Number.isSafeInteger(pollDelayMs) || pollDelayMs < 0) fail('Invalid registry poll delay.')
           if (manifest.packageVersion !== process.env.RELEASE_VERSION) fail('Release version differs.')
           const npmVersion = run(['--version']).stdout.trim().split('.').map(Number)
           if (npmVersion[0] < 11 || (npmVersion[0] === 11 && npmVersion[1] < 5)) fail('npm 11.5 or newer is required.')
@@ -157,7 +161,7 @@ jobs:
             mode = 'oidc'
           }
 
-          for (let attempt = 0; attempt < 12; attempt += 1) {
+          for (let attempt = 0; attempt < pollAttempts; attempt += 1) {
             const shasum = view(spec, 'dist.shasum')
             const attestations = view(spec, 'dist.attestations')
             const channel = view(manifest.packageName, `dist-tags.${manifest.channel}`)
@@ -176,7 +180,7 @@ jobs:
               appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nPublication mode: ${mode}.\n`)
               process.exit(0)
             }
-            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pollDelayMs)
           }
           fail(`${spec} did not expose the required bytes, provenance mode, and ${manifest.channel}.`)
           NODE

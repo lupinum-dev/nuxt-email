@@ -13,7 +13,7 @@
 </p>
 
 > [!WARNING]
-> The first scoped release is in preparation. Public APIs can change before version 1.0. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> Nuxt Email is pre-1.0. Review the changelog before each upgrade. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 

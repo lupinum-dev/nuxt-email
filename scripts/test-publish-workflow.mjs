@@ -41,10 +41,7 @@ const publishEnd = publishLines.findIndex(
   (line, index) => index > publishStart && line.trim() === 'NODE',
 )
 assert(publishStart >= 0 && publishEnd > publishStart, 'The publish job must contain one inline Node program.')
-const publishScript = dedent(publishLines.slice(publishStart + 1, publishEnd).join('\n')).replace(
-  'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)',
-  'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 0)',
-)
+const publishScript = dedent(publishLines.slice(publishStart + 1, publishEnd).join('\n'))
 
 runScenario('matching bootstrap bytes', {
   allowBootstrap: true,
@@ -158,6 +155,8 @@ function runScenario(name, options) {
         GITHUB_OUTPUT: outputPath,
         GITHUB_STEP_SUMMARY: join(root, 'summary.md'),
         RELEASE_VERSION: packageVersion,
+        REGISTRY_POLL_ATTEMPTS: '5',
+        REGISTRY_POLL_DELAY_MS: '0',
       },
     })
     const diagnostic = `${result.stdout}\n${result.stderr}`
