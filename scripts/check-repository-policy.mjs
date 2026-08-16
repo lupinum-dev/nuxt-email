@@ -137,10 +137,17 @@ for (const heading of [
 }
 
 const vercel = JSON.parse(readFileSync(resolve(root, 'docs/vercel.json'), 'utf8'))
+const expectedVercelIgnoreCommand = 'if [ -z "$VERCEL_GIT_PREVIOUS_SHA" ]; then exit 1; fi; git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- . ../src ../package.json ../pnpm-lock.yaml ../pnpm-workspace.yaml ../tsconfig.json'
 if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
 if (vercel.framework !== 'nuxtjs') throw new Error('Vercel must select the Nuxt framework.')
+if (vercel.git?.deploymentEnabled !== true) {
+  throw new Error('Vercel must report a status for every pull-request commit.')
+}
+if (vercel.ignoreCommand !== expectedVercelIgnoreCommand) {
+  throw new Error('Vercel must skip deployments that cannot affect the documentation app.')
+}
 if (vercel.outputDirectory !== null) {
   throw new Error('Vercel must let Nuxt provide .vercel/output.')
 }
