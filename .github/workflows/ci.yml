@@ -46,11 +46,13 @@ jobs:
               paths.every((path) =>
                 /^(?:docs\/content\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
               )
-            const docsRelevant = paths.some((path) =>
-              /^(?:docs\/|src\/|playground\/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|tsconfig\.json$|nuxt\.config\.ts$)/u.test(path),
-            )
+            const docsUnrelated =
+              paths.length > 0 &&
+              paths.every((path) =>
+                /^(?:test\/|scripts\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
+              )
             core.setOutput('full', String(runAll || !publicDocsOnly))
-            core.setOutput('docs', String(runAll || docsRelevant))
+            core.setOutput('docs', String(runAll || !docsUnrelated))
 
   test:
     name: ${{ matrix.os }} · Node ${{ matrix.node-version }}

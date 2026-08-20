@@ -45,7 +45,8 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 for (const scenario of [
   { name: 'public docs', event: 'pull_request', paths: ['docs/content/1.index.md'], full: 'false', docs: 'true' },
   { name: 'module source', event: 'pull_request', paths: ['src/module.ts'], full: 'true', docs: 'true' },
-  { name: 'workflow policy', event: 'pull_request', paths: ['.github/workflows/ci.yml'], full: 'true', docs: 'false' },
+  { name: 'test only', event: 'pull_request', paths: ['test/unit/render.test.ts'], full: 'true', docs: 'false' },
+  { name: 'workflow policy', event: 'pull_request', paths: ['.github/workflows/ci.yml'], full: 'true', docs: 'true' },
   { name: 'main certification', event: 'push', paths: [], full: 'true', docs: 'true' },
 ]) {
   const outputs = new Map()
