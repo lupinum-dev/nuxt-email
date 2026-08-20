@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { parse } from 'yaml'
@@ -178,7 +178,7 @@ for (const heading of [
 }
 
 const vercel = JSON.parse(readFileSync(resolve(root, 'docs/vercel.json'), 'utf8'))
-const expectedVercelIgnoreCommand = 'if [ -z "$VERCEL_GIT_PREVIOUS_SHA" ]; then exit 1; fi; git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- . ../src ../package.json ../pnpm-lock.yaml ../pnpm-workspace.yaml ../tsconfig.json'
+const expectedVercelIgnoreCommand = 'node scripts/vercel-ignore.mjs'
 if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
@@ -188,6 +188,16 @@ if (vercel.git?.deploymentEnabled !== true) {
 }
 if (vercel.ignoreCommand !== expectedVercelIgnoreCommand) {
   throw new Error('Vercel must skip deployments that cannot affect the documentation app.')
+}
+const runVercelIgnoreCommand = previousSha => spawnSync('sh', ['-c', vercel.ignoreCommand], {
+  cwd: resolve(root, 'docs'),
+  env: { ...process.env, VERCEL_GIT_PREVIOUS_SHA: previousSha },
+})
+if (runVercelIgnoreCommand('0000000000000000000000000000000000000000').status !== 1) {
+  throw new Error('Vercel must build when a rebased or force-pushed previous commit is unavailable.')
+}
+if (runVercelIgnoreCommand('HEAD').status !== 0) {
+  throw new Error('Vercel must skip the build when documentation inputs are unchanged.')
 }
 if (vercel.outputDirectory !== null) {
   throw new Error('Vercel must let Nuxt provide .vercel/output.')
