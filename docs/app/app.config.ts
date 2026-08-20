@@ -1,5 +1,10 @@
 export default {
   ginkoDocs: {
+    theme: {
+      neutral: 'custom',
+      primary: 'custom',
+      codeBlocks: 'adaptive',
+    },
     site: {
       url: 'https://nuxt-email.lupinum.com',
       name: { en: 'Nuxt Email' },
