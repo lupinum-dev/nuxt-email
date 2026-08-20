@@ -16,8 +16,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  classify:
+    name: Classify changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: read
+    outputs:
+      full: ${{ steps.paths.outputs.full }}
+      docs: ${{ steps.paths.outputs.docs }}
+    steps:
+      - name: Select required lanes
+        id: paths
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const runAll = context.eventName !== 'pull_request'
+            const files = runAll
+              ? []
+              : await github.paginate(github.rest.pulls.listFiles, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  per_page: 100,
+                })
+            const paths = files.map((file) => file.filename)
+            const publicDocsOnly =
+              paths.length > 0 &&
+              paths.every((path) =>
+                /^(?:docs\/content\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
+              )
+            const docsUnrelated =
+              paths.length > 0 &&
+              paths.every((path) =>
+                /^(?:test\/|scripts\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
+              )
+            core.setOutput('full', String(runAll || !publicDocsOnly))
+            core.setOutput('docs', String(runAll || !docsUnrelated))
+
   test:
     name: ${{ matrix.os }} · Node ${{ matrix.node-version }}
+    needs: classify
+    if: needs.classify.outputs.full == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
 
@@ -103,6 +143,8 @@ jobs:
   # (Sharp-backed OG images), so it runs once on Linux with an explicit heap budget.
   docs-site:
     name: Docs site build
+    needs: classify
+    if: needs.classify.outputs.docs == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -125,3 +167,25 @@ jobs:
 
       - name: Build the docs site
         run: pnpm docs:build
+
+  gate:
+    name: CI gate
+    if: always()
+    needs:
+      - classify
+      - test
+      - docs-site
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every selected lane
+        env:
+          CLASSIFY_RESULT: ${{ needs.classify.result }}
+          FULL: ${{ needs.classify.outputs.full }}
+          TEST_RESULT: ${{ needs.test.result }}
+          DOCS: ${{ needs.classify.outputs.docs }}
+          DOCS_RESULT: ${{ needs.docs-site.result }}
+        run: |
+          test "$CLASSIFY_RESULT" = success
+          if [ "$FULL" = true ]; then test "$TEST_RESULT" = success; else test "$TEST_RESULT" = skipped; fi
+          if [ "$DOCS" = true ]; then test "$DOCS_RESULT" = success; else test "$DOCS_RESULT" = skipped; fi
