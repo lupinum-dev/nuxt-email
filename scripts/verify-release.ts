@@ -686,7 +686,7 @@ async function verifyRelease(): Promise<void> {
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
-    for (const requiredText of ['<h1 align="center">Nuxt Email</h1>', '@lupinum/nuxt-email', 'renderEmail']) {
+    for (const requiredText of ['wordmark-light.svg', '@lupinum/nuxt-email', 'renderEmail']) {
       invariant(packedReadme.includes(requiredText), `Packed README is missing required text: ${requiredText}`)
     }
     for (const scaffoldText of [

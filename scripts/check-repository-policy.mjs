@@ -108,10 +108,14 @@ function requireMatch(pattern, message) {
 }
 
 requireMatch(/<img[^>]+width="128"[^>]+alt="Nuxt Email icon"/u, 'README must start with the 128 px product icon.')
-requireMatch(/<h1 align="center">Nuxt Email<\/h1>/u, 'README must use the centered product heading.')
+requireMatch(
+  /<h1 align="center">[\s\S]*?<img[^>]+alt="Nuxt Email">[\s\S]*?<\/h1>/u,
+  'README must use the centered product wordmark as its heading.',
+)
 requireMatch(/img\.shields\.io\/npm\/v\/@lupinum\/nuxt-email/u, 'README must show the npm badge.')
 requireMatch(/actions\/workflows\/ci\.yml\/badge\.svg/u, 'README must show the CI badge.')
 requireMatch(/license-MIT/u, 'README must show the MIT badge.')
+requireMatch(/https:\/\/deepwiki\.com\/lupinum-dev\/nuxt-email/u, 'README must link to DeepWiki.')
 requireMatch(/https:\/\/nuxt-email\.lupinum\.com/u, 'README must link to the canonical documentation site.')
 requireMatch(/https:\/\/github\.com\/lupinum-dev\/nuxt-email/u, 'README must link to the canonical repository.')
 
