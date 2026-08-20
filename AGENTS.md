@@ -50,6 +50,7 @@ Use these focused commands:
 - `pnpm verify` runs the normal handoff gate.
 - `pnpm audit:all` audits the complete workspace dependency graph.
 - `pnpm release:verify` builds and tests the installable package.
+- `pnpm docs:theme` checks the Nuxt visual tokens and Ginko Docs version.
 - `pnpm docs:build` builds the package and then the public documentation.
 
 Run the smallest relevant check while you work. Run lint, types, and tests

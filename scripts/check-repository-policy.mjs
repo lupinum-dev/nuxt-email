@@ -154,8 +154,8 @@ if (vercel.outputDirectory !== null) {
 if (vercel.buildCommand !== 'pnpm --dir .. docs:build') {
   throw new Error('Vercel must build the package before the docs app.')
 }
-if (packageJson.scripts?.['docs:build'] !== 'nuxt-module-build prepare && pnpm prepack && pnpm --dir docs build') {
-  throw new Error('docs:build must prepare the Nuxt module before the cold package build.')
+if (packageJson.scripts?.['docs:build'] !== 'pnpm docs:theme && nuxt-module-build prepare && pnpm prepack && pnpm --dir docs build') {
+  throw new Error('docs:build must verify the theme and prepare the Nuxt module before the cold package build.')
 }
 if (!ciWorkflow.includes('run: pnpm docs:build')) {
   throw new Error('CI must use the root docs:build contract.')
