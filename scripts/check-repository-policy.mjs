@@ -3,11 +3,13 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { parse } from 'yaml'
 
 const root = resolve(import.meta.dirname, '..')
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
+const ciConfig = parse(ciWorkflow)
 const moduleSource = readFileSync(resolve(root, 'src/module.ts'), 'utf8')
 const workspacePolicy = readFileSync(resolve(root, 'pnpm-workspace.yaml'), 'utf8')
 const renovate = JSON.parse(readFileSync(resolve(root, 'renovate.json'), 'utf8'))
@@ -20,6 +22,44 @@ if (!ciWorkflow.includes('node scripts/verify-action-shas.mjs')) {
 }
 if (ciWorkflow.includes('GITHUB_TOKEN')) {
   throw new Error('Action verification must not receive GITHUB_TOKEN.')
+}
+const classifyScript = ciConfig.jobs.classify.steps.find(
+  step => step.name === 'Select required lanes',
+)?.with?.script
+if (
+  typeof classifyScript !== 'string'
+  || !classifyScript.includes(`context.eventName !== 'pull_request'`)
+  || !classifyScript.includes(`core.setOutput('full'`)
+  || !classifyScript.includes(`core.setOutput('docs'`)
+) {
+  throw new Error('CI must classify expensive pull-request lanes and run all lanes on main.')
+}
+const gate = ciConfig.jobs.gate
+if (gate.if !== 'always()' || gate.name !== 'CI gate') {
+  throw new Error('CI must expose one always-reported aggregate gate.')
+}
+if (!gate.needs.includes('classify') || !gate.needs.includes('test') || !gate.needs.includes('docs-site')) {
+  throw new Error('The CI gate must depend on every classified lane.')
+}
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+for (const scenario of [
+  { name: 'public docs', event: 'pull_request', paths: ['docs/content/1.index.md'], full: 'false', docs: 'true' },
+  { name: 'module source', event: 'pull_request', paths: ['src/module.ts'], full: 'true', docs: 'true' },
+  { name: 'workflow policy', event: 'pull_request', paths: ['.github/workflows/ci.yml'], full: 'true', docs: 'false' },
+  { name: 'main certification', event: 'push', paths: [], full: 'true', docs: 'true' },
+]) {
+  const outputs = new Map()
+  await new AsyncFunction('context', 'github', 'core', classifyScript)(
+    { eventName: scenario.event, issue: { number: 1 }, repo: { owner: 'lupinum-dev', repo: 'nuxt-email' } },
+    {
+      paginate: async () => scenario.paths.map(filename => ({ filename })),
+      rest: { pulls: { listFiles() {} } },
+    },
+    { setOutput: (name, value) => outputs.set(name, value) },
+  )
+  if (outputs.get('full') !== scenario.full || outputs.get('docs') !== scenario.docs) {
+    throw new Error(`CI classification failed the ${scenario.name} fixture.`)
+  }
 }
 if (renovate.minimumReleaseAge !== '1 day') {
   throw new Error('Renovate must match the 24-hour pnpm quarantine.')
