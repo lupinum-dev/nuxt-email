@@ -26,6 +26,69 @@ afterEach(async () => {
 })
 
 describe('Nuxt email registry regeneration', () => {
+  it.each([
+    { baseURL: '/', expectedURL: '/__email' },
+    { baseURL: '/dashboard/', expectedURL: '/dashboard/__email' },
+  ])('adds a baseURL-aware development preview to Nuxt DevTools', async ({ baseURL, expectedURL }) => {
+    const rootDir = await temporaryNuxtDirectory()
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: true,
+      overrides: {
+        app: { baseURL },
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const tabs: Array<Record<string, unknown>> = []
+      await nuxt.callHook('devtools:customTabs', tabs as never)
+
+      expect(tabs).toContainEqual({
+        name: 'nuxt-email',
+        title: 'Nuxt Email',
+        icon: 'i-lucide-mail',
+        view: {
+          type: 'iframe',
+          src: expectedURL,
+        },
+      })
+    }
+    finally {
+      await nuxt.close()
+    }
+  }, 15_000)
+
+  it('does not add the DevTools preview outside development', async () => {
+    const rootDir = await temporaryNuxtDirectory()
+    const nuxt = await loadNuxt({
+      cwd: workspaceDirectory,
+      dev: false,
+      overrides: {
+        compatibilityDate: '2025-07-15',
+        devtools: { enabled: false },
+        modulesDir: [join(workspaceDirectory, 'node_modules')],
+        modules: [NuxtEmail],
+        rootDir,
+      },
+      ready: true,
+    })
+
+    try {
+      const tabs: Array<Record<string, unknown>> = []
+      await nuxt.callHook('devtools:customTabs', tabs as never)
+      expect(tabs).toEqual([])
+    }
+    finally {
+      await nuxt.close()
+    }
+  })
+
   it('discovers templates from a custom Nuxt srcDir', async () => {
     const rootDir = await temporaryNuxtDirectory()
     const srcDir = join(rootDir, 'custom-source')

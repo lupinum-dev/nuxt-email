@@ -175,14 +175,14 @@ Complete the [manual client QA checklist](https://github.com/lupinum-dev/nuxt-em
 
 ## Package exports
 
-- `@lupinum/nuxt-email` provides the Nuxt module and the `RenderedEmail` type.
+- `@lupinum/nuxt-email` provides the Nuxt module plus the `RenderedEmail` and `EmailComponentProps` types.
 - `@lupinum/nuxt-email/define-email` provides typed template metadata.
 - `@lupinum/nuxt-email/testing` provides standalone component rendering.
 - `@lupinum/nuxt-email/errors` provides supported runtime error classes.
 
 ## Documentation
 
-Read the [Nuxt Email documentation](https://nuxt-email.lupinum.com/docs). It contains the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation), [component reference](https://nuxt-email.lupinum.com/docs/components), [testing guide](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails), and [preview guide](https://nuxt-email.lupinum.com/docs/guides/preview-workflow).
+Read the [Nuxt Email documentation](https://nuxt-email.lupinum.com/docs). It contains the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation), [component reference](https://nuxt-email.lupinum.com/docs/components), [preview guide](https://nuxt-email.lupinum.com/docs/guides/preview-workflow), [testing guide](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails), and [sending guide](https://nuxt-email.lupinum.com/docs/guides/sending-email).
 
 See the [changelog](CHANGELOG.md) for released changes.
 

@@ -221,8 +221,8 @@ describe('development email preview', async () => {
         timeout: 20_000,
       }).toContain('DYNAMIC_REGISTRY_TEMPLATE')
 
-      await rename(addedFixture, renamedFixture)
       await rename(addedTemplate, renamedTemplate)
+      await rename(addedFixture, renamedFixture)
       await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
         .toContain('renamed-dynamic')
       await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })

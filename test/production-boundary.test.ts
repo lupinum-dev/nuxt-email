@@ -308,6 +308,7 @@ describe('production server boundary', () => {
       expect(productionOutput).not.toContain('dev-preview/page.get')
       expect(productionOutput).not.toContain('dev-preview/render.get')
       expect(productionOutput).not.toContain('dev-preview/templates.get')
+      expect(productionOutput).not.toContain('devtools:customTabs')
       expect(productionOutput).not.toContain('welcome.fixtures')
       expect(productionOutput).not.toContain('broken.fixtures')
 
