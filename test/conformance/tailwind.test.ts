@@ -1,5 +1,6 @@
 import type { TailwindConfig } from '../../src/runtime/tailwind/engine/index'
 import type { Component, VNodeChild } from 'vue'
+import { generate, parse, type StyleSheet } from 'css-tree'
 import oracle from './oracle/react-email-6.9.0.json'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
@@ -18,6 +19,7 @@ import { EHead } from '../../src/runtime/components/EHead'
 import { ETailwind } from '../../src/runtime/components/ETailwind'
 import { pixelBasedPreset } from '../../src/runtime/tailwind/engine/index'
 import { renderComponentToHtml } from '../../src/runtime/render/render-component'
+import { downlevelForEmailClients } from '../../src/runtime/tailwind/engine/css/downlevel-for-email-clients'
 import { normalizeEmailHtml } from './normalize'
 
 // Same shape as tooling/generate-react-oracle.ts `tailwindEmail`: wrap
@@ -55,6 +57,14 @@ async function render(
 // from the oracle before the normalized full-document comparison.
 function stripColumnDataId(html: string): string {
   return html.replaceAll(' data-id="__react-email-column"', '')
+}
+
+function downlevelOracleTailwindCss(html: string): string {
+  return html.replace(/<style>([^<]+)<\/style>/g, (_match, css: string) => {
+    const styleSheet = parse(css) as StyleSheet
+    downlevelForEmailClients(styleSheet)
+    return `<style>${generate(styleSheet)}</style>`
+  })
 }
 
 function expectMatches(html: string, key: keyof typeof oracle.cases, transformOracle: (h: string) => string = h => h): void {
@@ -198,9 +208,12 @@ describe('eTailwind conformance', () => {
     tags: ['conformance:tw-residual-class-sanitization'],
   }, async () => {
     const html = await render(undefined, h('div', { class: 'hover:bg-red-500 md:w-1/2' }, 'Content'))
-    expectMatches(html, 'tw-residual-class-sanitization')
+    // React Email currently preserves Tailwind's raw CSS nesting. Nuxt Email
+    // deliberately downlevels it because nesting support in email clients is low.
+    expectMatches(html, 'tw-residual-class-sanitization', downlevelOracleTailwindCss)
     expect(html).toContain('<div class="hover_bg-red-500 md_w-1_2">Content</div>')
-    expect(html).toContain('.hover_bg-red-500{@media (hover:hover){&:hover{background-color:rgb(251,44,54)!important}}}')
+    expect(html).toContain('@media (hover:hover){.hover_bg-red-500:hover{background-color:rgb(251,44,54)!important}}')
+    expect(html).not.toContain('&')
   })
 
   it('tw-important: important modifier preserved in inline style', {

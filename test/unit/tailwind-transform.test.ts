@@ -79,10 +79,17 @@ describe('head style injection', () => {
     expect(html).toContain('<title>T</title><style>@media (min-width:48rem){.md_bg-red-500{background-color:rgb(251,44,54)!important}}</style></head>')
   })
 
-  it('injects raw css that is not html-escaped (pseudo-class rules keep their &)', async () => {
+  it('injects flattened pseudo-class CSS without HTML escaping', async () => {
     const html = await renderComponentToHtml(emailWith(h('div', { class: 'hover:bg-red-500' }, 'x')))
-    expect(html).toContain('&:hover{background-color:rgb(251,44,54)!important}')
-    expect(html).not.toContain('&amp;:hover')
+    expect(html).toContain('@media (hover:hover){.hover_bg-red-500:hover{background-color:rgb(251,44,54)!important}}')
+    expect(html).not.toContain('&')
+  })
+
+  it('injects referenced animation keyframes', async () => {
+    const html = await renderComponentToHtml(emailWith(h('div', { class: 'animate-spin' }, 'x')))
+    expect(html).toContain(
+      '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>',
+    )
   })
 })
 
@@ -98,6 +105,15 @@ describe('missing head', () => {
   it('does not throw when there are no non-inlinable rules and no head', async () => {
     const inlineOnly = fixture(() => h(ETailwind, null, { default: () => h('div', { class: 'p-4' }, 'x') }))
     await expect(renderComponentToHtml(inlineOnly)).resolves.toContain('<div style="padding:1rem;">x</div>')
+  })
+
+  it('names animation classes that need keyframes when head is missing', async () => {
+    const withoutHead = fixture(() => h(ETailwind, null, {
+      default: () => h('div', { class: 'animate-spin' }),
+    }))
+    await expect(renderComponentToHtml(withoutHead)).rejects.toThrow(
+      'remove these classes that require a <head>: animate-spin.',
+    )
   })
 })
 

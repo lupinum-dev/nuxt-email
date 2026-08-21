@@ -48,9 +48,10 @@ describe('createTailwindEngine()', () => {
 
     // They are unnested, range-downleveled, !important-ed, with sanitized selectors.
     expect(result.nonInlinableCss).toBe(
-      '.hover_underline{@media (hover:hover){&:hover{text-decoration-line:underline!important}}}'
+      '@media (hover:hover){.hover_underline:hover{text-decoration-line:underline!important}}'
       + '@media (min-width:40rem){.sm_px-4{padding-right:1rem!important;padding-left:1rem!important}}',
     )
+    expect(result.nonInlinableCss).not.toContain('&')
   })
 
   it('maps residual classes: non-inlinable -> sanitized, unknown -> identity, inlinable -> dropped', async () => {
@@ -117,5 +118,38 @@ describe('createTailwindEngine()', () => {
     expect(styleOf(result, 'bg-brand')).toEqual({
       'background-color': 'rgb(18,52,86)',
     })
+  })
+
+  it('emits only keyframes referenced by the current render', async () => {
+    const engine = await createTailwindEngine({})
+
+    engine.computeStyles(['animate-spin', 'animate-pulse'])
+    const result = engine.computeStyles(['animate-spin'])
+
+    expect(result.nonInlinableCss).toBe(
+      '@keyframes spin{to{transform:rotate(360deg)}}',
+    )
+    expect(result.nonInlinableCss).not.toContain('@keyframes pulse')
+    expect(result.nonInlinableClassNames).toEqual(['animate-spin'])
+  })
+
+  it('flattens Tailwind v4 stacked hover and responsive variants', async () => {
+    const engine = await createTailwindEngine({})
+    const result = engine.computeStyles(['hover:underline', 'sm:hover:underline'])
+
+    expect(result.nonInlinableCss).toBe(
+      '@media (hover:hover){.hover_underline:hover{text-decoration-line:underline!important}}'
+      + '@media (min-width:40rem){@media (hover:hover){.sm_hover_underline:hover{text-decoration-line:underline!important}}}',
+    )
+    expect(result.nonInlinableCss).not.toContain('&')
+  })
+
+  it('returns identical CSS across repeated renders', async () => {
+    const engine = await createTailwindEngine({})
+    const classes = ['animate-spin', 'hover:underline', 'sm:px-4']
+
+    expect(engine.computeStyles(classes).nonInlinableCss).toBe(
+      engine.computeStyles(classes).nonInlinableCss,
+    )
   })
 })

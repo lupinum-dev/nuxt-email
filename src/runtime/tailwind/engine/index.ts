@@ -1,4 +1,13 @@
-import { type CssNode, generate, List, type StyleSheet } from 'css-tree'
+import {
+  type Atrule,
+  clone,
+  type CssNode,
+  generate,
+  List,
+  type Rule,
+  type StyleSheet,
+  walk,
+} from 'css-tree'
 import { downlevelForEmailClients } from './css/downlevel-for-email-clients'
 import { extractRulesPerClass } from './css/extract-rules-per-class'
 import { getCustomProperties } from './css/get-custom-properties'
@@ -41,12 +50,12 @@ export interface ComputedStyles {
    */
   residualClassMap: Map<string, string>
   /**
-   * Original (unsanitized) names of every class that produced a non-inlinable
-   * rule, in stylesheet-emission order — the exact list React Email interpolates
-   * into its no-`<head>` error (`Array.from(nonInlinableRules.keys())`,
-   * tailwind.tsx). This order (breakpoint/variant emission order) differs from the
-   * authored class order, so it cannot be reconstructed from {@link residualClassMap}
-   * and must be carried canonically.
+   * Original (unsanitized) names of classes that need the generated `<head>`
+   * CSS: non-inlinable rules and animation declarations with referenced
+   * keyframes. Non-inlinable rules keep stylesheet-emission order; animation-only
+   * classes follow in authored order. This list drives the missing-`<head>` error
+   * and cannot be reconstructed from {@link residualClassMap}, because an
+   * animation declaration itself can still be inlined.
    */
   nonInlinableClassNames: string[]
 }
@@ -63,6 +72,61 @@ export interface TailwindEngine {
    * its own argument.
    */
   computeStyles: (classNames: string[]) => ComputedStyles
+}
+
+interface KeyframesDefinition {
+  name: string
+  node: Atrule
+}
+
+function collectKeyframesDefinitions(styleSheet: StyleSheet): KeyframesDefinition[] {
+  const definitions: KeyframesDefinition[] = []
+
+  styleSheet.children.forEach((node) => {
+    if (
+      node.type === 'Atrule'
+      && (node.name === 'keyframes' || node.name === '-webkit-keyframes')
+      && node.prelude
+    ) {
+      definitions.push({ name: generate(node.prelude).trim(), node })
+    }
+  })
+
+  return definitions
+}
+
+function collectReferencedKeyframes(
+  rulesByClass: Map<string, Rule[]>,
+  knownNames: Set<string>,
+): Map<string, Set<string>> {
+  const references = new Map<string, Set<string>>()
+
+  for (const [className, rules] of rulesByClass) {
+    const classReferences = new Set<string>()
+    for (const rule of rules) {
+      walk(rule, {
+        visit: 'Declaration',
+        enter(declaration) {
+          if (
+            declaration.property !== 'animation'
+            && declaration.property !== 'animation-name'
+          ) return
+
+          walk(declaration.value, (node) => {
+            const name = node.type === 'Identifier'
+              ? node.name
+              : node.type === 'String'
+                ? node.value
+                : null
+            if (name && knownNames.has(name)) classReferences.add(name)
+          })
+        },
+      })
+    }
+    if (classReferences.size > 0) references.set(className, classReferences)
+  }
+
+  return references
 }
 
 /**
@@ -91,6 +155,24 @@ export async function createTailwindEngine(
       = extractRulesPerClass(styleSheet, classNames)
 
     const customProperties = getCustomProperties(styleSheet)
+    const keyframesDefinitions = collectKeyframesDefinitions(styleSheet)
+    const knownKeyframeNames = new Set(
+      keyframesDefinitions.map(definition => definition.name),
+    )
+    const animationReferences = new Map<string, Set<string>>()
+    for (const rules of [inlinableRules, nonInlinableRules]) {
+      for (const [className, names] of collectReferencedKeyframes(
+        rules,
+        knownKeyframeNames,
+      )) {
+        const existing = animationReferences.get(className) ?? new Set<string>()
+        for (const name of names) existing.add(name)
+        animationReferences.set(className, existing)
+      }
+    }
+    const referencedKeyframeNames = new Set(
+      Array.from(animationReferences.values()).flatMap(names => [...names]),
+    )
 
     // Build, sanitize, and downlevel the injectable (media / pseudo) rules.
     const nonInlineStyles: StyleSheet = {
@@ -100,9 +182,15 @@ export async function createTailwindEngine(
       ),
     }
     sanitizeNonInlinableRules(nonInlineStyles)
+    for (const definition of keyframesDefinitions) {
+      if (referencedKeyframeNames.has(definition.name)) {
+        nonInlineStyles.children.appendData(clone(definition.node))
+      }
+    }
     downlevelForEmailClients(nonInlineStyles)
-    const nonInlinableCss
-      = nonInlinableRules.size > 0 ? generate(nonInlineStyles) : ''
+    const nonInlinableCss = nonInlineStyles.children.isEmpty
+      ? ''
+      : generate(nonInlineStyles)
 
     // Per-class inline declarations.
     const inlinable = new Map<string, InlineStyleMap>()
@@ -122,11 +210,19 @@ export async function createTailwindEngine(
       }
     }
 
+    const nonInlinableClassNames = Array.from(nonInlinableRules.keys())
+    for (const className of classNames) {
+      if (
+        animationReferences.has(className)
+        && !nonInlinableRules.has(className)
+      ) nonInlinableClassNames.push(className)
+    }
+
     return {
       inlinable,
       nonInlinableCss,
       residualClassMap,
-      nonInlinableClassNames: Array.from(nonInlinableRules.keys()),
+      nonInlinableClassNames,
     }
   }
 

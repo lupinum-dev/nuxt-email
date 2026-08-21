@@ -2,119 +2,95 @@ import { generate, parse, type StyleSheet } from 'css-tree'
 import { describe, expect, it } from 'vitest'
 import { downlevelForEmailClients } from '../../../src/runtime/tailwind/engine/css/downlevel-for-email-clients'
 
-function transform(css: string): string {
-  const ast = parse(css) as StyleSheet
-  downlevelForEmailClients(ast)
-  return generate(ast)
+function downlevel(css: string): string {
+  const styleSheet = parse(css) as StyleSheet
+  downlevelForEmailClients(styleSheet)
+  return generate(styleSheet)
 }
 
-describe('downlevelForEmailClients', () => {
-  describe('range syntax', () => {
-    it('converts width>= to min-width', () => {
-      expect(transform('@media (width>=40rem){.sm_p-4{padding:1rem}}')).toBe(
-        '@media (min-width:40rem){.sm_p-4{padding:1rem}}',
-      )
-    })
-
-    it('converts width<= to max-width', () => {
-      expect(
-        transform('@media (width<=40rem){.max-sm_p-4{padding:1rem}}'),
-      ).toBe('@media (max-width:40rem){.max-sm_p-4{padding:1rem}}')
-    })
-
-    it('converts width< to max-width', () => {
-      expect(
-        transform('@media (width<40rem){.max-sm_text-red{color:red}}'),
-      ).toBe('@media (max-width:40rem){.max-sm_text-red{color:red}}')
-    })
-
-    it('converts width> to min-width', () => {
-      expect(transform('@media (width>40rem){.sm_p-4{padding:1rem}}')).toBe(
-        '@media (min-width:40rem){.sm_p-4{padding:1rem}}',
+describe('downlevelForEmailClients()', () => {
+  describe('media range syntax', () => {
+    it.each([
+      ['width>=40rem', 'min-width:40rem'],
+      ['width>40rem', 'min-width:40rem'],
+      ['width<=40rem', 'max-width:40rem'],
+      ['width<40rem', 'max-width:40rem'],
+    ])('converts %s to %s', (input, output) => {
+      expect(downlevel(`@media (${input}){.a{color:red}}`)).toBe(
+        `@media (${output}){.a{color:red}}`,
       )
     })
 
     it('does not affect non-range media queries', () => {
       expect(
-        transform('@media (prefers-color-scheme:dark){.dark{color:white}}'),
+        downlevel('@media (prefers-color-scheme:dark){.dark{color:white}}'),
       ).toBe('@media (prefers-color-scheme:dark){.dark{color:white}}')
     })
   })
 
-  describe('unnesting', () => {
-    it('unnests @media from inside a selector', () => {
-      expect(
-        transform(
-          '.sm_bg-red{@media (min-width:40rem){background-color:red!important}}',
-        ),
-      ).toBe(
-        '@media (min-width:40rem){.sm_bg-red{background-color:red!important}}',
-      )
-    })
+  it('preserves ordinary rules and an empty stylesheet', () => {
+    expect(downlevel('.bg-red{background-color:red}')).toBe(
+      '.bg-red{background-color:red}',
+    )
+    expect(downlevel('')).toBe('')
+  })
 
-    it('handles combined range syntax + nesting', () => {
-      expect(
-        transform(
-          '.sm_bg-red{@media (width>=40rem){background-color:rgb(255,162,162)!important}}',
-        ),
-      ).toBe(
-        '@media (min-width:40rem){.sm_bg-red{background-color:rgb(255,162,162)!important}}',
-      )
-    })
+  it('flattens multiple conditional rules owned by one selector', () => {
+    const result = downlevel(
+      '.multi{@media (width>=40rem){color:red!important}'
+      + '@media (width>=48rem){color:blue!important}}',
+    )
 
-    it('handles multiple concatenated rules', () => {
-      const input
-        = '.sm_bg-red{@media (width>=40rem){background-color:red!important}}'
-          + '.md_bg-blue{@media (width>=48rem){background-color:blue!important}}'
+    expect(result).toBe(
+      '@media (min-width:40rem){.multi{color:red!important}}'
+      + '@media (min-width:48rem){.multi{color:blue!important}}',
+    )
+  })
 
-      const result = transform(input)
+  it('preserves mixed declarations and nested rules in source order', () => {
+    const result = downlevel(
+      '.a,.b{color:red;@media (width>=40rem){padding:1rem;'
+      + '@supports (display:grid){&:hover,&:focus{display:grid}}'
+      + 'margin:2rem}background:blue}',
+    )
 
-      expect(result).toContain(
-        '@media (min-width:40rem){.sm_bg-red{background-color:red!important}}',
-      )
-      expect(result).toContain(
-        '@media (min-width:48rem){.md_bg-blue{background-color:blue!important}}',
-      )
-    })
+    expect(result).toBe(
+      '.a,.b{color:red}'
+      + '@media (min-width:40rem){.a,.b{padding:1rem}}'
+      + '@media (min-width:40rem){@supports (display:grid){'
+      + '.a:hover,.a:focus,.b:hover,.b:focus{display:grid}}}'
+      + '@media (min-width:40rem){.a,.b{margin:2rem}}'
+      + '.a,.b{background:blue}',
+    )
+  })
 
-    it('unnests dark mode media queries', () => {
-      expect(
-        transform(
-          '.dark_text-white{@media (prefers-color-scheme:dark){color:rgb(255,255,255)!important}}',
-        ),
-      ).toBe(
-        '@media (prefers-color-scheme:dark){.dark_text-white{color:rgb(255,255,255)!important}}',
-      )
-    })
+  it('recursively flattens stacked selectors and conditional at-rules', () => {
+    const result = downlevel(
+      '@media (width>=40rem){@supports (display:grid){'
+      + '.a{& .b,&>.c{display:grid}}}}',
+    )
 
-    it('preserves rules without nested @media', () => {
-      expect(transform('.bg-red{background-color:red}')).toBe(
-        '.bg-red{background-color:red}',
-      )
-    })
+    expect(result).toBe(
+      '@media (min-width:40rem){@supports (display:grid){'
+      + '.a .b,.a>.c{display:grid}}}',
+    )
+    expect(result).not.toContain('&')
+  })
 
-    it('preserves already top-level @media rules', () => {
-      expect(
-        transform('@media (min-width:40rem){.sm_p-4{padding:1rem!important}}'),
-      ).toBe('@media (min-width:40rem){.sm_p-4{padding:1rem!important}}')
-    })
+  it('fails rather than preserving an unparsed nested selector', () => {
+    expect(() => downlevel('.a,.b{.child{color:red}}')).toThrow(
+      'an unparsed nested CSS shape was encountered',
+    )
+  })
 
-    it('handles multiple @media nested in one selector', () => {
-      const input
-        = '.multi{@media (width>=40rem){color:red!important}@media (width>=48rem){color:blue!important}}'
+  it('fails explicitly for an unsupported nested at-rule', () => {
+    expect(() => downlevel('.a{@container (width>1px){color:red}}')).toThrow(
+      'nested @container rules are not supported',
+    )
+  })
 
-      const result = transform(input)
-
-      expect(result).toContain(
-        '@media (min-width:40rem){.multi{color:red!important}}',
-      )
-      expect(result).toContain(
-        '@media (min-width:48rem){.multi{color:blue!important}}',
-      )
-    })
-
-    it('handles empty stylesheet', () => {
-      expect(transform('')).toBe('')
-    })
+  it('is deterministic across repeated transforms', () => {
+    const input = '.a{@media (width>=40rem){&:hover{color:red}}}'
+    expect(downlevel(input)).toBe(downlevel(input))
   })
 })
