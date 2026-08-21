@@ -3,7 +3,9 @@ import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 
-export type EHtmlProps = SafeEmailAttributes<HTMLAttributes>
+export type EHtmlProps = Omit<SafeEmailAttributes<HTMLAttributes>, 'lang'> & {
+  lang: string
+}
 
 export const EHtml = defineComponent({
   name: 'EHtml',
@@ -11,7 +13,10 @@ export const EHtml = defineComponent({
   setup(_props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('EHtml', attrs)
-      const { dir = 'ltr', lang = 'en', ...attributes } = attrs
+      const { dir = 'ltr', lang, ...attributes } = attrs
+      if (typeof lang !== 'string' || lang.trim().length === 0) {
+        throw new TypeError('EHtml lang must be a non-empty string')
+      }
 
       return h('html', {
         ...attributes,

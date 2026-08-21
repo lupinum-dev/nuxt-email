@@ -1,6 +1,7 @@
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { DefineEmailWelcome } from '../fixtures/DefineEmailWelcome'
+import type { DefineEmailOptions } from '../../src/runtime/render/define-email'
 import {
   defineEmail,
   DefineEmailOutsideRenderError,
@@ -23,7 +24,7 @@ function subjectEmail(name: string, subject: (props: SubjectProps) => string) {
   })
 }
 
-describe('defineEmail subject registration', () => {
+describe('defineEmail metadata registration', () => {
   it('computes the subject from the props passed to the render', async () => {
     const result = await renderEmailComponent(DefineEmailWelcome, { firstName: 'Ada' })
 
@@ -43,6 +44,38 @@ describe('defineEmail subject registration', () => {
     expect(result.subject).toBeUndefined()
     expect(Object.hasOwn(result, 'subject')).toBe(false)
     expect(Object.keys(result)).toEqual(['html', 'text'])
+  })
+
+  it('accepts constant subject and text metadata', async () => {
+    const ConstantMetadataEmail = defineComponent({
+      name: 'ConstantMetadataEmail',
+      setup() {
+        defineEmail({ subject: 'A constant subject', text: 'Authored plain text' })
+        return () => h('html', [h('body', [h('p', 'Derived body text')])])
+      },
+    })
+
+    await expect(renderEmailComponent(ConstantMetadataEmail)).resolves.toEqual({
+      html: expect.stringContaining('Derived body text'),
+      subject: 'A constant subject',
+      text: 'Authored plain text',
+    })
+  })
+
+  it('uses prop-derived authored text instead of HTML-derived text', async () => {
+    const AuthoredTextEmail = defineComponent({
+      name: 'AuthoredTextEmail',
+      props: { firstName: { type: String, required: true } },
+      setup(props: SubjectProps) {
+        defineEmail({ text: () => `Plain welcome for ${props.firstName}` })
+        return () => h('html', [h('body', [h('p', `Visual welcome for ${props.firstName}`)])])
+      },
+    })
+
+    const result = await renderEmailComponent(AuthoredTextEmail, { firstName: 'Ada' })
+    expect(result.text).toBe('Plain welcome for Ada')
+    expect(result.html).toContain('Visual welcome for Ada')
+    expect(result.subject).toBeUndefined()
   })
 
   it('keeps concurrent renders isolated (no shared module state)', async () => {
@@ -198,11 +231,39 @@ describe('defineEmail subject registration', () => {
     expect(error.cause.message).toBe('defineEmail() subject must return a string; received undefined')
   })
 
+  it('rejects non-string authored text returned by untyped JavaScript', async () => {
+    const InvalidText = defineComponent({
+      name: 'InvalidTextEmail',
+      setup() {
+        defineEmail({ text: (() => 42) as unknown as () => string })
+        return () => h('html', [h('body', [h('p', 'body')])])
+      },
+    })
+
+    const error = await renderEmailComponent(InvalidText).catch(value => value)
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('defineEmail() text must return a string; received number')
+  })
+
+  it('rejects empty metadata from untyped JavaScript', async () => {
+    const EmptyDefinition = defineComponent({
+      name: 'EmptyDefinitionEmail',
+      setup() {
+        defineEmail({} as DefineEmailOptions)
+        return () => h('html', [h('body')])
+      },
+    })
+
+    const error = await renderEmailComponent(EmptyDefinition).catch(value => value)
+    expect(error.cause).toBeInstanceOf(TypeError)
+    expect(error.cause.message).toBe('defineEmail() requires subject or text metadata.')
+  })
+
   it('rejects a malformed subject declaration from untyped JavaScript', async () => {
     const InvalidDefinition = defineComponent({
       name: 'InvalidDefinitionEmail',
       setup() {
-        defineEmail({ subject: null } as unknown as { subject: () => string })
+        defineEmail({ subject: null } as unknown as DefineEmailOptions)
         return () => h('html', [h('body', [h('p', 'body')])])
       },
     })
@@ -210,6 +271,6 @@ describe('defineEmail subject registration', () => {
     const error = await renderEmailComponent(InvalidDefinition).catch(value => value)
 
     expect(error.cause).toBeInstanceOf(TypeError)
-    expect(error.cause.message).toBe('defineEmail() subject must be a function returning a string.')
+    expect(error.cause.message).toBe('defineEmail() subject must be a string or a function returning a string.')
   })
 })

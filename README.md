@@ -141,6 +141,16 @@ Run the Nuxt application and open `/__email`. The development-only page shows th
 
 Add one sibling fixture file for deterministic sample props. Preview routes and fixtures are excluded from production builds.
 
+```ts
+import type { EmailComponentProps } from '@lupinum/nuxt-email'
+import type WelcomeEmail from './welcome.vue'
+
+export default {
+  firstName: 'Ada',
+  activationUrl: 'https://example.com/activate',
+} satisfies EmailComponentProps<typeof WelcomeEmail>
+```
+
 ## Testing
 
 Render a Vue email without starting Nuxt:

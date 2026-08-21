@@ -21,7 +21,7 @@ describe('component rendering', () => {
         const EHtml = resolveComponent('EHtml')
         const EBody = resolveComponent('EBody')
         const EText = resolveComponent('EText')
-        return () => h(EHtml, null, {
+        return () => h(EHtml, { lang: 'en' }, {
           default: () => h(EBody, null, {
             default: () => h(EText, null, { default: () => 'Hello' }),
           }),
@@ -165,7 +165,7 @@ describe('component rendering', () => {
     const error = await renderEmailComponent(InvalidEmail).catch(value => value)
 
     expect(error).toBeInstanceOf(EmailRenderError)
-    expect(error).toMatchObject({ componentName: 'InvalidEmail' })
+    expect(error).toMatchObject({ templateName: 'InvalidEmail' })
     expect(error.cause).toBeInstanceOf(TypeError)
     expect(error.cause.message).toContain('exactly one <html> root containing exactly one <body>')
   })
@@ -203,10 +203,11 @@ describe('render errors', () => {
     expect(error).toBeInstanceOf(EmailRenderError)
     expect(error).toMatchObject({
       name: 'EmailRenderError',
-      componentName: 'BrokenEmail',
+      templateName: 'BrokenEmail',
       cause,
-      message: 'Failed to render email component BrokenEmail',
+      message: 'Failed to render email template BrokenEmail',
     })
+    expect(error).not.toHaveProperty('componentName')
   })
 
   it('surfaces the real cause thrown from an async setup, not a misleading document error', async () => {
@@ -224,7 +225,7 @@ describe('render errors', () => {
     const error = await renderEmailComponent(AsyncBrokenEmail).catch(value => value)
 
     expect(error).toBeInstanceOf(EmailRenderError)
-    expect(error).toMatchObject({ componentName: 'AsyncBrokenEmail', cause })
+    expect(error).toMatchObject({ templateName: 'AsyncBrokenEmail', cause })
     expect(error.cause.message).not.toContain('exactly one <html> root')
   })
 
@@ -238,7 +239,7 @@ describe('render errors', () => {
     ScriptSetupEmail.__name = 'WelcomeEmail'
 
     await expect(renderEmailComponent(ScriptSetupEmail))
-      .rejects.toMatchObject({ componentName: 'WelcomeEmail', cause })
+      .rejects.toMatchObject({ templateName: 'WelcomeEmail', cause })
   })
 
   it('uses the name of a functional component when it fails', async () => {
@@ -248,6 +249,6 @@ describe('render errors', () => {
     }
 
     await expect(renderEmailComponent(FunctionalEmail))
-      .rejects.toMatchObject({ componentName: 'FunctionalEmail', cause })
+      .rejects.toMatchObject({ templateName: 'FunctionalEmail', cause })
   })
 })

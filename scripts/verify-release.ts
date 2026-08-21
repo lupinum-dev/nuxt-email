@@ -356,6 +356,7 @@ async function verifyFreshConsumer(
     ])};`
     + ` const resolved = Object.fromEntries(specifiers.map(specifier => [specifier, import.meta.resolve(specifier)]));`
     + ` const [defineEmail, errors, testing] = await Promise.all(specifiers.map(specifier => import(specifier)));`
+    + ` const renderError = new errors.EmailRenderError('welcome', new Error('cause'));`
     + ` const checks = {`
     + ` defineEmail: typeof defineEmail.defineEmail === 'function',`
     + ` defineEmailOutside: typeof defineEmail.DefineEmailOutsideRenderError === 'function',`
@@ -367,6 +368,7 @@ async function verifyFreshConsumer(
     + ` errorsDefineEmailOutside: typeof errors.DefineEmailOutsideRenderError === 'function',`
     + ` errorsDuplicateDefinition: typeof errors.DuplicateEmailDefinitionError === 'function',`
     + ` emailRenderError: typeof errors.EmailRenderError === 'function',`
+    + ` emailRenderErrorContract: renderError.templateName === 'welcome' && !('componentName' in renderError) && renderError.cause?.message === 'cause',`
     + ` tailwindMissingHeadError: typeof errors.TailwindMissingHeadError === 'function',`
     + ` unknownTemplateError: typeof errors.UnknownEmailTemplateError === 'function',`
     + ` errorsSurface: JSON.stringify(Object.keys(errors).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'EmailRenderError', 'TailwindMissingHeadError', 'UnknownEmailTemplateError']),`

@@ -21,7 +21,7 @@ function fixture(render: () => unknown): Component {
 
 function emailWith(body: unknown, head: unknown = h(EHead)): Component {
   return fixture(() => h(ETailwind, null, {
-    default: () => h(EHtml, null, { default: () => [head, h(EBody, null, { default: () => body })] }),
+    default: () => h(EHtml, { lang: 'en' }, { default: () => [head, h(EBody, null, { default: () => body })] }),
   }))
 }
 
@@ -119,7 +119,7 @@ describe('missing head', () => {
 
 describe('idempotence outside a Tailwind region', () => {
   it('leaves an email that does not use ETailwind byte-for-byte unchanged', async () => {
-    const plain = fixture(() => h(EHtml, null, {
+    const plain = fixture(() => h(EHtml, { lang: 'en' }, {
       default: () => [h(EHead), h(EBody, null, { default: () => h('div', { class: 'p-4' }, 'x') })],
     }))
     const first = await renderComponentToHtml(plain)

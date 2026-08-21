@@ -154,7 +154,7 @@ describe('development email preview', async () => {
           name: string
           message: string
           stack: string
-          componentName: string
+          templateName: string
           cause: { name: string, message: string, stack: string }
         }
       }
@@ -162,7 +162,7 @@ describe('development email preview', async () => {
     const fixtureless = await testFetch('/sub/__email/render?name=without-fixture&format=json')
 
     expect(broken.status).toBe(500)
-    expect(brokenBody.data.error.componentName).toBe('broken')
+    expect(brokenBody.data.error.templateName).toBe('broken')
     expect(brokenBody.data.error.name).toBe('EmailRenderError')
     expect(brokenBody.data.error.stack).toContain('EmailRenderError')
     expect(brokenBody.data.error.cause.message).toContain('Preview fixture failed: intentional test failure')
@@ -209,7 +209,7 @@ describe('development email preview', async () => {
     const addedFixture = join(emailDirectory, 'dynamic.fixtures.ts')
     const renamedTemplate = join(emailDirectory, 'renamed-dynamic.vue')
     const renamedFixture = join(emailDirectory, 'renamed-dynamic.fixtures.ts')
-    const templateSource = '<template><EHtml><EBody><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EBody></EHtml></template>'
+    const templateSource = '<template><EHtml lang="en"><EBody><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EBody></EHtml></template>'
     const fixtureSource = 'export default {}\n'
     try {
       await writeFile(addedFixture, fixtureSource)

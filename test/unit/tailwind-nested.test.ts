@@ -14,7 +14,7 @@ function email(body: unknown, options: { head?: boolean } = {}): Component {
     name: 'NestedEmailFixture',
     setup() {
       return () => h(ETailwind, null, {
-        default: () => h(EHtml, null, {
+        default: () => h(EHtml, { lang: 'en' }, {
           default: () => [
             ...(options.head === false ? [] : [h(EHead)]),
             h(EBody, null, { default: () => body }),
@@ -120,7 +120,7 @@ describe('nested-component Tailwind', () => {
   })
 
   it('self-inlines a nested EBody before deriving its reset and wrapper styles', async () => {
-    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, null, {
+    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, { lang: 'en' }, {
       default: () => [
         h(EHead),
         h(EBody, { class: 'p-4' }, { default: () => h('p', 'Deep') }),
@@ -177,7 +177,7 @@ describe('nested-component Tailwind', () => {
   })
 
   it('inserts responsive CSS when a nested layout emits the whole document and head', async () => {
-    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, null, {
+    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, { lang: 'en' }, {
       default: () => [
         h(EHead),
         h(EBody, null, {
@@ -192,7 +192,7 @@ describe('nested-component Tailwind', () => {
 
   it('ignores style-like markup inside a head comment when inserting nested CSS', async () => {
     const conditional = '[if mso]><style>.mso{color:red}</style><![endif]'
-    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, null, {
+    const html = await renderComponentToHtml(nestedDocument(() => h(EHtml, { lang: 'en' }, {
       default: () => [
         h(EHead, null, { default: () => createCommentVNode(conditional) }),
         h(EBody, null, {
@@ -222,7 +222,7 @@ describe('nested-component Tailwind', () => {
     const fixture = defineComponent({
       name: 'NestedTailwindBoundaryFixture',
       setup: () => () => h(ETailwind, null, {
-        default: () => h(EHtml, null, {
+        default: () => h(EHtml, { lang: 'en' }, {
           default: () => [
             h(EHead),
             h(EBody, null, {
@@ -252,7 +252,7 @@ describe('nested-component Tailwind', () => {
     const Deep = nested(() => h('div', { class: 'md:bg-red-500' }, 'Deep'))
     const fixture = defineComponent({
       name: 'OutsideHeadFixture',
-      setup: () => () => h(EHtml, null, {
+      setup: () => () => h(EHtml, { lang: 'en' }, {
         default: () => [
           h(EHead),
           h(EBody, null, {
@@ -308,7 +308,7 @@ describe('zero-cost outside a Tailwind region', () => {
     const plain = defineComponent({
       name: 'PlainEmail',
       setup() {
-        return () => h(EHtml, null, {
+        return () => h(EHtml, { lang: 'en' }, {
           default: () => [
             h(EHead),
             h(EBody, null, {

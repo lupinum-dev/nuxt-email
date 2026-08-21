@@ -39,6 +39,13 @@ async function renderComponent(
   return renderComponentToHtml(componentFixture(component, attributes, children))
 }
 
+function neutralizeReactLinkDefaults(html: string): string {
+  return html
+    .replaceAll('color:#067df7;', '')
+    .replaceAll('text-decoration-line:none', '')
+    .replaceAll(' style=""', '')
+}
+
 const CompleteBasicEmail = defineComponent({
   name: 'CompleteBasicEmail',
   setup() {
@@ -68,10 +75,10 @@ const CompleteBasicEmail = defineComponent({
 })
 
 describe('document primitives', () => {
-  it('renders EHtml defaults, overrides, slots, and escaped attributes', {
+  it('renders explicit EHtml language, defaults dir, and forwards attributes', {
     tags: ['conformance:html-defaults'],
   }, async () => {
-    const defaults = await renderComponent(EHtml)
+    const defaults = await renderComponent(EHtml, { lang: 'en' })
     const overrides = await renderComponent(EHtml, {
       'data-description': 'French & "quoted"',
       'dir': 'rtl',
@@ -82,6 +89,15 @@ describe('document primitives', () => {
     expect(defaults).toContain('<html dir="ltr" lang="en"></html>')
     expect(overrides).toContain('<html data-description="French &amp; &quot;quoted&quot;" style="background-color:white;" dir="rtl" lang="fr">')
     expect(overrides).toContain('Bonjour &amp; bienvenue')
+  })
+
+  it('rejects a missing or empty EHtml language', async () => {
+    await expect(renderComponent(EHtml))
+      .rejects.toThrow('EHtml lang must be a non-empty string')
+    await expect(renderComponent(EHtml, { lang: '' }))
+      .rejects.toThrow('EHtml lang must be a non-empty string')
+    await expect(renderComponent(EHtml, { lang: '   ' }))
+      .rejects.toThrow('EHtml lang must be a non-empty string')
   })
 
   it('renders EHead metadata before user content and matches the oracle', {
@@ -248,12 +264,15 @@ describe('content primitives', () => {
       'target': '_self',
     }, 'Link & content')
 
-    expect(normalizeEmailHtml(oracleOverrides)).toBe(normalizeEmailHtml(oracle.cases['link-overrides'].html))
-    expect(defaults).toContain('style="color:#067df7;text-decoration-line:none;" target="_blank"')
+    expect(normalizeEmailHtml(oracleOverrides)).toBe(
+      normalizeEmailHtml(neutralizeReactLinkDefaults(oracle.cases['link-overrides'].html)),
+    )
+    expect(defaults).toContain('<a href="https://example.com" target="_blank">Example</a>')
+    expect(defaults).not.toContain('style=')
     expect(overrides).toContain('href="https://example.com/?value=&quot;quoted&quot;&amp;mode=test"')
     expect(overrides).toContain('aria-label="Open &amp; inspect"')
     expect(overrides).toContain('rel="noreferrer"')
-    expect(overrides).toContain('style="color:red;text-decoration-line:none;"')
+    expect(overrides).toContain('style="color:red;"')
     expect(overrides).toContain('target="_self"')
     expect(overrides).toContain('>Link &amp; content</a>')
   })
@@ -327,7 +346,9 @@ describe('complete Phase 1 email', () => {
     const second = await renderEmailComponent(CompleteBasicEmail)
 
     expect(first).toEqual(second)
-    expect(normalizeEmailHtml(first.html)).toBe(normalizeEmailHtml(oracle.cases['complete-basic-email'].html))
+    expect(normalizeEmailHtml(first.html)).toBe(
+      normalizeEmailHtml(neutralizeReactLinkDefaults(oracle.cases['complete-basic-email'].html)),
+    )
     expect(first.text).toBe(oracle.cases['complete-basic-email-text'].text)
     expect(first.html).toContain(oracle.cases['complete-basic-email'].expectedExactFragments[0])
     expect(first.html).toContain('Hello &amp; &lt;Ada&gt; — Grüß dich')

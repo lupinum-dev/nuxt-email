@@ -1,9 +1,5 @@
+import type { EmailComponentProps } from '@lupinum/nuxt-email'
 import type ReleaseNotesEmail from './release-notes.vue'
-
-type ReleaseNotesEmailProps = Omit<
-  InstanceType<typeof ReleaseNotesEmail>['$props'],
-  keyof import('vue').PublicProps
->
 
 export default {
   changelogUrl: 'https://example.com/changelog/v2-4',
@@ -19,4 +15,4 @@ export default {
   productName: 'Northstar',
   recipientName: 'Ada',
   version: 'v2.4',
-} satisfies ReleaseNotesEmailProps
+} satisfies EmailComponentProps<typeof ReleaseNotesEmail>

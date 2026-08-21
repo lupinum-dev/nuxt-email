@@ -4,12 +4,15 @@ import { AsyncLocalStorage } from 'node:async_hooks'
 /**
  * Options declared by an email template via {@link defineEmail}.
  *
- * `subject` is a zero-argument closure over the template's real `defineProps()`
- * value and returns the computed subject line.
+ * String values are constant metadata. Functions are zero-argument closures
+ * over the template's real `defineProps()` value and run synchronously after
+ * the HTML render completes.
  */
-export interface DefineEmailOptions {
-  subject: () => string
-}
+export type EmailMetadataValue = string | (() => string)
+
+export type DefineEmailOptions
+  = | { subject: EmailMetadataValue, text?: EmailMetadataValue }
+    | { subject?: EmailMetadataValue, text: EmailMetadataValue }
 
 const EMAIL_RENDER_BRAND = Symbol('nuxt-email:render-context')
 
@@ -31,6 +34,8 @@ const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
 export interface EmailRenderContext {
   readonly [EMAIL_RENDER_BRAND]: true
   subject?: () => string
+  text?: () => string
+  metadataDefined?: true
   /**
    * Tailwind regions registered by `<ETailwind>` boundaries during render, in
    * registration order. Consumed by the post-render pass to complete each head
@@ -82,10 +87,10 @@ function isEmailRenderContext(value: unknown): value is EmailRenderContext {
 }
 
 /**
- * Declare email metadata (currently the subject) from an email template's
- * `<script setup>`. The zero-argument subject closure captures the template's
- * real `defineProps()` value, so there is no separate generic that can lie about
- * the template contract. The computed value surfaces as `subject`.
+ * Declare subject and/or authored plain text from an email template's
+ * `<script setup>`. A zero-argument closure captures the template's real
+ * `defineProps()` value, so there is no separate generic that can lie about the
+ * template contract.
  *
  * Must run during an email render; calling it elsewhere throws
  * {@link DefineEmailOutsideRenderError}.
@@ -96,13 +101,31 @@ export function defineEmail(options: DefineEmailOptions): void {
     throw new DefineEmailOutsideRenderError()
   }
 
-  if (context.subject !== undefined) {
+  if (context.metadataDefined) {
     throw new DuplicateEmailDefinitionError()
   }
 
-  if (!options || typeof options.subject !== 'function') {
-    throw new TypeError('defineEmail() subject must be a function returning a string.')
+  if (!options || typeof options !== 'object') {
+    throw new TypeError('defineEmail() requires subject or text metadata.')
   }
 
-  context.subject = options.subject
+  const keys = Object.keys(options)
+  const unsupportedKeys = keys.filter(key => key !== 'subject' && key !== 'text')
+  if (unsupportedKeys.length > 0) {
+    throw new TypeError(`defineEmail() received unsupported metadata: ${unsupportedKeys.sort().join(', ')}.`)
+  }
+  if (options.subject === undefined && options.text === undefined) {
+    throw new TypeError('defineEmail() requires subject or text metadata.')
+  }
+
+  const toFactory = (name: 'subject' | 'text', value: EmailMetadataValue | undefined) => {
+    if (value === undefined) return undefined
+    if (typeof value === 'string') return () => value
+    if (typeof value === 'function') return value
+    throw new TypeError(`defineEmail() ${name} must be a string or a function returning a string.`)
+  }
+
+  context.subject = toFactory('subject', options.subject)
+  context.text = toFactory('text', options.text)
+  context.metadataDefined = true
 }

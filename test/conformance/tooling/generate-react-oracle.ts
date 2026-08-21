@@ -363,8 +363,8 @@ async function generateOracle() {
       nuxtComponent: 'EHtml',
       classification: 'intentional-divergence',
       input: {},
-      semanticAssertions: ['html tag', 'ltr direction', 'English language'],
-      intentionalDivergence: 'Vue SSR does not inject React 19\'s implicit empty head into a standalone html element.',
+      semanticAssertions: ['html tag', 'ltr direction', 'explicit English language'],
+      intentionalDivergence: 'EHtml requires a non-empty lang value instead of silently defaulting to English. Vue SSR also does not inject React 19\'s implicit empty head into a standalone html element.',
     }, React.createElement(Html)),
     'head-content': await renderCase({
       reactReference: 'packages/react-email/src/components/head/head.spec.tsx',
@@ -412,9 +412,10 @@ async function generateOracle() {
     'link-overrides': await renderCase({
       reactReference: 'packages/react-email/src/components/link/link.spec.tsx',
       nuxtComponent: 'ELink',
-      classification: 'semantic',
+      classification: 'intentional-divergence',
       input: { href: 'quoted and escaped URL', target: '_self', style: { color: 'red' } },
       semanticAssertions: ['anchor tag', 'escaped URL', 'target override', 'user style precedence'],
+      intentionalDivergence: 'ELink keeps target="_blank" but adds no color or text-decoration defaults, so application styles remain the single visual source of truth.',
     }, React.createElement(Link, {
       id: 'link-test',
       href: 'https://example.com/?value="quoted"&mode=test',

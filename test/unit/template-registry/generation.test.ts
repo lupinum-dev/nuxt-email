@@ -51,7 +51,7 @@ describe('email template generation', () => {
     expect(generated).toContain('component: () => Promise<typeof import("/project/app/emails/account/reset-password.vue")>')
     expect(generated).toContain('fixture: () => Promise<typeof import("/project/app/emails/account/reset-password.fixtures.ts")>')
     expect(generated).toContain('export type EmailTemplateName = keyof typeof emailTemplates')
-    expect(generated).toContain('keyof import(\'vue\').PublicProps')
+    expect(generated).toContain('import("/package/runtime/render/types").EmailComponentProps<Component>')
     expect(generated).toContain('_EmailProps<Awaited<ReturnType<(typeof emailTemplates)[Name][\'component\']>>[\'default\']>')
     expect(generated).toContain('name: Name,\n  props: NoInfer<EmailTemplateProps[Name]>')
     expect(generated).toContain('Promise<import("/package/runtime/render/types").RenderedEmail>')
