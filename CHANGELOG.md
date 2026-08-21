@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.0.0-beta.1
+
+Status: certified beta candidate. Feature development is frozen until stable `1.0.0`; manual email-client QA and the external transactional beta remain pending.
+
+### Added
+
+- Added synchronous `subject` and authored plain-text `text` metadata to `defineEmail`, including prop-derived functions. Authored text takes precedence over automatic HTML-to-text derivation.
+- Added the type-only `EmailComponentProps<Component>` helper for deterministic, component-checked preview fixtures.
+- Added a baseURL-aware Nuxt DevTools shortcut to the existing development-only `/__email` preview.
+- Added direct Resend and local Nodemailer/Mailpit sending recipes while keeping all delivery behavior application-owned.
+
+### Changed
+
+- Rebuilt Tailwind v4 nested-selector and nested `@media`/`@supports` handling so declarations and rules preserve source order, media ranges are downleveled, and unhandled nesting fails instead of emitting raw `&` CSS.
+- Limited emitted keyframes to animations referenced by the current render. Animation remains best-effort progressive enhancement because email-client support is limited.
+- Made `EHtml.lang` a required, non-empty value. `dir` still defaults to `ltr`.
+- Made `ELink` visually neutral by removing its built-in color and underline. `target="_blank"` remains the default and can be overridden.
+- Renamed `EmailRenderError.componentName` to `templateName` and kept the original error as `cause`.
+- Limited module-driven registry rebuilds to structural template and fixture changes; ordinary edits continue through Nitro's normal watcher.
+
+### Breaking changes from v0.1.1
+
+- Every `EHtml` now requires an explicit non-empty `lang`.
+- `ELink` no longer supplies color or text-decoration styles. Add those styles explicitly where required.
+- Read `EmailRenderError.templateName` instead of `componentName`; there is no compatibility alias.
+- `defineEmail` rejects an empty object and invalid or asynchronous metadata values. Provide at least one synchronous `subject` or `text` value.
+
 ## v0.1.1
 
 [Compare changes](https://github.com/lupinum-dev/nuxt-email/compare/e45025a...v0.1.1)
