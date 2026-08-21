@@ -52,13 +52,13 @@ describe('Nuxt Email module integration', async () => {
   it('rejects a missing required prop declared by a compiled Vue SFC', async () => {
     const result = await $fetch<{
       cause: string
-      componentName: string
+      templateName: string
       name: string
     }>('/api/render-transactional-missing')
 
     expect(result).toEqual({
       cause: 'Missing required email component prop: firstName',
-      componentName: 'transactional',
+      templateName: 'transactional',
       name: 'EmailRenderError',
     })
   })

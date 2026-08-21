@@ -6,7 +6,7 @@ const count = ref(1)
 </script>
 
 <template>
-  <EHtml>
+  <EHtml lang="en">
     <EBody>
       <EText>{{ count }}</EText>
     </EBody>

@@ -10,16 +10,16 @@ Nuxt Email 0.1.1 is compared against React Email 6.9.0 and @react-email/render 2
 
 Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
 Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbfd`
+Oracle SHA-256: `dbaa8433377c15cc029d3f42c943a87cbfa42e17e411e738e2deddeb26e5b768`
 
 ## Classifications
 
 | Classification | Total | Passed | Failed |
 | --- | ---: | ---: | ---: |
 | exact | 10 | 10 | 0 |
-| intentional-divergence | 8 | 8 | 0 |
+| intentional-divergence | 9 | 9 | 0 |
 | normalized | 34 | 34 | 0 |
-| semantic | 5 | 5 | 0 |
+| semantic | 4 | 4 | 0 |
 | unsupported | 1 | 0 | 0 |
 
 ## Supported components and utilities
@@ -54,7 +54,8 @@ Oracle SHA-256: `cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbf
 | --- | --- | --- |
 | code-inline-basic | passed | The hidden Orange.fr compatibility copy is excluded from recipient plain text. |
 | code-inline-no-class | passed | The hidden Orange.fr compatibility copy is excluded from recipient plain text. |
-| html-defaults | passed | Vue SSR does not inject React 19's implicit empty head into a standalone html element. |
+| html-defaults | passed | EHtml requires a non-empty lang value instead of silently defaulting to English. Vue SSR also does not inject React 19's implicit empty head into a standalone html element. |
+| link-overrides | passed | ELink keeps target="_blank" but adds no color or text-decoration defaults, so application styles remain the single visual source of truth. |
 | preview-max-length | passed | EPreview omits React 19 title output and keeps hiding and plain-text exclusion invariant because Vue SSR cannot safely hoist title into head. |
 | preview-short | passed | React 19 hoists Preview title output into head; Vue authors place title explicitly in EHead. EPreview also keeps hiding styles and data-skip-in-text fixed so user attributes cannot expose filler. |
 | preview-style-override | passed | React replaces all hiding styles when a user style is provided; EPreview retains the hiding defaults as an email-safety invariant. |
@@ -75,6 +76,7 @@ Oracle SHA-256: `cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbf
 - **Only inline/static presentation-table padding can move to a cell.** Physical padding already known at render time — author `style` and non-variant Tailwind utilities — moves from ESection, EContainer, and ERow tables to a `<td>`. Responsive or pseudo-class padding remains a media/pseudo rule on the table because there is no inline value to relocate. For clients that force collapsed table borders, put responsive padding on an inner EColumn (a real `<td>`) instead.
 - **ECodeInline excludes its compatibility copy from plain text.** HTML retains the hidden Orange.fr fallback span, but `renderPlainText` skips that copy so recipients receive the code once. React Email emits it twice.
 - **ETailwind moves non-inlinable rules to `<head>`.** Media-query and pseudo-class rules that cannot be inlined are collected into a `<style>` element in the document `<head>` (an `<EHead>` inside `<ETailwind>` is required, otherwise rendering throws), residual class names are sanitized, and `mso-*` style properties survive inlining. Output tracks the pinned Tailwind version compiled by the engine.
+- **ETailwind downlevels nesting and limits keyframes to the current render.** Tailwind v4 selector nesting and nested media/supports rules are recursively flattened because native email-client nesting support is low. Animation keyframes are included only when referenced; animation remains progressive enhancement rather than a compatibility guarantee.
 - **Tailwind diagnostics use Vue component names.** The missing-head error preserves React Email's class ordering and remediation contract but names `<ETailwind>` and `<EHead />`, the components users can actually add.
 - **ETailwind renders user components exactly once.** E* primitives with style-derived markup (Body, Text, Button, Section, Container, Row, Link, Img, Hr) resolve classes through the provided render context. After SSR, one marker-scoped pass handles native and structural elements and completes non-inlinable `<head>` CSS without re-invoking slots. ECodeInline, EMarkdown, EPreview, and EFont are excluded because their class/head semantics are not Tailwind style targets. Nested `<ETailwind>` boundaries are not supported.
 
@@ -101,7 +103,7 @@ Oracle SHA-256: `cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbf
 | horizontal-rule-overrides | EHr | semantic | passed | 3 |
 | html-defaults | EHtml | intentional-divergence | passed | 3 |
 | image-overrides | EImg | semantic | passed | 3 |
-| link-overrides | ELink | semantic | passed | 4 |
+| link-overrides | ELink | intentional-divergence | passed | 4 |
 | markdown-container-and-attrs | EMarkdown | normalized | passed | 3 |
 | markdown-custom-styles | EMarkdown | normalized | passed | 2 |
 | markdown-document | EMarkdown | normalized | passed | 4 |

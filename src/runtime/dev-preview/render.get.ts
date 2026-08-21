@@ -32,7 +32,7 @@ interface SerializedPreviewError {
   name: string
   message: string
   stack?: string
-  componentName?: string
+  templateName?: string
   requestedName?: string
   knownNames?: readonly string[]
   cause?: SerializedPreviewError
@@ -61,8 +61,8 @@ function serializeError(error: unknown, seen = new Set<unknown>()): SerializedPr
   if (error.stack) {
     serialized.stack = error.stack
   }
-  if ('componentName' in error && typeof error.componentName === 'string') {
-    serialized.componentName = error.componentName
+  if ('templateName' in error && typeof error.templateName === 'string') {
+    serialized.templateName = error.templateName
   }
   if ('requestedName' in error && typeof error.requestedName === 'string') {
     serialized.requestedName = error.requestedName

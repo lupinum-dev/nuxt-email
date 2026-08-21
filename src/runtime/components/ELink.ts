@@ -3,15 +3,9 @@ import { defineComponent, h, inject } from 'vue'
 import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
-import { mergeEmailStyles } from './style'
 
 export type ELinkProps = Omit<SafeEmailAttributes<AnchorHTMLAttributes>, 'href'> & {
   href: string
-}
-
-const DEFAULT_LINK_STYLE = {
-  color: '#067df7',
-  textDecorationLine: 'none',
 }
 
 export const ELink = defineComponent({
@@ -35,7 +29,9 @@ export const ELink = defineComponent({
       return h('a', {
         ...attributes,
         href: props.href,
-        style: mergeEmailStyles(DEFAULT_LINK_STYLE, effectiveStyle),
+        ...(effectiveStyle === undefined || effectiveStyle === null
+          ? {}
+          : { style: effectiveStyle }),
         target: attrs.target ?? '_blank',
       }, slots.default?.())
     }

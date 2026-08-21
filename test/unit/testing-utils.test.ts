@@ -1,9 +1,17 @@
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
+import { EmailRenderError as PublicEmailRenderError } from '../../src/runtime/errors'
 import { defineEmail } from '../../src/runtime/render/define-email'
-import { renderEmailComponent } from '../../src/runtime/testing'
+import {
+  EmailRenderError as TestingEmailRenderError,
+  renderEmailComponent,
+} from '../../src/runtime/testing'
 
 describe('@lupinum/nuxt-email/testing: renderEmailComponent', () => {
+  it('re-exports the one public EmailRenderError identity', () => {
+    expect(TestingEmailRenderError).toBe(PublicEmailRenderError)
+  })
+
   it('renders a real component to a complete email document without a Nuxt app', async () => {
     const Email = defineComponent({
       name: 'HelloEmail',

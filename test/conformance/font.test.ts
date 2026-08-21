@@ -14,7 +14,7 @@ function fontDocument(fontProps: EFontProps): Component {
   return defineComponent({
     name: 'FontFixture',
     setup() {
-      return () => h(EHtml, null, {
+      return () => h(EHtml, { lang: 'en' }, {
         default: () => [
           h(EHead, null, { default: () => h(EFont, fontProps) }),
           h(EBody, null, { default: () => BODY_COPY }),

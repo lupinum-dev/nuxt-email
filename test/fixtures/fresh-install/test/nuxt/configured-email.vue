@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <EHtml>
+  <EHtml lang="en">
     <EBody>
       <ECodeBlock
         :code="source"

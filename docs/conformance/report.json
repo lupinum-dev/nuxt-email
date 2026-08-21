@@ -11,7 +11,7 @@
     "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
     "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
   },
-  "oracleSha256": "cf62e78b024d652986b9c3c5d9fe9116f8a2a9dba4428f15eebda9621dcefbfd",
+  "oracleSha256": "dbaa8433377c15cc029d3f42c943a87cbfa42e17e411e738e2deddeb26e5b768",
   "summary": {
     "failed": 0,
     "passed": 57,
@@ -26,8 +26,8 @@
     },
     "semantic": {
       "failed": 0,
-      "passed": 5,
-      "total": 5
+      "passed": 4,
+      "total": 4
     },
     "exact": {
       "failed": 0,
@@ -36,8 +36,8 @@
     },
     "intentional-divergence": {
       "failed": 0,
-      "passed": 8,
-      "total": 8
+      "passed": 9,
+      "total": 9
     },
     "unsupported": {
       "failed": 0,
@@ -430,12 +430,12 @@
       "semanticAssertions": [
         "html tag",
         "ltr direction",
-        "English language"
+        "explicit English language"
       ],
-      "intentionalDivergence": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "intentionalDivergence": "EHtml requires a non-empty lang value instead of silently defaulting to English. Vue SSR also does not inject React 19's implicit empty head into a standalone html element.",
       "test": {
         "file": "test/conformance/phase-one-components.test.ts",
-        "name": "document primitives > renders EHtml defaults, overrides, slots, and escaped attributes"
+        "name": "document primitives > renders explicit EHtml language, defaults dir, and forwards attributes"
       }
     },
     {
@@ -456,7 +456,7 @@
     },
     {
       "id": "link-overrides",
-      "classification": "semantic",
+      "classification": "intentional-divergence",
       "status": "passed",
       "nuxtComponent": "ELink",
       "reactReference": "packages/react-email/src/components/link/link.spec.tsx",
@@ -466,6 +466,7 @@
         "target override",
         "user style precedence"
       ],
+      "intentionalDivergence": "ELink keeps target=\"_blank\" but adds no color or text-decoration defaults, so application styles remain the single visual source of truth.",
       "test": {
         "file": "test/conformance/phase-one-components.test.ts",
         "name": "content primitives > renders ELink defaults, overrides, forwarding, and escaped content"
@@ -1042,7 +1043,12 @@
     },
     {
       "id": "html-defaults",
-      "note": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "note": "EHtml requires a non-empty lang value instead of silently defaulting to English. Vue SSR also does not inject React 19's implicit empty head into a standalone html element.",
+      "status": "passed"
+    },
+    {
+      "id": "link-overrides",
+      "note": "ELink keeps target=\"_blank\" but adds no color or text-decoration defaults, so application styles remain the single visual source of truth.",
       "status": "passed"
     },
     {

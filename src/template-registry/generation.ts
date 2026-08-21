@@ -74,14 +74,9 @@ ${entries.join('\n')}
 }>
 
 export type EmailTemplateName = keyof typeof emailTemplates
-type _EmailComponent = abstract new (...args: never[]) => { $props: object }
-type _DeclaredEmailProps<Component extends _EmailComponent> = Omit<
-  InstanceType<Component>['$props'],
-  keyof import('vue').PublicProps
->
-type _EmailProps<Component extends _EmailComponent> = keyof _DeclaredEmailProps<Component> extends never
+type _EmailProps<Component> = keyof import(${importPath(typePaths.renderedEmail)}).EmailComponentProps<Component> extends never
   ? Record<string, never>
-  : _DeclaredEmailProps<Component>
+  : import(${importPath(typePaths.renderedEmail)}).EmailComponentProps<Component>
 
 export type EmailTemplateProps = {
   [Name in EmailTemplateName]: _EmailProps<Awaited<ReturnType<(typeof emailTemplates)[Name]['component']>>['default']>

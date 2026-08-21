@@ -169,9 +169,9 @@
       "semanticAssertions": [
         "html tag",
         "ltr direction",
-        "English language"
+        "explicit English language"
       ],
-      "intentionalDivergence": "Vue SSR does not inject React 19's implicit empty head into a standalone html element.",
+      "intentionalDivergence": "EHtml requires a non-empty lang value instead of silently defaulting to English. Vue SSR also does not inject React 19's implicit empty head into a standalone html element.",
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head></head><!--$--><!--html--><!--/$--></html>"
     },
     "head-content": {
@@ -252,7 +252,7 @@
     "link-overrides": {
       "reactReference": "packages/react-email/src/components/link/link.spec.tsx",
       "nuxtComponent": "ELink",
-      "classification": "semantic",
+      "classification": "intentional-divergence",
       "input": {
         "href": "quoted and escaped URL",
         "target": "_self",
@@ -266,6 +266,7 @@
         "target override",
         "user style precedence"
       ],
+      "intentionalDivergence": "ELink keeps target=\"_blank\" but adds no color or text-decoration defaults, so application styles remain the single visual source of truth.",
       "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><!--$--><a id=\"link-test\" href=\"https://example.com/?value=&quot;quoted&quot;&amp;mode=test\" style=\"color:red;text-decoration-line:none\" target=\"_self\">Link &amp; content</a><!--/$-->"
     },
     "image-overrides": {

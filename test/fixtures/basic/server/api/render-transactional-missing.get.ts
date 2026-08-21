@@ -15,8 +15,8 @@ export default defineEventHandler(async () => {
 
     return {
       cause,
-      componentName: typeof error === 'object' && error !== null && 'componentName' in error
-        ? error.componentName
+      templateName: typeof error === 'object' && error !== null && 'templateName' in error
+        ? error.templateName
         : undefined,
       name: error instanceof Error ? error.name : undefined,
     }

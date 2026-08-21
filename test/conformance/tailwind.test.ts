@@ -33,7 +33,7 @@ function tailwindEmail(
     name: 'TailwindFixture',
     setup() {
       return () => h(ETailwind, config ? { config } : {}, {
-        default: () => h(EHtml, null, {
+        default: () => h(EHtml, { lang: 'en' }, {
           default: () => [
             head ?? h(EHead),
             h(EBody, null, { default: () => body }),

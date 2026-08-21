@@ -17,7 +17,7 @@ import { EMAIL_COMPONENT_NAMES } from './runtime/components/email-component-name
 import { discoverEmailTemplates } from './template-registry/discovery'
 import { generateEmailRegistry, generateEmailTypes } from './template-registry/generation'
 
-export type { RenderedEmail } from './runtime/render/types'
+export type { EmailComponentProps, RenderedEmail } from './runtime/render/types'
 
 type NitroRollupOptions = {
   nitro?: {

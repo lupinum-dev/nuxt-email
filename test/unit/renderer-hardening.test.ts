@@ -15,7 +15,7 @@ describe('renderer hardening', () => {
     const textValue = `'"<& — Grüß 你好 👩🏽‍💻`
     const EscapingEmail = defineComponent({
       name: 'EscapingEmail',
-      setup: () => () => h(EHtml, null, {
+      setup: () => () => h(EHtml, { lang: 'en' }, {
         default: () => h(EBody, null, {
           default: () => h('p', { 'data-value': attributeValue }, [
             textValue,

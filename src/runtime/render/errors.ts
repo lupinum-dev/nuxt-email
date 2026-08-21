@@ -1,9 +1,9 @@
 export class EmailRenderError extends Error {
-  readonly componentName: string
+  readonly templateName: string
 
-  constructor(componentName: string, cause: unknown) {
-    super(`Failed to render email component ${componentName}`, { cause })
+  constructor(templateName: string, cause: unknown) {
+    super(`Failed to render email template ${templateName}`, { cause })
     this.name = 'EmailRenderError'
-    this.componentName = componentName
+    this.templateName = templateName
   }
 }
