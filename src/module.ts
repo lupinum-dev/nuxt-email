@@ -38,6 +38,20 @@ type NitroRollupOptions = {
   }
 }
 
+function previewURL(baseURL: string): string {
+  return `${baseURL.endsWith('/') ? baseURL : `${baseURL}/`}__email`
+}
+
+function relativeEmailPath(emailDirectory: string, path: string, roots: string[]): string | undefined {
+  const candidates = isAbsolute(path) ? [path] : roots.map(root => resolve(root, path))
+  for (const candidate of candidates) {
+    const relativePath = relative(emailDirectory, candidate).replaceAll('\\', '/')
+    if (relativePath !== '..' && !relativePath.startsWith('../') && !isAbsolute(relativePath)) {
+      return relativePath
+    }
+  }
+}
+
 export interface ModuleOptions {
   codeBlock?: CodeBlockOptions
 }
@@ -106,6 +120,17 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
     if (nuxt.options.dev) {
+      nuxt.hook('devtools:customTabs', (tabs) => {
+        tabs.push({
+          name: 'nuxt-email',
+          title: 'Nuxt Email',
+          icon: 'i-lucide-mail',
+          view: {
+            type: 'iframe',
+            src: previewURL(nuxt.options.app.baseURL),
+          },
+        })
+      })
       addServerHandler({
         route: '/__email',
         method: 'get',
@@ -137,23 +162,23 @@ export default defineNuxtModule<ModuleOptions>({
     let registryUpdates = Promise.resolve()
     nuxt.hook('builder:watch', (event, path) => {
       const structureChanged = ['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)
-      if (event !== 'change' && !structureChanged) {
+      if (!structureChanged) {
         return
       }
 
-      const absolutePath = isAbsolute(path) ? path : resolve(nuxt.options.srcDir, path)
-      const relativePath = relative(emailDirectory, absolutePath).replaceAll('\\', '/')
-      if (relativePath === '..' || relativePath.startsWith('../') || isAbsolute(relativePath)) {
+      const relativePath = relativeEmailPath(emailDirectory, path, [
+        nuxt.options.rootDir,
+        nuxt.options.srcDir,
+      ])
+      if (relativePath === undefined) {
         return
       }
 
       const update = async () => {
-        if (structureChanged) {
-          templates = await loadTemplates()
-          await updateTemplates({
-            filter: template => template.filename === typeTemplate.filename,
-          })
-        }
+        templates = await loadTemplates()
+        await updateTemplates({
+          filter: template => template.filename === typeTemplate.filename,
+        })
         await reloadRegistry()
       }
       const queuedUpdate = registryUpdates.then(update, update)
