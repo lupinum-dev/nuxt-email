@@ -5,6 +5,8 @@ import { splitMixedRule } from './split-mixed-rule'
 export interface ExtractedRules {
   inlinable: Map<string, Rule[]>
   nonInlinable: Map<string, Rule[]>
+  /** Canonical non-inlinable rules, once each and in stylesheet order. */
+  orderedNonInlinable: Rule[]
 }
 
 export function extractRulesPerClass(
@@ -17,6 +19,7 @@ export function extractRulesPerClass(
   // override), so keep them all to merge instead of the last one clobbering.
   const inlinableRules = new Map<string, Rule[]>()
   const nonInlinableRules = new Map<string, Rule[]>()
+  const orderedNonInlinableRules: Rule[] = []
 
   const appendRule = (
     map: Map<string, Rule[]>,
@@ -67,8 +70,10 @@ export function extractRulesPerClass(
       }
       else {
         const { inlinablePart, nonInlinablePart } = splitMixedRule(rule)
+        let includesRequestedClass = false
         for (const className of selectorClasses) {
           if (!classSet.has(className)) continue
+          includesRequestedClass = true
           if (inlinablePart) {
             appendRule(inlinableRules, className, inlinablePart)
           }
@@ -76,11 +81,15 @@ export function extractRulesPerClass(
             appendRule(nonInlinableRules, className, nonInlinablePart)
           }
         }
+        if (includesRequestedClass && nonInlinablePart) {
+          orderedNonInlinableRules.push(nonInlinablePart)
+        }
       }
     },
   })
   return {
     inlinable: inlinableRules,
     nonInlinable: nonInlinableRules,
+    orderedNonInlinable: orderedNonInlinableRules,
   }
 }

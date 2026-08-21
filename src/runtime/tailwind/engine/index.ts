@@ -151,7 +151,11 @@ export async function createTailwindEngine(
     const styleSheet = tailwindSetup.getStyleSheet()
     sanitizeStyleSheet(styleSheet)
 
-    const { inlinable: inlinableRules, nonInlinable: nonInlinableRules }
+    const {
+      inlinable: inlinableRules,
+      nonInlinable: nonInlinableRules,
+      orderedNonInlinable,
+    }
       = extractRulesPerClass(styleSheet, classNames)
 
     const customProperties = getCustomProperties(styleSheet)
@@ -177,9 +181,7 @@ export async function createTailwindEngine(
     // Build, sanitize, and downlevel the injectable (media / pseudo) rules.
     const nonInlineStyles: StyleSheet = {
       type: 'StyleSheet',
-      children: new List<CssNode>().fromArray(
-        Array.from(nonInlinableRules.values()).flat(),
-      ),
+      children: new List<CssNode>().fromArray(orderedNonInlinable),
     }
     sanitizeNonInlinableRules(nonInlineStyles)
     for (const definition of keyframesDefinitions) {
@@ -210,19 +212,19 @@ export async function createTailwindEngine(
       }
     }
 
-    const nonInlinableClassNames = Array.from(nonInlinableRules.keys())
+    const nonInlinableClassNames = new Set(nonInlinableRules.keys())
     for (const className of classNames) {
       if (
         animationReferences.has(className)
         && !nonInlinableRules.has(className)
-      ) nonInlinableClassNames.push(className)
+      ) nonInlinableClassNames.add(className)
     }
 
     return {
       inlinable,
       nonInlinableCss,
       residualClassMap,
-      nonInlinableClassNames,
+      nonInlinableClassNames: [...nonInlinableClassNames],
     }
   }
 

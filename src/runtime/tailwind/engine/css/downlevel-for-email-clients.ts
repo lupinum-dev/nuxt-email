@@ -281,8 +281,7 @@ function downlevelRangeMediaQueries(styleSheet: StyleSheet): void {
     enter(originalNode: CssNode, item: ListItem<CssNode>) {
       const node = originalNode as CssNode | FeatureRange
       if (item && node.type === 'FeatureRange') {
-        const replacement = downlevelFeatureRange(node)
-        if (replacement) replacements.push({ item, replacement })
+        replacements.push({ item, replacement: downlevelFeatureRange(node) })
       }
     },
   })
@@ -292,24 +291,50 @@ function downlevelRangeMediaQueries(styleSheet: StyleSheet): void {
   }
 }
 
-function downlevelFeatureRange(range: FeatureRange): Feature | null {
-  if (range.left.type !== 'Identifier') return null
-
-  let prefix: string
-  if (range.leftComparison === '>=' || range.leftComparison === '>') {
-    prefix = 'min-'
+function downlevelFeatureRange(range: FeatureRange): Feature {
+  const source = generate(range as unknown as CssNode)
+  if (range.rightComparison !== null || range.right !== null) {
+    throw new TypeError(
+      `Unable to render Tailwind CSS: unsupported two-sided media range ${source}.`,
+    )
   }
-  else if (range.leftComparison === '<=' || range.leftComparison === '<') {
-    prefix = 'max-'
+
+  let name: string
+  let value: CssNode
+  let direct: boolean
+  if (range.left.type === 'Identifier') {
+    name = range.left.name
+    value = range.middle
+    direct = true
+  }
+  else if (range.middle.type === 'Identifier') {
+    name = range.middle.name
+    value = range.left
+    direct = false
   }
   else {
-    return null
+    throw new TypeError(
+      `Unable to render Tailwind CSS: unsupported media range ${source}.`,
+    )
+  }
+
+  const comparison = range.leftComparison
+  const minimum = direct
+    ? comparison === '>=' || comparison === '>'
+    : comparison === '<=' || comparison === '<'
+  const maximum = direct
+    ? comparison === '<=' || comparison === '<'
+    : comparison === '>=' || comparison === '>'
+  if (!minimum && !maximum) {
+    throw new TypeError(
+      `Unable to render Tailwind CSS: unsupported media range ${source}.`,
+    )
   }
 
   return {
     type: 'Feature',
     kind: 'media',
-    name: `${prefix}${range.left.name}`,
-    value: range.middle,
+    name: `${minimum ? 'min-' : 'max-'}${name}`,
+    value,
   }
 }

@@ -1,4 +1,5 @@
 import type { TailwindRegion } from './nested'
+import type { ComputedStyles } from './engine'
 import type { CssNode } from 'css-tree'
 import { generate, parse, walk } from 'css-tree'
 import { Parser } from 'htmlparser2'
@@ -122,14 +123,11 @@ function rewriteOpenTag(openTag: string, newClass: string | null, newStyle: stri
  * Accumulates every class it sees into the region (so the head `<style>` is
  * complete) and returns the spliced fragment.
  */
-function inlinePlainElements(fragment: string, region: TailwindRegion): string {
-  const hits = collectElements(fragment)
-  for (const hit of hits) {
-    region.classNames.push(...classTokens(hit.classValue))
-  }
-
-  const computed = region.engine.computeStyles(region.classNames)
-
+function inlinePlainElements(
+  fragment: string,
+  hits: ElementHit[],
+  computed: ComputedStyles,
+): string {
   interface Edit { start: number, end: number, text: string }
   const edits: Edit[] = []
 
@@ -214,10 +212,14 @@ function processRegion(html: string, region: TailwindRegion): string {
 
   const fragmentStart = startIndex + startComment.length
   const fragment = html.slice(fragmentStart, endIndex)
-  const inlined = inlinePlainElements(fragment, region)
+  const hits = collectElements(fragment)
+  for (const hit of hits) {
+    region.classNames.push(...classTokens(hit.classValue))
+  }
 
   // Full non-inlinable CSS from every class seen anywhere in the region.
   const computed = region.engine.computeStyles(region.classNames)
+  const inlined = inlinePlainElements(fragment, hits, computed)
   if (inlined.includes(region.placeholder)) {
     const completed = inlined.replace(region.placeholder, computed.nonInlinableCss)
     return html.slice(0, startIndex) + completed + html.slice(endIndex + endComment.length)
