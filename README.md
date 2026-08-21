@@ -25,7 +25,7 @@
 </p>
 
 > [!WARNING]
-> Nuxt Email is pre-1.0. Review the changelog before each upgrade. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> Nuxt Email is in the `1.0.0-beta.1` contract freeze. Review the changelog before each upgrade. Manual inbox QA and the external beta are still pending. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 

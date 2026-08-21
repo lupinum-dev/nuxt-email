@@ -1,6 +1,6 @@
 {
   "name": "@lupinum/nuxt-email",
-  "version": "0.1.1",
+  "version": "1.0.0-beta.1",
   "description": "Typed transactional email for Nuxt with email-safe Tailwind v4",
   "keywords": [
     "email",
