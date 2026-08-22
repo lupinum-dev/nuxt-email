@@ -200,7 +200,14 @@ if (
 ) {
   throw new Error('Report exact-commit preview status without canceling requested builds.')
 }
-if (!['getCollaboratorPermissionLevel', 'AbortSignal.timeout', 'ignored-build-step', 'reusedExistingPreview'].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
+if (![
+  'getCollaboratorPermissionLevel',
+  'AbortSignal.timeout',
+  'ignored-build-step',
+  'reusedExistingPreview',
+  'sha=${encodeURIComponent(commitSha)}&state=READY',
+  'reportBestEffort',
+].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
   throw new Error('Keep preview authorization, API resilience, exact-SHA reuse, and neutral skip handling.')
 }
 if (
