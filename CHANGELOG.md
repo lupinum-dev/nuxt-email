@@ -2,7 +2,7 @@
 
 ## v1.0.0-beta.1
 
-Status: certified beta candidate. Feature development is frozen until stable `1.0.0`; manual email-client QA and the external transactional beta remain pending.
+Status: published on npm's `next` tag. Feature development is frozen until stable `1.0.0`. The three-client beta smoke test passed; the full eight-client checklist and external transactional beta remain pending.
 
 ### Added
 
