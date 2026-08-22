@@ -69,19 +69,30 @@ Create `app/emails/welcome.vue`:
 <script setup lang="ts">
 import { defineEmail } from '@lupinum/nuxt-email/define-email'
 
-const props = defineProps<{ firstName: string; activationUrl: string }>()
+const props = defineProps<{
+  firstName: string
+  activationUrl: string
+}>()
 
-defineEmail({ subject: () => `Welcome, ${props.firstName}` })
+defineEmail({
+  subject: () => `Welcome aboard, ${props.firstName}`,
+})
 </script>
 
 <template>
   <ETailwind>
     <EHtml lang="en">
-      <EBody class="bg-slate-100 p-6">
+      <EHead>
+        <title>Activate your account</title>
+      </EHead>
+      <EBody class="m-0 bg-slate-100 p-6">
         <EPreview>Your account is ready.</EPreview>
-        <EContainer class="bg-white p-6">
-          <EHeading>Welcome, {{ firstName }}</EHeading>
-          <EButton :href="activationUrl">Activate account</EButton>
+        <EContainer class="rounded-lg bg-white p-6">
+          <EHeading class="m-0 text-2xl text-slate-900">Welcome, {{ firstName }}</EHeading>
+          <EText class="text-slate-600">Finish setting up your account.</EText>
+          <EButton class="rounded-md bg-blue-600 px-5 py-3 text-white" :href="activationUrl">
+            Activate account
+          </EButton>
         </EContainer>
       </EBody>
     </EHtml>
@@ -100,7 +111,7 @@ export default defineEventHandler(async () => {
 })
 ```
 
-The template name and props are generated from the Vue file. Invalid names and props fail during type checking.
+The template name and props are generated from the Vue file. Invalid names and props fail during type checking. Use a sibling fixture to inspect it in `/__email`, then [pass the rendered result to your provider](https://nuxt-email.lupinum.com/docs/guides/sending-email).
 
 ## Discord
 
