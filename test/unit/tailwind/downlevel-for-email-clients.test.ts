@@ -15,6 +15,10 @@ describe('downlevelForEmailClients()', () => {
       ['width>40rem', 'min-width:40rem'],
       ['width<=40rem', 'max-width:40rem'],
       ['width<40rem', 'max-width:40rem'],
+      ['40rem<=width', 'min-width:40rem'],
+      ['40rem<width', 'min-width:40rem'],
+      ['40rem>=width', 'max-width:40rem'],
+      ['40rem>width', 'max-width:40rem'],
     ])('converts %s to %s', (input, output) => {
       expect(downlevel(`@media (${input}){.a{color:red}}`)).toBe(
         `@media (${output}){.a{color:red}}`,
@@ -25,6 +29,11 @@ describe('downlevelForEmailClients()', () => {
       expect(
         downlevel('@media (prefers-color-scheme:dark){.dark{color:white}}'),
       ).toBe('@media (prefers-color-scheme:dark){.dark{color:white}}')
+    })
+
+    it('fails explicitly for an unsupported two-sided range', () => {
+      expect(() => downlevel('@media (30rem<width<50rem){.a{color:red}}'))
+        .toThrow('unsupported two-sided media range (30rem<width<50rem)')
     })
   })
 

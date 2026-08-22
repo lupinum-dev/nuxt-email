@@ -10,10 +10,17 @@ export type EHtmlProps = Omit<SafeEmailAttributes<HTMLAttributes>, 'lang'> & {
 export const EHtml = defineComponent({
   name: 'EHtml',
   inheritAttrs: false,
-  setup(_props, { attrs, slots }) {
+  props: {
+    lang: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props, { attrs, slots }) {
     return () => {
       assertSafeEmailAttributes('EHtml', attrs)
-      const { dir = 'ltr', lang, ...attributes } = attrs
+      const { dir = 'ltr', ...attributes } = attrs
+      const { lang } = props
       if (typeof lang !== 'string' || lang.trim().length === 0) {
         throw new TypeError('EHtml lang must be a non-empty string')
       }

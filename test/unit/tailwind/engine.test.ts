@@ -54,6 +54,28 @@ describe('createTailwindEngine()', () => {
     expect(result.nonInlinableCss).not.toContain('&')
   })
 
+  it('emits selector-list rules once in stylesheet order', async () => {
+    const engine = await createTailwindEngine({
+      config: {
+        plugins: [{
+          handler(api) {
+            api.addBase({
+              '.a:hover, .b:hover': { color: 'red' },
+              '.b:focus': { color: 'blue' },
+              '.a:focus': { color: 'green' },
+            })
+          },
+        }],
+      },
+    })
+
+    expect(engine.computeStyles(['a', 'b']).nonInlinableCss).toBe(
+      '.a:hover,.b:hover{color:red!important}'
+      + '.b:focus{color:blue!important}'
+      + '.a:focus{color:green!important}',
+    )
+  })
+
   it('maps residual classes: non-inlinable -> sanitized, unknown -> identity, inlinable -> dropped', async () => {
     const engine = await createTailwindEngine({})
     const result = engine.computeStyles([
@@ -131,6 +153,13 @@ describe('createTailwindEngine()', () => {
     )
     expect(result.nonInlinableCss).not.toContain('@keyframes pulse')
     expect(result.nonInlinableClassNames).toEqual(['animate-spin'])
+  })
+
+  it('deduplicates animation classes in missing-head diagnostics', async () => {
+    const engine = await createTailwindEngine({})
+
+    expect(engine.computeStyles(['animate-spin', 'animate-spin']).nonInlinableClassNames)
+      .toEqual(['animate-spin'])
   })
 
   it('flattens Tailwind v4 stacked hover and responsive variants', async () => {

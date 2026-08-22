@@ -33,9 +33,10 @@ const renderContextStorage = new AsyncLocalStorage<EmailRenderContext>()
  */
 export interface EmailRenderContext {
   readonly [EMAIL_RENDER_BRAND]: true
-  subject?: () => string
-  text?: () => string
-  metadataDefined?: true
+  metadata?: {
+    subject?: () => string
+    text?: () => string
+  }
   /**
    * Tailwind regions registered by `<ETailwind>` boundaries during render, in
    * registration order. Consumed by the post-render pass to complete each head
@@ -101,7 +102,7 @@ export function defineEmail(options: DefineEmailOptions): void {
     throw new DefineEmailOutsideRenderError()
   }
 
-  if (context.metadataDefined) {
+  if (context.metadata) {
     throw new DuplicateEmailDefinitionError()
   }
 
@@ -125,7 +126,8 @@ export function defineEmail(options: DefineEmailOptions): void {
     throw new TypeError(`defineEmail() ${name} must be a string or a function returning a string.`)
   }
 
-  context.subject = toFactory('subject', options.subject)
-  context.text = toFactory('text', options.text)
-  context.metadataDefined = true
+  context.metadata = {
+    subject: toFactory('subject', options.subject),
+    text: toFactory('text', options.text),
+  }
 }

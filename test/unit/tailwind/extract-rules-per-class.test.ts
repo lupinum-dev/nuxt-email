@@ -1,4 +1,4 @@
-import { generate, type Rule } from 'css-tree'
+import { generate, parse, type Rule, type StyleSheet } from 'css-tree'
 import { describe, expect, it } from 'vitest'
 import { setupTailwind } from '../../../src/runtime/tailwind/engine/setup-tailwind'
 import { extractRulesPerClass } from '../../../src/runtime/tailwind/engine/css/extract-rules-per-class'
@@ -230,5 +230,21 @@ describe('extractRulesPerClass()', () => {
         ],
       }
     `)
+  })
+
+  it('keeps one canonical copy of non-inlinable rules in source order', () => {
+    const stylesheet = parse(
+      '.a:hover{color:red}.b:hover{color:blue}'
+      + '.a:focus{color:green}.a:hover,.b:hover{text-decoration:underline}',
+    ) as StyleSheet
+
+    const { orderedNonInlinable } = extractRulesPerClass(stylesheet, ['a', 'b'])
+
+    expect(orderedNonInlinable.map(rule => generate(rule))).toEqual([
+      '.a:hover{color:red}',
+      '.b:hover{color:blue}',
+      '.a:focus{color:green}',
+      '.a:hover,.b:hover{text-decoration:underline}',
+    ])
   })
 })

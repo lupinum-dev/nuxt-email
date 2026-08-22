@@ -10,10 +10,23 @@ const FixtureEmail = defineComponent({
   },
 })
 
+const EmittingEmail = defineComponent({
+  emits: ['save'],
+  props: {
+    firstName: { type: String, required: true },
+  },
+})
+
 const fixture = {
   count: 1,
   firstName: 'Ada',
 } satisfies EmailComponentProps<typeof FixtureEmail>
+
+const invalidListenerFixture = {
+  firstName: 'Ada',
+  // @ts-expect-error Vue-generated event listeners are not email template props
+  onSave: () => {},
+} satisfies EmailComponentProps<typeof EmittingEmail>
 
 // @ts-expect-error required fixture props cannot be omitted
 const missingFixtureProp: EmailComponentProps<typeof FixtureEmail> = { count: 1 }
@@ -45,6 +58,8 @@ defineEmail({ subject: async () => 'Async subject' })
 defineEmail({ text: async () => 'Async text' })
 
 void invalidFixtureKey
+void invalidListenerFixture
+void EmittingEmail
 void FixtureEmail
 void htmlProps
 void htmlWithoutLang

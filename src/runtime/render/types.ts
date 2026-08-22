@@ -1,10 +1,15 @@
 import type { FunctionalComponent, PublicProps } from 'vue'
 
+type VueListenerProp = `on${Capitalize<string>}`
+type EmailAuthoringProps<Props> = string extends keyof Props
+  ? Props
+  : Omit<Props, keyof PublicProps | VueListenerProp>
+
 export type EmailComponentProps<ComponentType>
   = ComponentType extends abstract new (...args: never[]) => { $props: infer Props }
-    ? Omit<Props, keyof PublicProps>
+    ? EmailAuthoringProps<Props>
     : ComponentType extends FunctionalComponent<infer Props>
-      ? Props
+      ? EmailAuthoringProps<Props>
       : never
 
 export interface RenderedEmail {

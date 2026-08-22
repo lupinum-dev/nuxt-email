@@ -57,8 +57,8 @@ export function createRenderEmailComponent(
         return value
       }
 
-      const subject = resolveMetadata('subject', context.subject)
-      const text = resolveMetadata('text', context.text) ?? renderPlainText(html)
+      const subject = resolveMetadata('subject', context.metadata?.subject)
+      const text = resolveMetadata('text', context.metadata?.text) ?? renderPlainText(html)
       const result: RenderedEmail = {
         html,
         text,
