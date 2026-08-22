@@ -190,7 +190,7 @@ The package has a module entry point plus focused metadata, testing, and error s
 
 ## Documentation
 
-Read the [Nuxt Email documentation](https://nuxt-email.lupinum.com/docs). It contains the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation), [component reference](https://nuxt-email.lupinum.com/docs/components), [preview guide](https://nuxt-email.lupinum.com/docs/guides/preview-workflow), [testing guide](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails), and [sending guide](https://nuxt-email.lupinum.com/docs/guides/sending-email).
+Read the [Nuxt Email documentation](https://nuxt-email.lupinum.com/docs). Start with the [installation guide](https://nuxt-email.lupinum.com/docs/getting-started/installation) and [component reference](https://nuxt-email.lupinum.com/docs/components). Use the guides for [preview](https://nuxt-email.lupinum.com/docs/guides/preview-workflow), [testing](https://nuxt-email.lupinum.com/docs/guides/testing-your-emails), and [sending](https://nuxt-email.lupinum.com/docs/guides/sending-email).
 
 See the [changelog](CHANGELOG.md) for released changes.
 

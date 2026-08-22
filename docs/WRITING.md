@@ -18,6 +18,26 @@ Issue 9. It does not claim formal ASD-STE100 compliance.
 Do not use filler such as `simply`, `just`, `obviously`, `easy`, `seamless`, or
 `powerful`.
 
+## Use the house voice
+
+- State facts. Do not grade the product with words such as `honest`, `powerful`,
+  or `clean` when behavior can prove the point.
+- Name the actor in instructional prose.
+- Keep one main idea in each sentence. Split sentences that need nested dashes.
+- Define a necessary term on first use.
+- Describe the user-visible effect instead of an internal nickname.
+- Put warnings before the affected action.
+- Use a list when one paragraph mixes setup, rationale, and exclusions.
+
+Before: “Classes are inlined by a marker-scoped pass, and MSO survives.”
+
+After: “Nuxt Email inlines marked classes after rendering. Outlook-specific
+conditional comments stay unchanged.”
+
+Before: “This page summarizes the compatibility report honestly.”
+
+After: “This page summarizes the compatibility report.”
+
 ## Use the approved terms
 
 - **Application**: the user's Nuxt application.

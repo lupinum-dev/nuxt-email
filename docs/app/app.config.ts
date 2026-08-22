@@ -49,7 +49,7 @@ export default {
         en: 'Transactional email, native to Nuxt.',
       },
       description: {
-        en: 'Author typed Vue SFCs with Tailwind utilities, then render deterministic HTML, plain text, and subject lines from the same Nitro-native path.',
+        en: 'Author typed Vue single-file components with Tailwind utilities, then render deterministic HTML, plain text, and subject lines from the same Nitro-native path.',
       },
       primary: {
         label: { en: 'Get started' },
@@ -139,7 +139,7 @@ export default {
         {
           title: { en: 'Conformance with evidence' },
           description: {
-            en: 'The ported component behaviors are checked against a pinned React Email 6.9.0 oracle, with intentional differences recorded in a generated report.',
+            en: 'Covered behaviors are compared with a fixed React Email 6.9.0 version. A generated report records intentional differences.',
           },
           icon: 'lucide:git-compare',
         },
