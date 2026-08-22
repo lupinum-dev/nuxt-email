@@ -184,6 +184,9 @@ for (const heading of [
 const vercel = JSON.parse(readFileSync(resolve(root, 'docs/vercel.json'), 'utf8'))
 const vercelPreviewWorkflow = readFileSync(resolve(root, '.github/workflows/vercel-preview.yml'), 'utf8')
 const expectedVercelIgnoreCommand = 'node scripts/vercel-ignore.mjs'
+const vercelPreviewConfig = parse(vercelPreviewWorkflow)
+const vercelPreviewSteps = Object.values(vercelPreviewConfig.jobs ?? {}).flatMap(job => job.steps ?? [])
+const approvedVercelPreviewAction = 'actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd'
 if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
@@ -200,8 +203,18 @@ if (
 if (!['getCollaboratorPermissionLevel', 'AbortSignal.timeout', 'ignored-build-step', 'reusedExistingPreview'].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
   throw new Error('Keep preview authorization, API resilience, exact-SHA reuse, and neutral skip handling.')
 }
-if (/actions\/checkout@|vercel build|vercel deploy|pnpm install|^\s*(?:-\s*)?run:/mu.test(vercelPreviewWorkflow)) {
-  throw new Error('The token-holding preview workflow must not execute pull-request code.')
+if (
+  vercelPreviewSteps.length !== 1
+  || vercelPreviewSteps.some(step =>
+    Object.hasOwn(step, 'run')
+    || !Object.hasOwn(step, 'uses')
+    || step.uses !== approvedVercelPreviewAction,
+  )
+) {
+  throw new Error('The token-holding preview workflow must use only the approved pinned reporting action.')
+}
+if (/vercel build|vercel deploy|pnpm install/u.test(vercelPreviewWorkflow)) {
+  throw new Error('The token-holding preview workflow must not invoke local deployment commands.')
 }
 if (
   vercel.git?.deploymentEnabled?.['**'] !== false
