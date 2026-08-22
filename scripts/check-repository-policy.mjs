@@ -197,8 +197,8 @@ if (
 ) {
   throw new Error('Report exact-commit preview status without canceling requested builds.')
 }
-if (!['getCollaboratorPermissionLevel', 'AbortSignal.timeout', 'ignored-build-step'].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
-  throw new Error('Keep preview authorization, API resilience, and neutral skip handling.')
+if (!['getCollaboratorPermissionLevel', 'AbortSignal.timeout', 'ignored-build-step', 'reusedExistingPreview'].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
+  throw new Error('Keep preview authorization, API resilience, exact-SHA reuse, and neutral skip handling.')
 }
 if (/actions\/checkout@|vercel build|vercel deploy|pnpm install|^\s*(?:-\s*)?run:/mu.test(vercelPreviewWorkflow)) {
   throw new Error('The token-holding preview workflow must not execute pull-request code.')
