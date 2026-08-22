@@ -29,13 +29,41 @@ type NitroRollupOptions = {
       plugins?: unknown
     }
     typescript?: {
-      tsConfig?: {
-        compilerOptions?: {
-          paths?: Record<string, string[]>
-        }
-      }
+      tsConfig?: EmailTypeProjectConfig
     }
   }
+}
+
+interface EmailTypeProjectConfig {
+  compilerOptions?: {
+    paths?: Record<string, string[]>
+  }
+  exclude?: string[]
+  include?: string[]
+}
+
+function configureEmailTypeProject(
+  tsConfig: EmailTypeProjectConfig,
+  emailDirectory: string,
+  registryId: string,
+  registryPath: string,
+): Record<string, string[]> {
+  const normalizedDirectory = emailDirectory.replaceAll('\\', '/')
+  const include = (tsConfig.include ??= [])
+  const emailTypeGlob = `${normalizedDirectory}/**/*.vue`
+  if (!include.includes(emailTypeGlob)) {
+    include.push(emailTypeGlob)
+  }
+
+  const exclude = (tsConfig.exclude ??= [])
+  const emailComponentTypeGlob = `${normalizedDirectory}/components/**/*.vue`
+  if (!exclude.includes(emailComponentTypeGlob)) {
+    exclude.push(emailComponentTypeGlob)
+  }
+
+  const paths = (tsConfig.compilerOptions ??= {}).paths ??= {}
+  paths[registryId] = [registryPath]
+  return paths
 }
 
 function previewURL(baseURL: string): string {
@@ -104,6 +132,9 @@ export default defineNuxtModule<ModuleOptions>({
       write: true,
       getContents: () => generateEmailTypes(templates, registryTypePaths),
     }, { nitro: true })
+    nuxt.hook('prepare:types', ({ tsConfig }) => {
+      configureEmailTypeProject(tsConfig, emailDirectory, registryId, typeTemplate.dst)
+    })
 
     addServerImports([
       {
@@ -201,9 +232,7 @@ export default defineNuxtModule<ModuleOptions>({
     }
     const typescript = (nitro.typescript ??= {})
     const tsConfig = (typescript.tsConfig ??= {})
-    const compilerOptions = (tsConfig.compilerOptions ??= {})
-    const paths = (compilerOptions.paths ??= {})
-    paths[registryId] = [typeTemplate.dst]
+    const paths = configureEmailTypeProject(tsConfig, emailDirectory, registryId, typeTemplate.dst)
     paths['#nuxt-email/testing'] = [renderEmailComponentPath]
 
     nitro.rollupConfig ??= {}
