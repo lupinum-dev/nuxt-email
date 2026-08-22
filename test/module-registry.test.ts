@@ -170,6 +170,22 @@ describe('Nuxt email registry regeneration', () => {
     })
 
     try {
+      const typeOptions = {
+        declarations: [],
+        nodeReferences: [],
+        nodeTsConfig: {},
+        references: [],
+        sharedReferences: [],
+        sharedTsConfig: {},
+        tsConfig: {},
+      }
+      await nuxt.callHook('prepare:types', typeOptions as never)
+      const appTsConfig = typeOptions.tsConfig as {
+        compilerOptions?: { paths?: Record<string, string[]> }
+        exclude?: string[]
+        include?: string[]
+      }
+
       const components: Array<{ export: string, filePath: string, mode: string, pascalName: string }> = []
       await nuxt.callHook('components:dirs', [])
       await nuxt.callHook('components:extend', components as never)
@@ -191,6 +207,7 @@ describe('Nuxt email registry regeneration', () => {
       const nitroOptions = nuxt.options.nitro as {
         alias?: Record<string, string>
         externals?: { inline?: unknown[] }
+        typescript?: { tsConfig?: { exclude?: string[], include?: string[] } }
       }
       const nitroAlias = nitroOptions.alias
       expect(nitroAlias?.['@lupinum/nuxt-email/define-email']?.replaceAll('\\', '/'))
@@ -199,6 +216,20 @@ describe('Nuxt email registry regeneration', () => {
         .toMatch(/\/runtime\/errors\.(?:js|ts)$/)
       expect(nitroAlias?.['#nuxt-email/testing']?.replaceAll('\\', '/'))
         .toMatch(/\/runtime\/testing\/index\.(?:js|ts)$/)
+      expect(nitroOptions.typescript?.tsConfig?.include).toContain(
+        `${join(rootDir, 'app/emails').replaceAll('\\', '/')}/**/*.vue`,
+      )
+      expect(nitroOptions.typescript?.tsConfig?.exclude).toContain(
+        `${join(rootDir, 'app/emails/components').replaceAll('\\', '/')}/**/*.vue`,
+      )
+      expect(appTsConfig.compilerOptions?.paths?.['#nuxt-email/registry'])
+        .toEqual([expect.stringMatching(/types\/nuxt-email\.d\.ts$/)])
+      expect(appTsConfig.include).toContain(
+        `${join(rootDir, 'app/emails').replaceAll('\\', '/')}/**/*.vue`,
+      )
+      expect(appTsConfig.exclude).toContain(
+        `${join(rootDir, 'app/emails/components').replaceAll('\\', '/')}/**/*.vue`,
+      )
       for (const specifier of [
         '@lupinum/nuxt-email/define-email',
         '@lupinum/nuxt-email/errors',
