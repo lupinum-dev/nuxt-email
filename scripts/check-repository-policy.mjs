@@ -206,6 +206,7 @@ if (![
   'ignored-build-step',
   'reusedExistingPreview',
   'sha=${encodeURIComponent(commitSha)}&state=READY',
+  'candidate.readyState === \'READY\'',
   'reportBestEffort',
 ].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
   throw new Error('Keep preview authorization, API resilience, exact-SHA reuse, and neutral skip handling.')
