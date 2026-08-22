@@ -186,10 +186,7 @@ Complete the [manual client QA checklist](https://github.com/lupinum-dev/nuxt-em
 
 ## Package exports
 
-- `@lupinum/nuxt-email` provides the Nuxt module plus the `RenderedEmail` and `EmailComponentProps` types.
-- `@lupinum/nuxt-email/define-email` provides typed template metadata.
-- `@lupinum/nuxt-email/testing` provides standalone component rendering.
-- `@lupinum/nuxt-email/errors` provides supported runtime error classes.
+The package has a module entry point plus focused metadata, testing, and error subpaths. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
 
 ## Documentation
 
