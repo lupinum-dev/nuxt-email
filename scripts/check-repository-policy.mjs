@@ -204,7 +204,7 @@ if (/actions\/checkout@|vercel build|vercel deploy|pnpm install|^\s*(?:-\s*)?run
   throw new Error('The token-holding preview workflow must not execute pull-request code.')
 }
 if (
-  vercel.git?.deploymentEnabled?.['*'] !== false
+  vercel.git?.deploymentEnabled?.['**'] !== false
   || vercel.git.deploymentEnabled.main !== true
   || Object.keys(vercel.git.deploymentEnabled).length !== 2
 ) {
