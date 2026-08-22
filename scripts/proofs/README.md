@@ -1,7 +1,7 @@
 # Email client PROOF KIT
 
-Tools for the release-blocking manual step: rendering a representative email and
-confirming it displays correctly in real email clients. Everything up to
+Tools for the manual release step: rendering a representative email and confirming
+it displays correctly in real email clients. Everything up to
 the moment a human looks at the rendered mail is automated here; the visual sign-off
 is done by a person against
 [`docs/release/client-qa-checklist.md`](../../docs/release/client-qa-checklist.md).
@@ -72,9 +72,11 @@ pnpm vitest run test/unit/proofs.test.ts
 
 ## Release gate
 
-**A release is blocked until `docs/release/client-qa-checklist.md` is signed.** Render
-the batch, deliver it by one of the two paths above, walk the checklist per client in
-both light and dark mode, and complete the sign-off table.
+The `next`-tag beta is blocked until its Gmail web, Apple Mail, and Outlook classic
+smoke test is signed. Stable `1.0.0` is blocked until the complete eight-client
+`docs/release/client-qa-checklist.md` table is signed. Render the batch, deliver it by
+one of the two paths above, walk the applicable checklist in both light and dark
+mode, and complete the sign-off table.
 
 ## package.json scripts
 

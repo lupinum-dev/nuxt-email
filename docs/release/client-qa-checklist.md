@@ -1,9 +1,9 @@
-# Email client QA checklist (release-blocking)
+# Email client QA checklist
 
 Manual visual verification of the [proof batch](../../scripts/proofs/README.md) across
-real email clients. **This checklist must be completed and the sign-off table signed
-before a release ships.** Automated rendering conformance does not prove client
-display; only a human looking at real mail does.
+real email clients. Automated rendering conformance does not prove client display;
+only a human looking at real mail does. The three-client smoke test blocks the beta;
+the complete eight-client table blocks stable `1.0.0`.
 
 ## How to run it
 
@@ -76,6 +76,28 @@ cases** — enhanced where supported, sensible base rendering where not.
 
 ## Sign-off
 
+### `1.0.0-beta.1` smoke test
+
+Matthias performed the required owner-run visual check on 2026-08-22. Client version
+numbers and screenshots were not recorded. All three clients passed with no observed
+P0/P1 defect or accepted rendering limitation beyond the documented compatibility
+notes above. The checked renderer was commit
+`75b13f6b6c36929a1667a790f248c360438228e7`; its CI tarball SHA-256 was
+`df98317fccafebded6c704675b22e0f4ad35478c8ba81b357847bd57a1a014ef`, and the
+generated `proof-kit.html` SHA-256 was
+`cd8c042724b6c103b275bb4d6adaf3e079378c960adf9027222f1bcb110954a5`.
+
+| Client | Mode | `proof-kit` | Verifier | Date | Result | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gmail — web | Light + Dark | Pass | Matthias | 2026-08-22 | Pass | Owner-reported smoke test |
+| Outlook — Windows classic desktop | Light + Dark | Pass | Matthias | 2026-08-22 | Pass | Owner-reported smoke test |
+| Apple Mail — macOS | Light + Dark | Pass | Matthias | 2026-08-22 | Pass | Owner-reported smoke test |
+
+This is sufficient for the `next`-tag beta publication. It does not complete the
+stable-release checklist below.
+
+### Stable `1.0.0` sign-off
+
 Fill one row per client. Verify **both** light and dark for every proof before marking
 a client passed. Use the notes column for any per-check failures (reference the check
 IDs above, e.g. "P3 fail: button padding collapsed").
@@ -91,6 +113,6 @@ IDs above, e.g. "P3 fail: button padding collapsed").
 | Apple Mail — macOS | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
 | Apple Mail — iOS | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
 
-**Release gate:** the release is **blocked** until every row above is signed
-Pass (or a failure is triaged, fixed, the batch regenerated, and re-verified). Record
-the signed checklist alongside the release notes.
+**Stable-release gate:** `1.0.0` is **blocked** until every row above is signed Pass
+(or a failure is triaged, fixed, the batch regenerated, and re-verified). Record the
+signed checklist alongside the release notes.
