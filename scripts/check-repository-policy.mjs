@@ -187,8 +187,12 @@ if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
 if (vercel.framework !== 'nuxtjs') throw new Error('Vercel must select the Nuxt framework.')
-if (vercel.git?.deploymentEnabled !== true) {
-  throw new Error('Vercel must report a status for every pull-request commit.')
+if (
+  vercel.git?.deploymentEnabled?.['*'] !== false
+  || vercel.git.deploymentEnabled.main !== true
+  || Object.keys(vercel.git.deploymentEnabled).length !== 2
+) {
+  throw new Error('Vercel must deploy main automatically and require /vercel for pull-request previews.')
 }
 if (vercel.ignoreCommand !== expectedVercelIgnoreCommand) {
   throw new Error('Vercel must skip deployments that cannot affect the documentation app.')
