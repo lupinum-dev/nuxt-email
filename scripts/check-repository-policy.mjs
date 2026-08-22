@@ -182,13 +182,33 @@ for (const heading of [
 }
 
 const vercel = JSON.parse(readFileSync(resolve(root, 'docs/vercel.json'), 'utf8'))
+const vercelPreviewWorkflow = readFileSync(resolve(root, '.github/workflows/vercel-preview.yml'), 'utf8')
 const expectedVercelIgnoreCommand = 'node scripts/vercel-ignore.mjs'
 if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
 if (vercel.framework !== 'nuxtjs') throw new Error('Vercel must select the Nuxt framework.')
-if (vercel.git?.deploymentEnabled !== true) {
-  throw new Error('Vercel must report a status for every pull-request commit.')
+if (!vercelPreviewWorkflow.includes('/v13/deployments')) {
+  throw new Error('Create previews through the Vercel deployment API.')
+}
+if (
+  !vercelPreviewWorkflow.includes('checks: write')
+  || !vercelPreviewWorkflow.includes('cancel-in-progress: false')
+) {
+  throw new Error('Report exact-commit preview status without canceling requested builds.')
+}
+if (!['getCollaboratorPermissionLevel', 'AbortSignal.timeout', 'ignored-build-step', 'reusedExistingPreview'].every(boundary => vercelPreviewWorkflow.includes(boundary))) {
+  throw new Error('Keep preview authorization, API resilience, exact-SHA reuse, and neutral skip handling.')
+}
+if (/actions\/checkout@|vercel build|vercel deploy|pnpm install|^\s*(?:-\s*)?run:/mu.test(vercelPreviewWorkflow)) {
+  throw new Error('The token-holding preview workflow must not execute pull-request code.')
+}
+if (
+  vercel.git?.deploymentEnabled?.['**'] !== false
+  || vercel.git.deploymentEnabled.main !== true
+  || Object.keys(vercel.git.deploymentEnabled).length !== 2
+) {
+  throw new Error('Vercel must deploy main automatically and require /vercel for pull-request previews.')
 }
 if (vercel.ignoreCommand !== expectedVercelIgnoreCommand) {
   throw new Error('Vercel must skip deployments that cannot affect the documentation app.')
