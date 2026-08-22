@@ -188,10 +188,13 @@ if (existsSync(resolve(root, 'vercel.json'))) {
   throw new Error('Keep vercel.json in the deployable docs app.')
 }
 if (vercel.framework !== 'nuxtjs') throw new Error('Vercel must select the Nuxt framework.')
-if (!vercelPreviewWorkflow.includes("'/v13/deployments'")) {
+if (!vercelPreviewWorkflow.includes('/v13/deployments')) {
   throw new Error('Create previews through the Vercel deployment API.')
 }
-if (!vercelPreviewWorkflow.includes('checks: write') || !vercelPreviewWorkflow.includes('cancel-in-progress: false')) {
+if (
+  !vercelPreviewWorkflow.includes('checks: write')
+  || !vercelPreviewWorkflow.includes('cancel-in-progress: false')
+) {
   throw new Error('Report exact-commit preview status without canceling requested builds.')
 }
 if (/actions\/checkout@|vercel build|vercel deploy|pnpm install|^\s+run:/mu.test(vercelPreviewWorkflow)) {
