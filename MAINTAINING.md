@@ -89,13 +89,19 @@ publishing is configured.
 ## Recover a release
 
 Rerun the protected publish workflow with the same version when npm or GitHub
-fails after publication starts. The workflow skips an existing npm version only
-when its SHA-1 matches the certified tarball. A provenance-free package is
-accepted only when this is its sole first version, created interactively before
-trusted publishing could be configured. The GitHub release records that
-bootstrap exception. Every version first published by the workflow requires
-OIDC provenance. The workflow also requires the expected dist-tag before it
-creates or repairs the GitHub release.
+fails after publication starts. Before the protected environment is approved,
+an unprivileged job verifies existing npm bytes and cryptographically binds npm
+provenance to this repository's `publish.yml`, `main`, the exact source commit,
+and the certified tarball. The protected job rejects any registry existence or
+byte change after that check. It never installs or runs repository code.
+
+A provenance-free package is accepted only when it is the sole first version,
+created interactively before trusted publishing could be configured. The
+GitHub release records that bootstrap exception. Every version first published
+by the workflow requires OIDC provenance. The workflow also requires the
+expected dist-tag before it creates or repairs the GitHub release. Release
+repair verifies the tag's final commit, including annotated tags, restores the
+correct prerelease state, and replaces only the certified tarball asset.
 
 Set the `allow_bootstrap` dispatch input only for the known first-version
 recovery. The workflow rejects every other existing package without provenance.

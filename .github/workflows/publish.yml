@@ -38,11 +38,18 @@ jobs:
         run: |
           test "$GITHUB_REF" = refs/heads/main
           node -e "if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(process.env.RELEASE_VERSION)) throw new Error('Invalid release version')"
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          test "$current_main" = "$GITHUB_SHA"
           tag_ref="refs/tags/v$RELEASE_VERSION"
-          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$RELEASE_VERSION" --jq ".[] | select(.ref == \"$tag_ref\") | .object.sha")"
-          if [ -n "$tag_sha" ]; then
+          tag_object="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v$RELEASE_VERSION" --jq ".[] | select(.ref == \"$tag_ref\") | [.object.type, .object.sha] | @tsv")"
+          if test -n "$tag_object"; then
+            IFS=$'\t' read -r tag_type tag_sha <<< "$tag_object"
+            while test "$tag_type" = tag; do
+              tag_object="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '[.object.type, .object.sha] | @tsv')"
+              IFS=$'\t' read -r tag_type tag_sha <<< "$tag_object"
+            done
+            test "$tag_type" = commit
             test "$tag_sha" = "$GITHUB_SHA"
-            gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null
           fi
 
       - name: Find successful CI for this commit
@@ -58,6 +65,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+
+      - name: Install isolated Sigstore verifier
+        env:
+          SIGSTORE_PREFIX: ${{ runner.temp }}/sigstore
+        run: |
+          mkdir -p "$SIGSTORE_PREFIX"
+          cp scripts/sigstore-verifier/package.json \
+            scripts/sigstore-verifier/package-lock.json \
+            "$SIGSTORE_PREFIX/"
+          npm ci --prefix "$SIGSTORE_PREFIX" --ignore-scripts --no-audit --no-fund
+
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: nuxt-email-release
@@ -65,12 +88,24 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ steps.ci.outputs.run-id }}
 
-      - name: Verify exact artifact and committed release notes
+      - name: Verify exact artifact
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           node -e "const fs=require('node:fs');const crypto=require('node:crypto');const m=require('./.release/release-artifact.json');const file='.release/lupinum-nuxt-email.tgz';const bytes=fs.readFileSync(file);const channel=m.packageVersion.includes('-')?'next':'latest';if(m.schemaVersion!==2||m.packageName!=='@lupinum/nuxt-email'||m.packageVersion!==process.env.RELEASE_VERSION||m.channel!==channel||m.commit!==process.env.GITHUB_SHA||m.sourceClean!==true||m.tarball!=='lupinum-nuxt-email.tgz'||m.sha1!==crypto.createHash('sha1').update(bytes).digest('hex')||m.sha256!==crypto.createHash('sha256').update(bytes).digest('hex'))throw new Error('Artifact failed exact-SHA validation')"
           (cd .release && sha256sum --check SHA256SUMS)
+
+      - name: Verify registry recovery state
+        env:
+          ALLOW_BOOTSTRAP: ${{ inputs.allow_bootstrap }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          SIGSTORE_PREFIX: ${{ runner.temp }}/sigstore
+        run: node scripts/verify-npm-recovery.mjs
+
+      - name: Extract committed release notes
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
           awk -v version="v$RELEASE_VERSION" '$0 == "## " version { capture=1 } capture && /^## / && $0 != "## " version { exit } capture' CHANGELOG.md > .release/release-notes.md
           test -s .release/release-notes.md
 
@@ -80,7 +115,7 @@ jobs:
           path: .release
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 2
+          retention-days: 14
 
   publish:
     name: Publish to npm
@@ -114,6 +149,7 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { spawnSync } from 'node:child_process'
+          import { createHash } from 'node:crypto'
           import { appendFileSync, readFileSync } from 'node:fs'
 
           const fail = message => { throw new Error(message) }
@@ -127,8 +163,42 @@ jobs:
             if (/E404|404 Not Found/.test(result.stderr)) return null
             fail(`npm view failed for ${spec} ${field}: ${result.stderr.trim()}`)
           }
+          const hasProvenance = metadata =>
+            typeof metadata?.url === 'string' && metadata.url.length > 0 &&
+            metadata.provenance?.predicateType === 'https://slsa.dev/provenance/v1'
+          const provenanceBundleHash = async metadata => {
+            if (!hasProvenance(metadata)) fail('The current npm provenance metadata is incomplete.')
+            let url
+            try {
+              url = new URL(metadata.url)
+            } catch {
+              fail('The current npm provenance URL is invalid.')
+            }
+            if (
+              url.origin !== 'https://registry.npmjs.org' ||
+              url.username || url.password || url.search || url.hash ||
+              !/^\/-\/npm\/v1\/attestations\/[^/]+$/.test(url.pathname)
+            ) fail('The current npm provenance URL is outside the registry attestation API.')
+            const response = await fetch(url, {
+              headers: { Accept: 'application/json' },
+              redirect: 'error',
+              signal: AbortSignal.timeout(15000),
+            })
+            if (!response.ok) fail(`npm provenance lookup failed: HTTP ${response.status}.`)
+            const document = await response.json()
+            const attestations = (document?.attestations ?? []).filter(
+              attestation => attestation.predicateType === 'https://slsa.dev/provenance/v1',
+            )
+            if (attestations.length !== 1 || !attestations[0]?.bundle) {
+              fail('The current npm version has no unique provenance bundle.')
+            }
+            return createHash('sha256')
+              .update(JSON.stringify(attestations[0].bundle))
+              .digest('hex')
+          }
 
           const manifest = JSON.parse(readFileSync('.release/release-artifact.json', 'utf8'))
+          const record = JSON.parse(readFileSync('.release/registry-verification.json', 'utf8'))
           const pollAttempts = Number(process.env.REGISTRY_POLL_ATTEMPTS ?? 240)
           const pollDelayMs = Number(process.env.REGISTRY_POLL_DELAY_MS ?? 5000)
           if (!Number.isSafeInteger(pollAttempts) || pollAttempts < 1) fail('Invalid registry poll attempt count.')
@@ -136,45 +206,99 @@ jobs:
           if (manifest.packageVersion !== process.env.RELEASE_VERSION) fail('Release version differs.')
           const npmVersion = run(['--version']).stdout.trim().split('.').map(Number)
           if (npmVersion[0] < 11 || (npmVersion[0] === 11 && npmVersion[1] < 5)) fail('npm 11.5 or newer is required.')
+          if (!/^[a-z0-9._-]+\.tgz$/.test(manifest.tarball)) fail('Unsafe tarball filename.')
+
+          const bytes = readFileSync(`.release/${manifest.tarball}`)
+          const shasum = createHash('sha1').update(bytes).digest('hex')
+          const sha512 = createHash('sha512').update(bytes).digest('hex')
+          const channel = manifest.packageVersion.includes('-') ? 'next' : 'latest'
 
           const spec = `${manifest.packageName}@${manifest.packageVersion}`
-          const existing = view(spec, 'dist.shasum')
-          if (existing && existing !== manifest.sha1) fail(`${spec} exists with different bytes.`)
-          let mode
-          if (existing) {
-            const attestations = view(spec, 'dist.attestations')
+          const recordKeys = [
+            'packageName', 'packageVersion', 'provenanceBundleSha256', 'registryShasum',
+            'registryState', 'schemaVersion', 'sourceSha', 'tarball', 'tarballSha1',
+            'tarballSha512',
+          ]
+          const verifiedExisting =
+            record.registryState === 'verified-existing' &&
+            /^[0-9a-f]{40}$/.test(record.registryShasum) &&
+            /^[0-9a-f]{64}$/.test(record.provenanceBundleSha256)
+          const verifiedBootstrap =
+            record.registryState === 'verified-bootstrap' &&
+            /^[0-9a-f]{40}$/.test(record.registryShasum) &&
+            record.provenanceBundleSha256 === null &&
+            process.env.ALLOW_BOOTSTRAP === 'true'
+          if (
+            Object.keys(record).sort().join(',') !== recordKeys.join(',') ||
+            record.schemaVersion !== 1 ||
+            record.packageName !== '@lupinum/nuxt-email' ||
+            record.packageName !== manifest.packageName ||
+            record.packageVersion !== process.env.RELEASE_VERSION ||
+            record.packageVersion !== manifest.packageVersion ||
+            record.sourceSha !== process.env.GITHUB_SHA ||
+            record.sourceSha !== manifest.commit ||
+            record.tarball !== manifest.tarball ||
+            record.tarballSha1 !== shasum ||
+            record.tarballSha512 !== sha512 ||
+            !(
+              record.registryState === 'absent' && record.registryShasum === null &&
+                record.provenanceBundleSha256 === null ||
+              verifiedExisting || verifiedBootstrap
+            )
+          ) fail('Registry verification record does not match the certified artifact.')
+
+          const registryVersion = view(spec, 'version')
+          const currentShasum = registryVersion === null ? null : view(spec, 'dist.shasum')
+          if (
+            registryVersion !== null && registryVersion !== manifest.packageVersion ||
+            currentShasum !== record.registryShasum
+          ) {
+            fail(`${spec} registry existence or bytes changed after verification.`)
+          }
+          if (
+            record.registryState === 'verified-existing' &&
+            await provenanceBundleHash(view(spec, 'dist.attestations')) !==
+              record.provenanceBundleSha256
+          ) {
+            fail(`${spec} provenance bundle changed after verification.`)
+          }
+
+          let mode = 'oidc'
+          if (record.registryState === 'verified-bootstrap') {
             const published = view(manifest.packageName, 'versions')
             const versions = Array.isArray(published) ? published : [published]
-            if (!attestations && (versions.length !== 1 || versions[0] !== manifest.packageVersion)) {
-              fail(`${spec} is not the first package version and has no provenance.`)
+            const provenance = view(spec, 'dist.attestations')
+            if (
+              versions.length !== 1 || versions[0] !== manifest.packageVersion ||
+              provenance !== null
+            ) {
+              fail(`${spec} bootstrap registry state changed after verification.`)
             }
-            if (!attestations && process.env.ALLOW_BOOTSTRAP !== 'true') {
-              fail(`${spec} requires explicit bootstrap authorization.`)
-            }
-            mode = attestations ? 'oidc' : 'bootstrap'
-          } else {
+            mode = 'bootstrap'
+          } else if (record.registryState === 'absent') {
             const result = run([
               'publish', `.release/${manifest.tarball}`, '--access', 'public',
-              '--tag', manifest.channel, '--ignore-scripts', '--provenance',
+              '--tag', channel, '--ignore-scripts', '--provenance',
             ], true)
-            if (result.status !== 0) fail(`npm publish failed for ${spec}.`)
-            mode = 'oidc'
+            if (result.status !== 0) {
+              fail(`npm publish failed for ${spec}.`)
+            }
           }
 
           for (let attempt = 0; attempt < pollAttempts; attempt += 1) {
             const shasum = view(spec, 'dist.shasum')
-            const attestations = view(spec, 'dist.attestations')
-            const channel = view(manifest.packageName, `dist-tags.${manifest.channel}`)
+            const provenance = view(spec, 'dist.attestations')
+            const distTag = view(manifest.packageName, `dist-tags.${channel}`)
             const published = mode === 'bootstrap' ? view(manifest.packageName, 'versions') : null
             const versions = Array.isArray(published) ? published : [published]
             const remainsFirstVersion = mode !== 'bootstrap' || (
               versions.length === 1 && versions[0] === manifest.packageVersion
             )
             if (
-              shasum === manifest.sha1 &&
-              channel === manifest.packageVersion &&
+              shasum === record.tarballSha1 &&
+              distTag === manifest.packageVersion &&
               remainsFirstVersion &&
-              (mode === 'bootstrap' || (mode === 'oidc' && attestations))
+              (mode === 'bootstrap' ? provenance === null : hasProvenance(provenance))
             ) {
               appendFileSync(process.env.GITHUB_OUTPUT, `bootstrap=${String(mode === 'bootstrap')}\n`)
               appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nPublication mode: ${mode}.\n`)
@@ -182,7 +306,7 @@ jobs:
             }
             Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, pollDelayMs)
           }
-          fail(`${spec} did not expose the required bytes, provenance mode, and ${manifest.channel}.`)
+          fail(`${spec} did not expose the required bytes, provenance mode, and ${channel}.`)
           NODE
 
   github-release:
@@ -200,12 +324,20 @@ jobs:
           name: verified-nuxt-email-release
           path: .release
 
-      - name: Create the release for the published commit
+      - name: Create or repair the release for the published commit
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ github.sha }}
           BOOTSTRAP_RELEASE: ${{ needs.publish.outputs.bootstrap }}
         run: |
+          TARBALL=$(node -e "process.stdout.write(require('./.release/release-artifact.json').tarball)")
+          RELEASE_TAG="v$RELEASE_VERSION"
+          PRERELEASE_CREATE=()
+          PRERELEASE_EDIT=(--prerelease=false)
+          case "$RELEASE_VERSION" in
+            *-*) PRERELEASE_CREATE=(--prerelease); PRERELEASE_EDIT=(--prerelease) ;;
+          esac
           if [ "$BOOTSTRAP_RELEASE" = true ]; then
             cat >> .release/release-notes.md <<'NOTICE'
 
@@ -213,18 +345,48 @@ jobs:
           > This first npm version was created from the exact CI-certified artifact before npm trusted publishing could be configured. npm does not provide GitHub OIDC provenance for this bootstrap publication. The protected workflow verified the registry bytes. Later versions use trusted publishing with provenance.
           NOTICE
           fi
-          if gh release view "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$RELEASE_VERSION" --jq '.object.sha')"
-            test "$tag_sha" = "$GITHUB_SHA"
-            gh release upload "v$RELEASE_VERSION" .release/lupinum-nuxt-email.tgz --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "v$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" --title "v$RELEASE_VERSION" --notes-file .release/release-notes.md
+          release_status=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+          case "$release_status" in
+            404) release_exists=false ;;
+            200) release_exists=true ;;
+            *) echo "Could not verify GitHub release state (HTTP $release_status)" >&2; exit 1 ;;
+          esac
+          tag_status=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")
+          case "$tag_status" in
+            404)
+              if [ "$release_exists" = true ]; then
+                echo "The existing GitHub release has no tag." >&2
+                exit 1
+              fi
+              gh api --silent --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                -f ref="refs/tags/$RELEASE_TAG" \
+                -f sha="$SOURCE_SHA"
+              ;;
+            200) ;;
+            *) echo "Could not verify tag state (HTTP $tag_status)" >&2; exit 1 ;;
+          esac
+          tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.type')"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')"
+          while test "$tag_type" = tag; do
+            tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.object.type')"
+            tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.object.sha')"
+          done
+          test "$tag_type" = commit
+          test "$tag_sha" = "$SOURCE_SHA"
+          if [ "$release_exists" = true ]; then
+            gh release upload "$RELEASE_TAG" ".release/$TARBALL" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "$RELEASE_TAG" --notes-file .release/release-notes.md "${PRERELEASE_EDIT[@]}"
           else
-            prerelease=()
-            case "$RELEASE_VERSION" in *-*) prerelease=(--prerelease) ;; esac
-            gh release create "v$RELEASE_VERSION" .release/lupinum-nuxt-email.tgz \
+            gh release create "$RELEASE_TAG" ".release/$TARBALL" \
               --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "v$RELEASE_VERSION" \
+              --verify-tag \
+              --title "$RELEASE_TAG" \
               --notes-file .release/release-notes.md \
-              "${prerelease[@]}"
+              "${PRERELEASE_CREATE[@]}"
           fi
