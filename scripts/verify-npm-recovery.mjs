@@ -95,8 +95,6 @@ export const createRegistryVerificationRecord = async ({
   tarballBytes,
   registryShasum,
   attestationDocument,
-  publishedVersions,
-  allowBootstrap = false,
   verifyBundle,
 }) => {
   const tarballSha1 = digest('sha1', tarballBytes)
@@ -122,14 +120,7 @@ export const createRegistryVerificationRecord = async ({
       registryState = 'verified-existing'
     }
     else if (attestations.length === 0) {
-      const versions = Array.isArray(publishedVersions) ? publishedVersions : [publishedVersions]
-      if (versions.length !== 1 || versions[0] !== manifest.packageVersion) {
-        fail(`${manifest.packageName}@${manifest.packageVersion} is not the first package version and has no provenance.`)
-      }
-      if (!allowBootstrap) {
-        fail(`${manifest.packageName}@${manifest.packageVersion} requires explicit bootstrap authorization.`)
-      }
-      registryState = 'verified-bootstrap'
+      fail(`${manifest.packageName}@${manifest.packageVersion} exists without verifiable npm provenance.`)
     }
     else {
       fail(`${manifest.packageName}@${manifest.packageVersion} has no unique npm provenance.`)
@@ -206,14 +197,11 @@ const main = async () => {
   }
   const metadata = registryShasum === null ? null : npmView(spec, 'dist.attestations')
   const attestationDocument = registryShasum === null ? null : await fetchAttestations(metadata)
-  const publishedVersions = registryShasum === null ? null : npmView(manifest.packageName, 'versions')
   const record = await createRegistryVerificationRecord({
     manifest,
     tarballBytes,
     registryShasum,
     attestationDocument,
-    publishedVersions,
-    allowBootstrap: process.env.ALLOW_BOOTSTRAP === 'true',
   })
 
   writeFileSync(

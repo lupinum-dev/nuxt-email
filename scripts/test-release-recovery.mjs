@@ -98,8 +98,6 @@ const runProtected = ({
   registryPresent = true,
   attestations = provenance,
   attestationDocument = provenanceDocument,
-  versions = [releaseVersion],
-  allowBootstrap = false,
   recordChange,
 }) => {
   const directory = mkdtempSync(join(tmpdir(), 'nuxt-email-protected-release-'))
@@ -128,7 +126,6 @@ const runProtected = ({
 
     const spec = `${packageName}@${releaseVersion}`
     const views = {
-      [`${packageName} versions`]: versions,
       [`${packageName} dist-tags.latest`]: releaseVersion,
     }
     if (registryPresent) {
@@ -167,7 +164,6 @@ const runProtected = ({
         encoding: 'utf8',
         env: {
           ...process.env,
-          ALLOW_BOOTSTRAP: String(allowBootstrap),
           GITHUB_OUTPUT: outputPath,
           GITHUB_SHA: sourceSha,
           GITHUB_STEP_SUMMARY: summaryPath,
@@ -194,7 +190,6 @@ const runProtected = ({
 const completeRegistry = runProtected({ recordState: 'verified-existing' })
 assert.equal(completeRegistry.result.status, 0, completeRegistry.result.stderr)
 assert.equal(completeRegistry.state.publishes, 0, 'Verified existing bytes must not be republished.')
-assert.match(completeRegistry.output, /bootstrap=false/u)
 
 const incompleteRegistry = runProtected({ recordState: 'verified-existing', attestations: {} })
 assert.notEqual(incompleteRegistry.result.status, 0, 'Incomplete provenance metadata must fail.')
@@ -250,31 +245,6 @@ const newPublication = runProtected({ recordState: 'absent', registryPresent: fa
 assert.equal(newPublication.result.status, 0, newPublication.result.stderr)
 assert.equal(newPublication.state.publishes, 1)
 
-const bootstrap = runProtected({
-  recordState: 'verified-bootstrap',
-  attestations: null,
-  allowBootstrap: true,
-})
-assert.equal(bootstrap.result.status, 0, bootstrap.result.stderr)
-assert.equal(bootstrap.state.publishes, 0)
-assert.match(bootstrap.output, /bootstrap=true/u)
-
-const unauthorizedBootstrap = runProtected({
-  recordState: 'verified-bootstrap',
-  attestations: null,
-})
-assert.notEqual(unauthorizedBootstrap.result.status, 0)
-assert.match(unauthorizedBootstrap.result.stderr, /Registry verification record does not match/u)
-
-const changedBootstrap = runProtected({
-  recordState: 'verified-bootstrap',
-  attestations: null,
-  versions: [releaseVersion, '1.2.4'],
-  allowBootstrap: true,
-})
-assert.notEqual(changedBootstrap.result.status, 0)
-assert.match(changedBootstrap.result.stderr, /bootstrap registry state changed after verification/u)
-
 const githubReleaseProgram = stepProgram(
   'github-release',
   'Create or repair the release for the published commit',
@@ -298,6 +268,10 @@ if (args[0] === 'api') {
   const methodIndex = args.indexOf('--method')
   const method = methodIndex === -1 ? 'GET' : args[methodIndex + 1]
   if (method === 'POST' && endpoint.endsWith('/git/refs')) {
+    if (fixture.tagCreateForbidden) {
+      process.stderr.write('Resource not accessible by integration (HTTP 403)\\n')
+      process.exit(1)
+    }
     if (fixture.tagOnCreateConflict) {
       fixture.tag = fixture.tagOnCreateConflict
       save()
@@ -359,9 +333,9 @@ const runGithubRelease = ({
   version,
   tag,
   tagOnCreateConflict,
+  tagCreateForbidden = false,
   peeled = {},
   releaseExists,
-  bootstrap = false,
 }) => {
   const directory = mkdtempSync(join(tmpdir(), 'nuxt-email-github-release-'))
   try {
@@ -379,6 +353,7 @@ const runGithubRelease = ({
       actions: [],
       tag,
       tagOnCreateConflict,
+      tagCreateForbidden,
       peeled,
       releaseExists,
     }))
@@ -395,7 +370,6 @@ const runGithubRelease = ({
       encoding: 'utf8',
       env: {
         ...process.env,
-        BOOTSTRAP_RELEASE: String(bootstrap),
         GH_FIXTURE: ghFixture,
         GH_LOG: ghLog,
         GH_TOKEN: 'fixture',
@@ -494,12 +468,16 @@ const orphanedRelease = runGithubRelease({ version: releaseVersion, tag: null, r
 assert.notEqual(orphanedRelease.result.status, 0, 'Release repair requires its existing tag.')
 assert(!orphanedRelease.calls.some(args => args[0] === 'release' && ['edit', 'upload'].includes(args[1])))
 
-const bootstrapRepair = runGithubRelease({
+const historicalTagForbidden = runGithubRelease({
   version: releaseVersion,
-  tag: { type: 'commit', sha: sourceSha },
-  releaseExists: true,
-  bootstrap: true,
+  tag: null,
+  tagCreateForbidden: true,
+  releaseExists: false,
 })
-assert.match(bootstrapRepair.notes, /before npm trusted publishing could be configured/u)
+assert.notEqual(historicalTagForbidden.result.status, 0)
+assert.match(historicalTagForbidden.result.stdout, /HUMAN-ONLY:/u)
+assert.match(historicalTagForbidden.result.stdout, /refs\/tags\/v1\.2\.3/u)
+assert.match(historicalTagForbidden.result.stdout, new RegExp(sourceSha, 'u'))
+assert.deepEqual(historicalTagForbidden.state.actions, [])
 
 process.stdout.write('Protected release recovery fixtures passed.\n')

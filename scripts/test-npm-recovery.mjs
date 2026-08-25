@@ -124,7 +124,6 @@ const existingRecord = await createRegistryVerificationRecord({
   tarballBytes,
   registryShasum: sha1,
   attestationDocument: { attestations: [{ predicateType: PROVENANCE_TYPE, bundle: bundle() }] },
-  publishedVersions: [manifest.packageVersion],
   verifyBundle: async (...args) => { verifyArguments = args },
 })
 assert.equal(verifyArguments.length, 2, 'Sigstore DSSE policy must be its second argument.')
@@ -138,30 +137,13 @@ const absentRecord = await createRegistryVerificationRecord({
   tarballBytes,
   registryShasum: null,
   attestationDocument: null,
-  publishedVersions: null,
   verifyBundle: () => assert.fail('Absent versions must not invoke Sigstore.'),
 })
 assert.equal(absentRecord.registryState, 'absent')
 
-const bootstrapRecord = await createRegistryVerificationRecord({
-  manifest,
-  tarballBytes,
-  registryShasum: sha1,
-  attestationDocument: null,
-  publishedVersions: manifest.packageVersion,
-  allowBootstrap: true,
-  verifyBundle: () => assert.fail('Bootstrap versions have no Sigstore bundle.'),
-})
-assert.equal(bootstrapRecord.registryState, 'verified-bootstrap')
-assert.equal(bootstrapRecord.provenanceBundleSha256, null)
-
 await assert.rejects(
-  createRegistryVerificationRecord({ manifest, tarballBytes, registryShasum: sha1, attestationDocument: null, publishedVersions: [manifest.packageVersion] }),
-  /requires explicit bootstrap authorization/u,
-)
-await assert.rejects(
-  createRegistryVerificationRecord({ manifest, tarballBytes, registryShasum: sha1, attestationDocument: null, publishedVersions: [manifest.packageVersion, '1.0.0'], allowBootstrap: true }),
-  /is not the first package version/u,
+  createRegistryVerificationRecord({ manifest, tarballBytes, registryShasum: sha1, attestationDocument: null }),
+  /exists without verifiable npm provenance/u,
 )
 await assert.rejects(
   createRegistryVerificationRecord({ manifest, tarballBytes, registryShasum: '0'.repeat(40), attestationDocument: null }),
