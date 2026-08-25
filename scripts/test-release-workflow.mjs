@@ -20,8 +20,8 @@ const assert = (condition, message) => {
 assert(publish.on?.workflow_dispatch, 'Publishing must remain manually dispatched.')
 assert(publish.on.workflow_dispatch.inputs?.version?.required, 'Publishing requires an exact version.')
 assert(
-  publish.on.workflow_dispatch.inputs?.allow_bootstrap?.type === 'boolean',
-  'Publishing must preserve explicit bootstrap authorization.',
+  Object.keys(publish.on.workflow_dispatch.inputs ?? {}).join(',') === 'version',
+  'Publishing must accept only the explicit release version.',
 )
 assert(
   publishSource.match(/while test "\$tag_type" = tag/gu)?.length === 2,
@@ -36,6 +36,10 @@ assert(
 const publishJob = publish.jobs?.publish
 assert(publishJob?.environment === 'npm', 'Publishing must use the protected npm environment.')
 assert(publishJob?.permissions?.['id-token'] === 'write', 'Publishing must use npm trusted publishing.')
+assert(
+  publishJob?.if === 'needs.verify.outputs.publish-required == \'true\'',
+  'The protected environment must be skipped when npm already has the certified bytes.',
+)
 
 const publishJobSource
   = /^ {2}publish:\n([\s\S]*?)(?=^ {2}[a-z][a-z-]*:\n)/m.exec(publishSource)?.[1] ?? ''
@@ -54,7 +58,6 @@ for (const forbidden of [
 }
 for (const required of [
   'registry-verification.json',
-  'record.registryState === \'verified-bootstrap\'',
   'Object.keys(record).sort()',
   'record.sourceSha !== process.env.GITHUB_SHA',
   'record.tarballSha512 !== sha512',
@@ -86,10 +89,18 @@ for (const required of [
   '-f sha="$SOURCE_SHA"',
   'git/ref/tags/$RELEASE_TAG',
   '--verify-tag',
+  'HUMAN-ONLY:',
+  'HTTP 403',
 ]) {
   assert(releaseJobSource.includes(required), `Atomic GitHub release handling is missing ${required}.`)
 }
 assert(!releaseJobSource.includes('--target'), 'GitHub Release creation must not implicitly create a tag.')
+assert(
+  publish.jobs?.['github-release']?.needs?.includes('verify')
+  && publish.jobs?.['github-release']?.needs?.includes('publish')
+  && publish.jobs?.['github-release']?.if?.includes('needs.publish.result == \'skipped\''),
+  'Release repair must remain available after a verified npm no-op.',
+)
 
 assert(
   verifyJobSource.includes('scripts/sigstore-verifier/package.json')
@@ -129,7 +140,7 @@ for (const required of [
   'certificateIdentityURI',
   '\'1.3.6.1.4.1.57264.1.3\': sourceSha',
   'subjects[0]?.digest?.sha512 !== tarballSha512',
-  'registryState = \'verified-bootstrap\'',
+  'exists without verifiable npm provenance',
 ]) {
   assert(recoverySource.includes(required), `Cryptographic recovery is missing ${required}.`)
 }
