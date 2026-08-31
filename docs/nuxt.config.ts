@@ -1,6 +1,5 @@
 export default defineNuxtConfig({
   extends: ['@lupinum/ginko-docs'],
-  css: ['~/assets/css/theme.css'],
   site: { url: 'https://nuxt-email.lupinum.com' },
   ginkoDocs: {
     syntaxHighlighting: {

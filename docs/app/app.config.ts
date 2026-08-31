@@ -1,8 +1,7 @@
 export default {
   ginkoDocs: {
     theme: {
-      neutral: 'custom',
-      primary: 'custom',
+      preset: 'nuxt',
       codeBlocks: 'adaptive',
     },
     site: {
