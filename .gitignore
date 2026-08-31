@@ -36,6 +36,7 @@ coverage
 .nyc_output
 
 # Verified release artifacts
+.ginko
 release-artifacts
 .release
 .package-preview
