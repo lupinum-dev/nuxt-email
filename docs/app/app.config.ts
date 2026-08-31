@@ -23,18 +23,6 @@ export default {
     },
     feedback: { enabled: true },
     analytics: { plausible: { scriptId: 'vkwO2ZsNQtpycIOZdf5cy' } },
-    banner: {
-      enabled: true,
-      id: 'nuxt-email-1-beta-1',
-      text: {
-        en: '1.0.0-beta.1 is published on npm\'s next tag. The three-client beta smoke test passed; stable still requires the full eight-client checklist and an external transactional beta.',
-      },
-      link: {
-        label: { en: 'Read the changelog' },
-        to: { en: 'https://github.com/lupinum-dev/nuxt-email/blob/main/CHANGELOG.md' },
-      },
-      showOnLanding: true,
-    },
     repository: {
       url: 'https://github.com/lupinum-dev/nuxt-email',
       branch: 'main',
