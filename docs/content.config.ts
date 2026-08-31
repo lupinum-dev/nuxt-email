@@ -5,7 +5,8 @@ export default defineGinkoDocsConfig({
     name: 'Nuxt Email',
     description:
       'Typed transactional email for Nuxt, with email-safe Tailwind v4.',
-    url: 'https://nuxt-email.lupinum.com',
+    whenToUse:
+      'Use this site to author and render transactional email with Nuxt Email.',
   },
   locales: ['en'],
   blog: false,
