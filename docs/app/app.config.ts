@@ -17,6 +17,7 @@ export default {
         { label: { en: 'Privacy' }, to: 'https://lupinum.com/datenschutz' },
       ],
     },
+    nav: { links: 'auto', socialIcons: true },
     social: {
       github: 'https://github.com/lupinum-dev/nuxt-email',
       discord: 'https://discord.gg/RPH6SeA36N',
