@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.0.0-beta.2
+
+### Added
+
+- Added `@lupinum/nuxt-email/build` to compile the existing typed email
+  registry for Node runtimes outside Nitro.
+- Added `@lupinum/nuxt-email/render` so compiled templates reuse the same
+  deterministic renderer, metadata, plain-text generation, and email-safe
+  components as Nuxt applications.
+
+### Production boundaries
+
+- Keep delivery, retries, idempotency, provider credentials, and audit state
+  application-owned. The package compiles and renders email; it does not send.
+- Reject source directories outside the application root, refuse to replace
+  output not owned by Nuxt Email, and preserve the last valid registry when a
+  build fails.
+- Exclude preview fixtures and source templates from the generated production
+  registry.
+
 ## v1.0.0-beta.1
 
 Status: published on npm's `next` tag. Feature development is frozen until stable `1.0.0`. The three-client beta smoke test passed; the full eight-client checklist and external transactional beta remain pending.

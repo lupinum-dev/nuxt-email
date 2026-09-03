@@ -25,7 +25,7 @@
 </p>
 
 > [!WARNING]
-> [`1.0.0-beta.1`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.1) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed. The full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> [`1.0.0-beta.2`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.2) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "nuxtEmailVersion": "1.0.0-beta.1",
+  "nuxtEmailVersion": "1.0.0-beta.2",
   "oracle": {
     "package": "react-email",
     "version": "6.9.0",

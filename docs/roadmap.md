@@ -1,6 +1,6 @@
 # Nuxt Email future roadmap
 
-This is the canonical backlog for features that may follow `1.0.0`. It is intentionally a decision record, not a promise or release schedule. The `1.0.0-beta.1` contract is feature-frozen; the current release contract remains defined by the README, component documentation, conformance report, and [`v1.0-readiness.md`](./release/v1.0-readiness.md).
+This is the canonical backlog for features that may follow `1.0.0`. It is intentionally a decision record, not a promise or release schedule. The `1.0.0-beta.2` contract is feature-frozen; the current release contract remains defined by the README, component documentation, conformance report, and [`v1.0-readiness.md`](./release/v1.0-readiness.md).
 
 ## Product boundary
 
@@ -29,7 +29,7 @@ The default decision is to keep the core small. A useful idea can remain in this
 
 ## Release rule
 
-Do not add features after `1.0.0-beta.1` and before stable `1.0.0`. The only permitted changes are defects, documentation corrections, and required dependency compatibility work found by the real-application exercise, external beta, real-client QA, or release gates. A necessary breaking API change requires another beta.
+Do not add features after `1.0.0-beta.2` and before stable `1.0.0`. The only permitted changes are defects, documentation corrections, and required dependency compatibility work found by the real-application exercise, external beta, real-client QA, or release gates. A necessary breaking API change requires another beta.
 
 ## Priority 1: documentation and evaluation
 
