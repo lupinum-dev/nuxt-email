@@ -21,6 +21,7 @@ overrides:
   'brace-expansion@>=4.0.0 <5.0.9': 5.0.9
   browserslist: 4.28.7
   esbuild: 0.28.1
+  'fflate@<0.7.5': 0.7.5
   fast-uri: 3.1.6
   h3: 1.15.11
   hono: 4.12.34
