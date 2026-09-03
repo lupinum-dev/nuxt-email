@@ -1,4 +1,4 @@
-import { type CssNode, type Rule, string, walk } from 'css-tree'
+import { type CssNode, type Rule, string, walk } from '../../css-tree'
 import { isRuleInlinable } from './is-rule-inlinable'
 import { splitMixedRule } from './split-mixed-rule'
 

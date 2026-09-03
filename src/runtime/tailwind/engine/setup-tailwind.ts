@@ -1,4 +1,4 @@
-import { parse, type StyleSheet } from 'css-tree'
+import { parse, type StyleSheet } from '../css-tree'
 import { type Config, compile } from 'tailwindcss'
 import type { TailwindConfig } from './types'
 import {

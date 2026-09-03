@@ -1,4 +1,4 @@
-import { type CssNode, type Declaration, generate, walk } from 'css-tree'
+import { type CssNode, type Declaration, generate, walk } from '../../css-tree'
 
 export interface CustomProperty {
   syntax?: Declaration

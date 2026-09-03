@@ -9,7 +9,7 @@ import {
   type SelectorList,
   type Value,
   walk,
-} from 'css-tree'
+} from '../../css-tree'
 
 interface VariableUse {
   declaration: Declaration

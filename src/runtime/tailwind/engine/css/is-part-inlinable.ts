@@ -1,4 +1,4 @@
-import { type CssNode, find } from 'css-tree'
+import { type CssNode, find } from '../../css-tree'
 
 export function isPartInlinable(part: CssNode): boolean {
   const hasAtRuleInside = find(part, node => node.type === 'Atrule') !== null

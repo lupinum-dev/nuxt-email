@@ -186,7 +186,7 @@ Complete the [manual client QA checklist](https://github.com/lupinum-dev/nuxt-em
 
 ## Package exports
 
-The package has a module entry point plus focused metadata, testing, and error subpaths. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
+The package has a module entry point plus focused build, production rendering, metadata, testing, and error subpaths. Use `@lupinum/nuxt-email/build` to compile a server registry and `@lupinum/nuxt-email/render` for compiled components outside Nitro. The [standalone guide](https://nuxt-email.lupinum.com/docs/guides/standalone-rendering) explains the build and runtime boundaries. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
 
 ## Documentation
 

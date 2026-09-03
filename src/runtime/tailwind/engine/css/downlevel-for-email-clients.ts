@@ -19,7 +19,7 @@ import {
   type SelectorList,
   type StyleSheet,
   walk,
-} from 'css-tree'
+} from '../../css-tree'
 
 /**
  * css-tree 3.x parses media range syntax, but the currently published type
