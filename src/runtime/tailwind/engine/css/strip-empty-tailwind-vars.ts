@@ -1,4 +1,4 @@
-import { type CssNode, generate, walk } from 'css-tree'
+import { type CssNode, generate, walk } from '../../css-tree'
 
 /**
  * Tailwind v4 emits variant-stacking idioms like

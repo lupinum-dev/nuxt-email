@@ -233,7 +233,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
 
   invariant(
     JSON.stringify(Object.keys(packed.exports ?? {}).sort())
-    === JSON.stringify(['.', './define-email', './errors', './testing']),
+    === JSON.stringify(['.', './build', './define-email', './errors', './render', './testing']),
     'Packed package exports differ from the intentional public surface',
   )
 
@@ -248,6 +248,8 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant('types' in testingExport && testingExport.types === './dist/runtime/testing/index.d.ts', 'Packed ./testing type export must point to ./dist/runtime/testing/index.d.ts')
 
   for (const [subpath, importPath, typePath] of [
+    ['./build', './dist/build.mjs', './dist/build.d.mts'],
+    ['./render', './dist/runtime/render/index.js', './dist/runtime/render/index.d.ts'],
     ['./define-email', './dist/runtime/define-email.js', './dist/runtime/define-email.d.ts'],
     ['./errors', './dist/runtime/errors.js', './dist/runtime/errors.d.ts'],
   ] as const) {
@@ -278,6 +280,44 @@ async function readTextOutput(directory: string): Promise<{ paths: string[], tex
     paths: files.map(path => relative(directory, path).replaceAll('\\', '/')),
     text: contents.join('\n'),
   }
+}
+
+async function verifyStandaloneConsumer(consumerDirectory: string, installedPackageRoot: string): Promise<void> {
+  await cp(join(packageRoot, 'test/fixtures/standalone/emails'), join(consumerDirectory, 'standalone-emails'), { recursive: true })
+  await run(process.execPath, ['--input-type=module', '--eval', `
+    import { buildEmailRegistry } from '@lupinum/nuxt-email/build'
+    import { rename } from 'node:fs/promises'
+    import assert from 'node:assert/strict'
+    await buildEmailRegistry({ rootDir: '.', templatesDir: 'standalone-emails', outDir: 'generated-emails' })
+    await rename('standalone-emails', 'standalone-emails-hidden')
+    const { renderEmail } = await import('./generated-emails/index.mjs')
+    const emails = await Promise.all(['Ada', 'Grace'].map(name => renderEmail('welcome', {
+      name, destination: 'https://example.test', items: ['One', 'Two'], brand: 'blue',
+    })))
+    assert.deepEqual(emails.map(email => email.subject), ['Welcome, Ada', 'Welcome, Grace'])
+    assert.ok(emails[0].html.includes('font-weight:700'))
+    assert.ok(emails[0].text.includes('https://example.test'))
+    const render = await import('@lupinum/nuxt-email/render')
+    const testing = await import('@lupinum/nuxt-email/testing')
+    const errors = await import('@lupinum/nuxt-email/errors')
+    assert.equal(render.renderEmailComponent, testing.renderEmailComponent)
+    assert.equal(render.EmailRenderError, errors.EmailRenderError)
+    assert.equal(render.UnknownEmailTemplateError, errors.UnknownEmailTemplateError)
+  `], consumerDirectory)
+  const check = join(consumerDirectory, 'standalone-types.mts')
+  await writeFile(check, `import { renderEmail } from './generated-emails/index.mjs'
+renderEmail('welcome', { name: 'Ada', destination: 'url', items: [] })
+// @ts-expect-error missing required props
+renderEmail('welcome', { name: 'Ada' })
+// @ts-expect-error imported prop type
+renderEmail('welcome', { name: 'Ada', destination: 'url', items: [42] })
+// @ts-expect-error closed template registry
+renderEmail('missing', {})
+`)
+  const packageRequire = createRequire(join(installedPackageRoot, 'package.json'))
+  await run(process.execPath, [packageRequire.resolve('typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2022', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', check], consumerDirectory)
+  const module = await readFile(join(consumerDirectory, 'generated-emails/index.mjs'), 'utf8')
+  invariant(!/NUXT_EMAIL_STANDALONE_FIXTURE_SECRET|vue-tsc|compiler-sfc|unplugin-vue|\/testing/.test(module), 'Standalone runtime contains build-only or preview code')
 }
 
 async function verifyFreshConsumer(
@@ -344,6 +384,12 @@ async function verifyFreshConsumer(
   const installedManifest = await readJson<PackageManifest>(join(installedPackageRoot, 'package.json'))
   invariant(installedManifest.name === releaseContract.name, 'Installed package name differs from the release contract')
   invariant(installedManifest.version === packedManifest.version, 'Installed package version differs from the packed tarball')
+
+  if (variant === 'default') {
+    const standaloneStartedAt = performance.now()
+    await verifyStandaloneConsumer(consumerDirectory, installedPackageRoot)
+    timingsMilliseconds.standaloneRegistry = performance.now() - standaloneStartedAt
+  }
 
   const publicProbeMarker = 'NUXT_EMAIL_PUBLIC_MODULE_PROBE:'
   const publicProbe = await run(process.execPath, [
@@ -646,6 +692,10 @@ async function verifyRelease(): Promise<void> {
       'THIRD_PARTY_NOTICES',
       'dist/module.mjs',
       'dist/module.d.mts',
+      'dist/build.mjs',
+      'dist/build.d.mts',
+      'dist/runtime/render/index.js',
+      'dist/runtime/render/index.d.ts',
       'dist/types.d.mts',
       'dist/runtime/render/render-component.js',
       'dist/runtime/define-email.js',

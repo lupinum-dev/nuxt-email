@@ -1,0 +1,1 @@
+export default { name: 'NUXT_EMAIL_STANDALONE_FIXTURE_SECRET_DO_NOT_BUNDLE' }

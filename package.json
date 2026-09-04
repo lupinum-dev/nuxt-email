@@ -1,6 +1,6 @@
 {
   "name": "@lupinum/nuxt-email",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Typed transactional email for Nuxt with email-safe Tailwind v4",
   "keywords": [
     "email",
@@ -28,6 +28,14 @@
     "node": "^22.18.0 || ^24.11.0 || ^26.0.0"
   },
   "exports": {
+    "./build": {
+      "types": "./dist/build.d.mts",
+      "import": "./dist/build.mjs"
+    },
+    "./render": {
+      "types": "./dist/runtime/render/index.d.ts",
+      "import": "./dist/runtime/render/index.js"
+    },
     ".": {
       "types": "./dist/module.d.mts",
       "import": "./dist/module.mjs"
@@ -73,7 +81,7 @@
     "release:prepare": "changelogen --bump --clean --hideAuthorEmail",
     "release:artifact": "pnpm release:verify --output .release/lupinum-nuxt-email.tgz && node scripts/write-release-manifest.mjs",
     "lint": "eslint .",
-    "test": "vitest run --exclude test/preview.test.ts && pnpm test:preview",
+    "test": "pnpm prepack && vitest run --exclude test/preview.test.ts && pnpm test:preview",
     "test:preview": "vitest run test/preview.test.ts",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
@@ -91,12 +99,15 @@
     "@shikijs/langs": "4.3.1",
     "@shikijs/themes": "4.3.1",
     "css-tree": "3.2.1",
+    "esbuild": "0.28.1",
     "h3": "1.15.11",
     "html-to-text": "9.0.5",
     "htmlparser2": "^10.1.0",
     "marked": "15.0.12",
     "tailwindcss": "4.1.18",
-    "unplugin-vue": "7.2.0"
+    "typescript": "~5.9.3",
+    "unplugin-vue": "7.2.0",
+    "vue-tsc": "^3.3.3"
   },
   "devDependencies": {
     "@nuxt/eslint-config": "^1.15.2",
@@ -118,10 +129,8 @@
     "react-dom": "19.2.7",
     "react-email": "6.9.0",
     "tsx": "4.23.1",
-    "typescript": "~5.9.3",
     "vitest": "^4.1.8",
     "vue": "3.5.42",
-    "vue-tsc": "^3.3.3",
     "yaml": "2.9.0"
   }
 }

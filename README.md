@@ -25,7 +25,7 @@
 </p>
 
 > [!WARNING]
-> [`1.0.0-beta.1`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.1) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed. The full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> [`1.0.0-beta.2`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.2) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 
@@ -186,7 +186,7 @@ Complete the [manual client QA checklist](https://github.com/lupinum-dev/nuxt-em
 
 ## Package exports
 
-The package has a module entry point plus focused metadata, testing, and error subpaths. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
+The package has a module entry point plus focused build, production rendering, metadata, testing, and error subpaths. Use `@lupinum/nuxt-email/build` to compile a server registry and `@lupinum/nuxt-email/render` for compiled components outside Nitro. The [standalone guide](https://nuxt-email.lupinum.com/docs/guides/standalone-rendering) explains the build and runtime boundaries. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
 
 ## Documentation
 

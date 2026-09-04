@@ -101,10 +101,12 @@ export default defineNuxtModule<ModuleOptions>({
     const resolver = createResolver(import.meta.url)
     const defineEmailPublicPath = await resolver.resolvePath('./runtime/define-email')
     const errorsPublicPath = await resolver.resolvePath('./runtime/errors')
-    let renderEmailComponentPath = await resolver.resolvePath('./runtime/testing')
+    let renderEmailComponentPath = await resolver.resolvePath('./runtime/render/index')
+    let testingRendererPath = await resolver.resolvePath('./runtime/testing')
     if (options.codeBlock !== undefined) {
       const { setupCodeBlock } = await import('./code-block/setup')
       renderEmailComponentPath = setupCodeBlock(options.codeBlock, resolver)
+      testingRendererPath = renderEmailComponentPath
     }
     const emailDirectory = resolve(nuxt.options.srcDir, 'emails')
     const loadTemplates = async () => {
@@ -220,7 +222,7 @@ export default defineNuxtModule<ModuleOptions>({
     const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions
     const nitro = (nuxtOptions.nitro ??= {})
     const alias = (nitro.alias ??= {})
-    alias['#nuxt-email/testing'] = renderEmailComponentPath
+    alias['#nuxt-email/testing'] = testingRendererPath
     alias['@lupinum/nuxt-email/define-email'] = defineEmailPublicPath
     alias['@lupinum/nuxt-email/errors'] = errorsPublicPath
     const externals = (nitro.externals ??= {})
@@ -233,7 +235,7 @@ export default defineNuxtModule<ModuleOptions>({
     const typescript = (nitro.typescript ??= {})
     const tsConfig = (typescript.tsConfig ??= {})
     const paths = configureEmailTypeProject(tsConfig, emailDirectory, registryId, typeTemplate.dst)
-    paths['#nuxt-email/testing'] = [renderEmailComponentPath]
+    paths['#nuxt-email/testing'] = [testingRendererPath]
 
     nitro.rollupConfig ??= {}
     const existingPlugins = nitro.rollupConfig.plugins

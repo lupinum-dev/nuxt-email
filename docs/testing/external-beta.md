@@ -6,7 +6,7 @@ Use one copy of this record for each real transactional-email project. Beta evid
 
 | Field | Value |
 | --- | --- |
-| Nuxt Email version | `1.0.0-beta.1` and exact CI tarball SHA-256 (pending run) |
+| Nuxt Email version | `1.0.0-beta.2` and exact CI tarball SHA-256 (pending run) |
 | Release-candidate commit | Pending beta run |
 | Package tarball SHA-256 | Pending beta run |
 | Tester / project | Pending beta run |

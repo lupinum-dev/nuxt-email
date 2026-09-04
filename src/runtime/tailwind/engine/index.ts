@@ -7,7 +7,7 @@ import {
   type Rule,
   type StyleSheet,
   walk,
-} from 'css-tree'
+} from '../css-tree'
 import { downlevelForEmailClients } from './css/downlevel-for-email-clients'
 import { extractRulesPerClass } from './css/extract-rules-per-class'
 import { getCustomProperties } from './css/get-custom-properties'

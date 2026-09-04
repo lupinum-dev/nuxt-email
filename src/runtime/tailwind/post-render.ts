@@ -1,7 +1,7 @@
 import type { TailwindRegion } from './nested'
 import type { ComputedStyles } from './engine'
 import type { CssNode } from 'css-tree'
-import { generate, parse, walk } from 'css-tree'
+import { generate, parse, walk } from './css-tree'
 import { Parser } from 'htmlparser2'
 import { classTokens, mergeInlinableStyle, residualClasses } from './inline-utils'
 import { TailwindMissingHeadError } from './errors'

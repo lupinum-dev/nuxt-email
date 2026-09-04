@@ -1,4 +1,4 @@
-import { type CssNode, string, walk } from 'css-tree'
+import { type CssNode, string, walk } from '../../css-tree'
 import { sanitizeClassName } from '../compatibility/sanitize-class-name'
 import { isRuleInlinable } from './is-rule-inlinable'
 import { stripEmptyTailwindVars } from './strip-empty-tailwind-vars'

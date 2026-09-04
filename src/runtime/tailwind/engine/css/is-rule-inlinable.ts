@@ -1,4 +1,4 @@
-import { find, type Rule } from 'css-tree'
+import { find, type Rule } from '../../css-tree'
 
 export function isRuleInlinable(rule: Rule): boolean {
   const hasAtRuleInside = find(rule, node => node.type === 'Atrule') !== null
