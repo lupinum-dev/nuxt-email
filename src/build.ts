@@ -29,6 +29,28 @@ function contains(parent: string, child: string): boolean {
   return path === '' || (!path.startsWith(`..`) && !isAbsolute(path))
 }
 
+async function replaceOutputDirectory(
+  staging: string,
+  outDir: string,
+  replaceOutput: boolean,
+): Promise<void> {
+  const previousRoot = await mkdtemp(join(dirname(outDir), '.nuxt-email-previous-'))
+  const previous = join(previousRoot, 'output')
+  try {
+    if (replaceOutput) await rename(outDir, previous)
+    try {
+      await rename(staging, outDir)
+    }
+    catch (error) {
+      if (replaceOutput) await rename(previous, outDir)
+      throw error
+    }
+  }
+  finally {
+    await rm(previousRoot, { recursive: true, force: true })
+  }
+}
+
 async function normalizeDeclarationImports(directory: string): Promise<void> {
   for (const file of await readdir(directory, { recursive: true })) {
     if (!/\.d\.[cm]?ts$/.test(file)) continue
@@ -145,8 +167,7 @@ export async function buildEmailRegistry(options: BuildEmailRegistryOptions): Pr
 
     // Only replace a directory previously created by this helper. Compilation
     // failures leave the last successful output untouched.
-    if (replaceOutput) await rm(outDir, { recursive: true })
-    await rename(staging, outDir)
+    await replaceOutputDirectory(staging, outDir, replaceOutput)
   }
   finally {
     await rm(staging, { recursive: true, force: true })
