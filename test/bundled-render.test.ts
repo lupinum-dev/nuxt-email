@@ -87,7 +87,7 @@ process.stdout.write('bundled rendering passed')
     const baseline = await bundle('baseline.mjs', [{
       name: 'restore-before-fix-root-import',
       setup(builder) {
-        builder.onLoad({ filter: /runtime\/tailwind\/css-tree\.ts$/ }, () => ({
+        builder.onLoad({ filter: /runtime[\\/]tailwind[\\/]css-tree\.ts$/ }, () => ({
           contents: `export { parse, generate, walk, find, clone, List, string } from 'css-tree'`,
           loader: 'js',
         }))
