@@ -36,18 +36,31 @@ async function replaceOutputDirectory(
 ): Promise<void> {
   const previousRoot = await mkdtemp(join(dirname(outDir), '.nuxt-email-previous-'))
   const previous = join(previousRoot, 'output')
+  let removePreviousRoot = true
   try {
     if (replaceOutput) await rename(outDir, previous)
     try {
       await rename(staging, outDir)
     }
     catch (error) {
-      if (replaceOutput) await rename(previous, outDir)
+      if (replaceOutput) {
+        try {
+          await rename(previous, outDir)
+        }
+        catch (restoreError) {
+          removePreviousRoot = false
+          throw new AggregateError(
+            [error, restoreError],
+            `Failed to replace generated email output and restore it. The prior output remains at ${previous}.`,
+            { cause: restoreError },
+          )
+        }
+      }
       throw error
     }
   }
   finally {
-    await rm(previousRoot, { recursive: true, force: true })
+    if (removePreviousRoot) await rm(previousRoot, { recursive: true, force: true })
   }
 }
 
