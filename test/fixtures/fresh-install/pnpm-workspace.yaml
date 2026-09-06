@@ -1,3 +1,7 @@
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
