@@ -39,6 +39,7 @@ interface PackageManifest {
   homepage?: unknown
   repository?: Record<string, unknown>
   exports?: Record<string, unknown>
+  devDependencies?: Record<string, string>
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
 }
@@ -71,6 +72,8 @@ interface FreshConsumerResult {
   packageResolution: string
   run: number
   nuxtVersion: string
+  vueVersion: string
+  nuxtVueVersion: string
   textBytes: number
   timingsMilliseconds: Record<string, number>
   variant: ConsumerVariant
@@ -89,16 +92,49 @@ const maximumFreshInstallMilliseconds = 10 * 60 * 1_000
 const textFilePattern = /\.(?:css|d\.ts|html|js|json|map|mjs|mts|txt)$/
 const releaseContract = {
   name: '@lupinum/nuxt-email',
-  node: '^22.18.0 || ^24.11.0 || ^26.0.0',
-  nuxt: '>=4.5.1 <5',
   repository: 'git+https://github.com/lupinum-dev/nuxt-email.git',
-  vue: '^3.5.35',
 } as const
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message)
   }
+}
+
+interface FrameworkVersions {
+  nuxt: string
+  vue: string
+}
+
+export function consumerFrameworkVersions(source: PackageManifest): FrameworkVersions[] {
+  const nuxt = source.peerDependencies?.nuxt?.match(/^>=(\d+\.\d+\.\d+) <(\d+)$/)
+  const vue = source.peerDependencies?.vue?.match(/^\^(\d+\.\d+\.\d+)$/)
+  invariant(nuxt && vue, 'Consumer trials require a bounded Nuxt range and caret Vue range with exact stable floors')
+  invariant(Number(nuxt[2]) === Number(nuxt[1]!.split('.')[0]) + 1, 'Consumer trials require a single Nuxt major')
+  const minimum = { nuxt: nuxt[1]!, vue: vue[1]! }
+  const currentNuxt = source.devDependencies?.nuxt
+  const currentVue = source.devDependencies?.vue
+  invariant(typeof currentNuxt === 'string' && /^\d+\.\d+\.\d+$/.test(currentNuxt), 'Pin the development Nuxt version for consumer trials')
+  invariant(typeof currentVue === 'string' && /^\d+\.\d+\.\d+$/.test(currentVue), 'Pin the development Vue version for consumer trials')
+  const current = { nuxt: currentNuxt, vue: currentVue }
+  for (const framework of ['nuxt', 'vue'] as const) {
+    const floor = minimum[framework].split('.').map(Number)
+    const version = current[framework].split('.').map(Number)
+    const atLeastFloor = version[1]! > floor[1]! || (version[1] === floor[1] && version[2]! >= floor[2]!)
+    invariant(version[0] === floor[0] && atLeastFloor, `Development ${framework} must satisfy its public peer range`)
+  }
+  return current.nuxt === minimum.nuxt && current.vue === minimum.vue ? [minimum] : [minimum, current]
+}
+
+export async function installedFrameworkVersions(directory: string, expected: FrameworkVersions): Promise<FrameworkVersions> {
+  const installed = {
+    nuxt: await readJson<{ version?: unknown }>(join(directory, 'node_modules/nuxt/package.json')),
+    vue: await readJson<{ version?: unknown }>(join(directory, 'node_modules/vue/package.json')),
+  }
+  for (const framework of ['nuxt', 'vue'] as const) {
+    invariant(installed[framework].version === expected[framework], `Fresh consumer installed ${framework} ${String(installed[framework].version)} instead of ${expected[framework]}`)
+  }
+  return expected
 }
 
 function displayArgument(argument: string): string {
@@ -116,7 +152,7 @@ function requestedArtifactPath(arguments_: readonly string[]): string | undefine
     && flag === '--output'
     && typeof requestedPath === 'string'
     && requestedPath.trim().length > 0,
-    'Usage: pnpm release:verify [--output <path-to-tarball.tgz>]',
+    'Usage: pnpm release:pack [--output <path-to-tarball.tgz>]',
   )
   const outputPath = resolve(process.cwd(), requestedPath)
   invariant(outputPath.endsWith('.tgz'), 'Release artifact output path must end in .tgz')
@@ -223,7 +259,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
     && packed.files.includes('THIRD_PARTY_NOTICES'),
     'Packed files allowlist differs from the release package surface',
   )
-  invariant(packed.engines?.node === releaseContract.node, `Packed Node range must be ${releaseContract.node}`)
+  invariant(packed.engines?.node === source.engines?.node, 'Packed Node range differs from package.json')
   invariant(packed.repository?.type === 'git', 'Packed package repository type must be git')
   invariant(packed.repository?.url === releaseContract.repository, 'Packed package repository URL differs from the release repository')
   invariant(packed.publishConfig?.access === 'public', 'Packed scoped package must publish with public access')
@@ -259,8 +295,8 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   }
 
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
-  invariant(packed.peerDependencies?.nuxt === releaseContract.nuxt, `Packed Nuxt peer range must be ${releaseContract.nuxt}`)
-  invariant(packed.peerDependencies?.vue === releaseContract.vue, `Packed Vue peer range must be ${releaseContract.vue}`)
+  invariant(packed.peerDependencies?.nuxt === source.peerDependencies?.nuxt, 'Packed Nuxt peer range differs from package.json')
+  invariant(packed.peerDependencies?.vue === source.peerDependencies?.vue, 'Packed Vue peer range differs from package.json')
 
   for (const [name, specifier] of Object.entries({
     ...packed.dependencies,
@@ -326,6 +362,7 @@ async function verifyFreshConsumer(
   tarballPath: string,
   workspaceStore: string,
   packedManifest: PackageManifest,
+  frameworks: FrameworkVersions,
 ): Promise<FreshConsumerResult> {
   const freshInstallStartedAt = performance.now()
   const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}-${variant}`)
@@ -337,10 +374,12 @@ async function verifyFreshConsumer(
   const consumerManifestPath = join(consumerDirectory, 'package.json')
   const consumerManifest = await readJson<PackageManifest & { dependencies: Record<string, string> }>(consumerManifestPath)
   invariant(consumerManifest.dependencies['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
+  invariant(consumerManifest.dependencies.nuxt === '__NUXT_VERSION__' && consumerManifest.dependencies.vue === '__VUE_VERSION__', 'Fresh-install fixtures must derive framework versions from package.json')
+  Object.assign(consumerManifest.dependencies, frameworks)
   consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
-  process.stdout.write(`\n=== Fresh consumer: ${variant} ===\n`)
+  process.stdout.write(`\n=== Fresh consumer: ${variant}, Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue} ===\n`)
   await run(process.execPath, [
     join(packageRoot, 'scripts/check-dependency-policy.mjs'),
     join(consumerDirectory, 'pnpm-workspace.yaml'),
@@ -356,6 +395,7 @@ async function verifyFreshConsumer(
   // Strict quarantine needs publication timestamps, which offline metadata can omit.
   await run('pnpm', installArguments, consumerDirectory)
   timingsMilliseconds.install = performance.now() - installStartedAt
+  const installedFrameworks = await installedFrameworkVersions(consumerDirectory, frameworks)
 
   const installedPackageRoot = await realpath(join(consumerDirectory, 'node_modules/@lupinum/nuxt-email'))
   invariant(isInside(temporaryRoot, installedPackageRoot), `Fresh install resolved @lupinum/nuxt-email outside its temporary app: ${installedPackageRoot}`)
@@ -477,14 +517,10 @@ async function verifyFreshConsumer(
   const build = await run('pnpm', ['exec', 'nuxt', 'build'], consumerDirectory, { NODE_ENV: 'production' })
   timingsMilliseconds.build = build.durationMilliseconds
 
-  const installedNuxtManifest = await readJson<{ version?: unknown }>(
-    consumerRequire.resolve('nuxt/package.json'),
-  )
-  invariant(
-    typeof installedNuxtManifest.version === 'string'
-    && installedNuxtManifest.version === consumerManifest.dependencies.nuxt,
-    `Fresh consumer ${runNumber} installed Nuxt ${String(installedNuxtManifest.version)} instead of ${consumerManifest.dependencies.nuxt}`,
-  )
+  const nuxtRequire = createRequire(consumerRequire.resolve('nuxt/package.json'))
+  const nuxtVue = await readJson<{ version: string }>(nuxtRequire.resolve('vue/package.json'))
+  const packageVue = await readJson<{ version: string }>(createRequire(join(installedPackageRoot, 'package.json')).resolve('vue/package.json'))
+  invariant(packageVue.version === frameworks.vue, 'Packed Email renderer did not resolve the requested Vue peer')
 
   const outputDirectory = join(consumerDirectory, '.output')
   const publicOutput = await readTextOutput(join(outputDirectory, 'public'))
@@ -601,7 +637,9 @@ async function verifyFreshConsumer(
     htmlBytes: Buffer.byteLength(rendered.first.html),
     packageResolution: relative(consumerDirectory, installedPackageRoot).replaceAll('\\', '/'),
     run: runNumber,
-    nuxtVersion: installedNuxtManifest.version,
+    nuxtVersion: installedFrameworks.nuxt,
+    vueVersion: installedFrameworks.vue,
+    nuxtVueVersion: nuxtVue.version,
     textBytes: Buffer.byteLength(rendered.first.text),
     timingsMilliseconds,
     variant,
@@ -623,17 +661,7 @@ async function verifyRelease(): Promise<void> {
   }
 
   const sourceManifest = await readJson<PackageManifest>(join(packageRoot, 'package.json'))
-  const freshFixtureManifests = await Promise.all(
-    Object.values(fixtureRoots).map(root => readJson<{ dependencies?: Record<string, string> }>(join(root, 'package.json'))),
-  )
-  for (const freshFixtureManifest of freshFixtureManifests) {
-    invariant(freshFixtureManifest.dependencies?.nuxt === '4.5.2', 'Fresh-install fixture must pin Nuxt 4.5.2')
-    invariant(
-      freshFixtureManifest.dependencies?.['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__',
-      'Fresh-install fixture must consume the scoped release tarball placeholder',
-    )
-    invariant(freshFixtureManifest.dependencies?.vue === '3.5.40', 'Fresh-install fixture must pin Vue 3.5.40')
-  }
+  const frameworkTargets = consumerFrameworkVersions(sourceManifest)
   invariant(
     typeof sourceManifest.packageManager === 'string' && /^pnpm@\d+\.\d+\.\d+$/.test(sourceManifest.packageManager),
     'package.json must pin pnpm with packageManager before release verification',
@@ -762,22 +790,31 @@ async function verifyRelease(): Promise<void> {
     )
     const workspaceStore = modulesState.storeDir
     const consumers: FreshConsumerResult[] = []
-    consumers.push(await verifyFreshConsumer(
-      1,
-      'default',
-      temporaryRoot,
-      tarballPath,
-      workspaceStore,
-      packedManifest,
-    ))
-    consumers.push(await verifyFreshConsumer(
-      2,
-      'code-block',
-      temporaryRoot,
-      tarballPath,
-      workspaceStore,
-      packedManifest,
-    ))
+    const consumerFailures: Error[] = []
+    let runNumber = 0
+    for (const frameworks of frameworkTargets) {
+      for (const variant of ['default', 'code-block'] as const) {
+        try {
+          consumers.push(await verifyFreshConsumer(
+            ++runNumber,
+            variant,
+            temporaryRoot,
+            tarballPath,
+            workspaceStore,
+            packedManifest,
+            frameworks,
+          ))
+          process.stdout.write(`  ${variant} consumer passed: Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue}\n`)
+        }
+        catch (error) {
+          const failure = new Error(`${variant} consumer failed: Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue}`, { cause: error })
+          consumerFailures.push(failure)
+          process.stderr.write(`${failure.message}\n${error instanceof Error ? error.message : String(error)}\n`)
+        }
+      }
+    }
+
+    if (consumerFailures.length) throw new AggregateError(consumerFailures, 'Release consumer verification failed')
 
     const tarballBytes = (await stat(tarballPath)).size
     const tarballSha256 = createHash('sha256').update(await readFile(tarballPath)).digest('hex')
@@ -804,8 +841,7 @@ async function verifyRelease(): Promise<void> {
         operatingSystem: `${platform()} ${release()}`,
         architecture: arch(),
         pnpm: pnpmVersion,
-        nuxt: freshFixtureManifests[0]!.dependencies!.nuxt,
-        vue: freshFixtureManifests[0]!.dependencies!.vue,
+        frameworkTargets,
       },
       tarball: {
         bytes: tarballBytes,
@@ -819,6 +855,8 @@ async function verifyRelease(): Promise<void> {
         run: consumer.run,
         variant: consumer.variant,
         nuxt: consumer.nuxtVersion,
+        vue: consumer.vueVersion,
+        nuxtInternalVue: consumer.nuxtVueVersion,
         isolatedResolution: {
           h3: consumer.h3Resolution,
           package: consumer.packageResolution,
@@ -843,8 +881,10 @@ async function verifyRelease(): Promise<void> {
   }
 }
 
-await verifyRelease().catch((error) => {
-  const message = error instanceof Error ? error.stack ?? error.message : String(error)
-  process.stderr.write(`\nRelease verification failed:\n${message}\n`)
-  process.exitCode = 1
-})
+if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.argv[1])).href) {
+  await verifyRelease().catch((error) => {
+    const message = error instanceof Error ? error.stack ?? error.message : String(error)
+    process.stderr.write(`\nRelease verification failed:\n${message}\n`)
+    process.exitCode = 1
+  })
+}
