@@ -10,6 +10,9 @@ const readme = readFileSync(resolve(root, 'README.md'), 'utf8')
 const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 const ciWorkflow = readFileSync(resolve(root, '.github/workflows/ci.yml'), 'utf8')
 const ciConfig = parse(ciWorkflow)
+if (ciConfig.on?.pull_request !== null) {
+  throw new Error('Native CI must run for pull requests targeting every stack branch.')
+}
 const moduleSource = readFileSync(resolve(root, 'src/module.ts'), 'utf8')
 const workspacePolicy = readFileSync(resolve(root, 'pnpm-workspace.yaml'), 'utf8')
 const renovate = JSON.parse(readFileSync(resolve(root, 'renovate.json'), 'utf8'))
@@ -34,6 +37,31 @@ if (
 ) {
   throw new Error('CI must classify expensive pull-request lanes and run all lanes on main.')
 }
+const engineFloors = packageJson.engines.node.split(' || ').map((range) => {
+  const match = range.match(/^\^(\d+\.\d+\.\d+)$/u)
+  if (!match) throw new Error('Review the Node matrix for the changed engine range.')
+  return match[1]
+})
+if (JSON.stringify(ciConfig.jobs.test.strategy.matrix['node-version']) !== JSON.stringify(engineFloors)) {
+  throw new Error('CI must test every Node engine floor from package.json.')
+}
+const testCommands = ciConfig.jobs.test.steps.flatMap(step => step.run ? [step.run] : [])
+for (const command of ['pnpm check:dependencies', 'pnpm audit:all && pnpm repo:check', 'pnpm lint', 'pnpm test:types', 'pnpm test', 'pnpm oracle:check']) {
+  if (!testCommands.includes(command)) throw new Error(`CI package certification is missing: ${command}`)
+}
+if (testCommands.some(command => /pnpm (?:verify|release:verify|release:artifact|conformance:check)(?:\s|$)/u.test(command))) {
+  throw new Error('CI must use its completed checks without rerunning aggregate children.')
+}
+const packStep = ciConfig.jobs.test.steps.find(step => step.run?.includes('pnpm release:pack --output '))
+if (!packStep?.run.includes('node scripts/write-release-manifest.mjs')) {
+  throw new Error('CI must retain a manifest for its verified tarball.')
+}
+if (!packageJson.scripts.test.includes('--reporter=./test/conformance/tooling/reporter.ts')) {
+  throw new Error('The normal test run must check conformance evidence from its own results.')
+}
+if (!packageJson.scripts['release:artifact'].startsWith('pnpm release:verify ')) {
+  throw new Error('Standalone artifact and preview commands must retain full certification.')
+}
 const gate = ciConfig.jobs.gate
 if (gate.if !== 'always()' || gate.name !== 'CI gate') {
   throw new Error('CI must expose one always-reported aggregate gate.')
@@ -47,13 +75,21 @@ for (const scenario of [
   { name: 'module source', event: 'pull_request', paths: ['src/module.ts'], full: 'true', docs: 'true' },
   { name: 'test only', event: 'pull_request', paths: ['test/unit/render.test.ts'], full: 'true', docs: 'false' },
   { name: 'workflow policy', event: 'pull_request', paths: ['.github/workflows/ci.yml'], full: 'true', docs: 'true' },
+  { name: 'docs configuration', event: 'pull_request', paths: ['docs/nuxt.config.ts'], full: 'true', docs: 'true' },
+  { name: 'docs dependency', event: 'pull_request', paths: ['docs/package.json'], full: 'true', docs: 'true' },
+  { name: 'executable content', event: 'pull_request', paths: ['docs/content/helper.ts'], full: 'true', docs: 'true' },
+  { name: 'build script', event: 'pull_request', paths: ['scripts/check-docs-theme.mjs'], full: 'true', docs: 'true' },
+  { name: 'unknown paths', event: 'pull_request', paths: [], full: 'true', docs: 'true' },
+  { name: 'lockfile', event: 'pull_request', paths: ['pnpm-lock.yaml'], full: 'true', docs: 'true' },
+  { name: 'mixed paths', event: 'pull_request', paths: ['test/unit/example.test.ts', 'src/module.ts'], full: 'true', docs: 'true' },
+  { name: 'renamed source', event: 'pull_request', paths: ['README.md'], previous: 'src/module.ts', full: 'true', docs: 'true' },
   { name: 'main certification', event: 'push', paths: [], full: 'true', docs: 'true' },
 ]) {
   const outputs = new Map()
   await new AsyncFunction('context', 'github', 'core', classifyScript)(
     { eventName: scenario.event, issue: { number: 1 }, repo: { owner: 'lupinum-dev', repo: 'nuxt-email' } },
     {
-      paginate: async () => scenario.paths.map(filename => ({ filename })),
+      paginate: async () => scenario.paths.map(filename => ({ filename, previous_filename: scenario.previous })),
       rest: { pulls: { listFiles() {} } },
     },
     { setOutput: (name, value) => outputs.set(name, value) },

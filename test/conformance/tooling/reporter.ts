@@ -33,7 +33,7 @@ interface TaggedResult {
   passed: boolean
 }
 
-const REPORT_MODE = process.env.NUXT_EMAIL_CONFORMANCE_REPORT
+const REPORT_MODE = process.env.NUXT_EMAIL_CONFORMANCE_REPORT ?? 'check'
 const ROOT_PATH = fileURLToPath(new URL('../../..', import.meta.url))
 const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.9.0.json', import.meta.url))
 const PACKAGE_PATH = fileURLToPath(new URL('../../../package.json', import.meta.url))

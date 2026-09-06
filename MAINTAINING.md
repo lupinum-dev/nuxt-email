@@ -15,19 +15,36 @@ Do not create a second version file or rebuild after certification.
 
 ## Daily maintenance
 
-```bash
-pnpm install --frozen-lockfile
-pnpm lint
-pnpm test:types
-pnpm test
-pnpm conformance:check
-```
+An assigned routine task includes setup, diagnosis, implementation, independent
+review, authorized protected merge, post-merge verification, and cleanup.
+Routine work has bounded scope, preserves public contracts and permissions,
+and has a known rollback. Meaningful code, CI, and dependency changes need
+independent review of the final diff. Preserve unrelated work. Ask for unresolved
+product or compatibility decisions, destructive actions, security or delegation
+changes, and protected approvals. User instructions and access controls take
+precedence; a pull request cannot expand its own authority. npm publication
+keeps its human approval.
 
-Build the documentation when public behavior or examples change:
+Use the Node and pnpm versions in `package.json`. Install with
+`pnpm install --frozen-lockfile`, then start `pnpm dev`. Open the printed local
+URL and `/__email`; select a template and check the rendered HTML and text.
+Check a narrow viewport and browser errors. Stop the server when finished.
+The playground and docs use workspace source; the release check separately
+installs the retained tarball outside the repository.
 
-```bash
-pnpm docs:build
-```
+Use focused commands while editing. Run `pnpm verify` before handoff or
+`pnpm release:verify` for package and release changes; it includes `verify`.
+Do not rerun completed child checks without a new change or failure. A failed
+or skipped required check blocks completion. Verify hosted results after merge
+and remove owned processes and disposable state.
+
+`pnpm build` builds the public module. `pnpm test` runs each case once and checks
+the conformance report from those results. `pnpm conformance:check` is the focused
+report command. CI runs the pinned upstream React Email oracle once. It certifies
+the package after its explicit policy, audit, lint, type, test, and oracle gates;
+the separate docs lane builds the site. Standalone `pnpm release:artifact` and
+package previews retain the complete `release:verify` gate. `pnpm release:pack`
+is the focused tarball and consumer check, not a substitute for that gate.
 
 ## Quick fixes
 
@@ -41,8 +58,8 @@ conformance evidence, tests, and documentation aligned.
 
 ## Documentation changes
 
-Follow [docs/WRITING.md](./docs/WRITING.md). Run `pnpm docs:build` and
-`pnpm verify` before merge.
+Follow [docs/WRITING.md](./docs/WRITING.md). Use `pnpm docs:build` for focused
+iteration, then `pnpm verify` once for handoff; it includes the docs build.
 
 ## Review dependencies
 
@@ -53,9 +70,18 @@ For each update:
 1. Review the upstream release and provenance.
 2. Review lifecycle-script changes.
 3. Keep build-script permissions closed to dependencies that need them.
-4. Run lint, types, and tests.
-5. Run `pnpm oracle:check` when the React Email oracle changes.
-6. Run `pnpm release:verify` when runtime or package dependencies change.
+4. Run focused checks while editing, then `pnpm release:verify` for runtime
+   or package dependencies, or `pnpm verify` for other workspace dependencies.
+5. Run `pnpm oracle:check` when the React Email oracle changes. It needs the
+   exact upstream source checkout recorded in the oracle metadata; set
+   `NUXT_EMAIL_REACT_EMAIL_CHECKOUT` to that checkout.
+
+`pnpm check:dependencies` checks the actual root install policy. The same
+checker runs before packed-consumer installation and daily in CI. Emergency
+exceptions must name one exact version with inline JSON `reason`, `owner`, and
+UTC `expires` within 24 hours. Remove an expired exception; do not extend it
+silently. Packed consumers enforce the age policy with their own reviewed build
+permissions and no root dependency overrides.
 
 Do not bypass the dependency release-age policy for convenience.
 
@@ -142,9 +168,24 @@ npm must bind `@lupinum/nuxt-email` to `publish.yml` and the `npm` environment
 through trusted publishing.
 
 Vercel must deploy the `docs/` app from `main` to `nuxt-email.lupinum.com` and
-create pull-request previews. Set the Vercel Root Directory to `docs`. Enable
+use the on-demand preview workflow for reviewed commits. Automatic library
+branch previews stay disabled. Use Basic build machines unless measured total
+successful-build cost or a build failure justifies another machine. Disable
+on-demand concurrency so builds queue. Set the Vercel Root Directory to `docs`. Enable
 source files outside the Root Directory so the app can build the local package.
 Do not set an Output Directory override; Nuxt emits the Vercel Build Output API
 files. Do not set an Install Command override. Vercel detects pnpm from the
 repository lockfile and installs the workspace. `docs/vercel.json` owns the
 exact build contract.
+
+
+## Adoption evidence
+
+The September 6, 2026 trial follows Lupinum OSS revision `da57890`. The documented
+`pnpm dev` journey exposed a configured-code-block preview failure. A focused
+test rejects the original implementation and passes the repaired renderer.
+Desktop and 390-pixel browser checks covered template selection, HTML and plain
+text, live fixture updates, missing-fixture recovery, and horizontal overflow.
+The active template and representation survived a fixture data edit. Owned
+processes and temporary edits were removed. Hosted operating-system and Node
+matrix checks remain separate evidence.
