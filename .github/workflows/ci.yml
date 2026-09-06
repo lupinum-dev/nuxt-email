@@ -5,8 +5,6 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -40,16 +38,16 @@ jobs:
                   pull_number: context.issue.number,
                   per_page: 100,
                 })
-            const paths = files.map((file) => file.filename)
+            const paths = files.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean))
             const publicDocsOnly =
               paths.length > 0 &&
               paths.every((path) =>
-                /^(?:docs\/content\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
+                /^(?:docs\/content\/.*\.md$|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
               )
             const docsUnrelated =
               paths.length > 0 &&
               paths.every((path) =>
-                /^(?:test\/|scripts\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
+                /^(?:test\/|README\.md$|CONTRIBUTING\.md$|SECURITY\.md$|MAINTAINING\.md$|AGENTS\.md$|CLAUDE\.md$|LICENSE$)/u.test(path),
               )
             core.setOutput('full', String(runAll || !publicDocsOnly))
             core.setOutput('docs', String(runAll || !docsUnrelated))
@@ -93,6 +91,13 @@ jobs:
       - name: Verify pinned Action commits
         run: node scripts/verify-action-shas.mjs
 
+      - name: Dependency quarantine
+        run: pnpm check:dependencies
+
+      - name: Workspace audit and repository policy
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
+        run: pnpm audit:all && pnpm repo:check
+
       - name: Lint and formatting
         run: pnpm lint
 
@@ -102,13 +107,8 @@ jobs:
       - name: Unit, component, module, conformance, and production-bundle tests
         run: pnpm test
 
-      # The conformance-report, React Email oracle, and full package/fresh-install
-      # verifications are runtime-heavy and platform-independent. Run them once on the
-      # primary Linux runner at the Node floor rather than across every matrix cell.
-      - name: Conformance report reproducibility
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
-        run: pnpm conformance:check
-
+      # Keep oracle and fresh-install certification on the primary runner.
+      # pnpm test already checks the conformance report in every matrix cell.
       - name: Check out the pinned React Email oracle source
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -127,7 +127,9 @@ jobs:
 
       - name: Package build, contents, and fresh-install smoke test
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
-        run: pnpm release:artifact
+        run: |
+          pnpm release:pack --output .release/lupinum-nuxt-email.tgz
+          node scripts/write-release-manifest.mjs
 
       - name: Retain the certified package
         if: matrix.os == 'ubuntu-latest' && matrix.node-version == '22.18.0'
@@ -164,6 +166,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Dependency quarantine
+        run: pnpm check:dependencies
 
       - name: Build the docs site
         run: pnpm docs:build

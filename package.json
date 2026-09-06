@@ -77,17 +77,19 @@
     "proofs:generate": "node --import tsx scripts/proofs/generate.ts",
     "proofs:send": "node --import tsx scripts/proofs/send.ts",
     "repo:check": "node scripts/check-repository-policy.mjs",
-    "release:verify": "pnpm verify && node --import tsx scripts/verify-release.ts",
+    "release:verify": "pnpm verify && pnpm release:pack",
     "release:prepare": "changelogen --bump --clean --hideAuthorEmail",
     "release:artifact": "pnpm release:verify --output .release/lupinum-nuxt-email.tgz && node scripts/write-release-manifest.mjs",
     "lint": "eslint .",
-    "test": "pnpm prepack && vitest run --exclude test/preview.test.ts && pnpm test:preview",
+    "test": "pnpm prepack && vitest run --exclude test/preview.test.ts --reporter=default --reporter=./test/conformance/tooling/reporter.ts && pnpm test:preview",
     "test:preview": "vitest run test/preview.test.ts",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
     "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
-    "verify": "pnpm check:dependencies && pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build",
-    "check:dependencies": "node scripts/check-dependency-policy.mjs"
+    "verify": "pnpm check:dependencies && pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm docs:build",
+    "check:dependencies": "node scripts/check-dependency-policy.mjs",
+    "build": "nuxt-module-build build",
+    "release:pack": "node --import tsx scripts/verify-release.ts"
   },
   "peerDependencies": {
     "nuxt": ">=4.5.1 <5",

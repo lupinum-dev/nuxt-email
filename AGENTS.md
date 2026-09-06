@@ -14,7 +14,6 @@ accepted design decision.
 - `src/` contains the published Nuxt module and server runtime.
 - `test/` contains unit, conformance, fixture, and package tests.
 - `docs/` contains the public Ginko Docs site and versioned engineering records.
-- `docs/` contains conformance evidence and release checklists.
 - `playground/` contains the development application.
 - `scripts/` contains release verification and proof generation.
 - `MAINTAINING.md` contains dependency and release procedures.
@@ -36,16 +35,16 @@ Use the Node and pnpm versions declared in `package.json`.
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm dev:prepare
-pnpm test
+pnpm dev
 ```
 
 Use these focused commands:
 
+- `pnpm build` builds the publishable module.
 - `pnpm lint` checks source and documentation rules.
 - `pnpm test:types` checks the module, fixtures, and playground.
 - `pnpm test:conformance` runs the conformance suite.
-- `pnpm conformance:check` checks the generated conformance report.
+- `pnpm conformance:check` is the focused generated-report check; `pnpm test` already includes it.
 - `pnpm oracle:check` checks the pinned React Email oracle.
 - `pnpm verify` runs the normal handoff gate.
 - `pnpm audit:all` audits the complete workspace dependency graph.
@@ -53,8 +52,9 @@ Use these focused commands:
 - `pnpm docs:theme` checks the Nuxt visual tokens and Ginko Docs version.
 - `pnpm docs:build` builds the package and then the public documentation.
 
-Run the smallest relevant check while you work. Run lint, types, and tests
-before handoff. Run `pnpm release:verify` for package or release changes.
+Read `MAINTAINING.md` for the complete working procedure and delegated authority.
+Run focused checks while editing, then `pnpm verify` before handoff. Run
+`pnpm release:verify` instead for package or release changes.
 
 ## Architecture boundaries
 
