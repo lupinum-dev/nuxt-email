@@ -86,7 +86,8 @@
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
     "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
-    "verify": "pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build"
+    "verify": "pnpm check:dependencies && pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm conformance:check && pnpm docs:build",
+    "check:dependencies": "node scripts/check-dependency-policy.mjs"
   },
   "peerDependencies": {
     "nuxt": ">=4.5.1 <5",

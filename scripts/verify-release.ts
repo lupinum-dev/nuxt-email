@@ -69,7 +69,6 @@ interface FreshConsumerResult {
   h3Resolution: string
   htmlBytes: number
   packageResolution: string
-  requiredNetworkFallback: boolean
   run: number
   nuxtVersion: string
   textBytes: number
@@ -342,6 +341,10 @@ async function verifyFreshConsumer(
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
   process.stdout.write(`\n=== Fresh consumer: ${variant} ===\n`)
+  await run(process.execPath, [
+    join(packageRoot, 'scripts/check-dependency-policy.mjs'),
+    join(consumerDirectory, 'pnpm-workspace.yaml'),
+  ], packageRoot)
   const installStartedAt = performance.now()
   const installArguments = [
     'install',
@@ -350,30 +353,8 @@ async function verifyFreshConsumer(
     '--store-dir',
     workspaceStore,
   ]
-  let requiredNetworkFallback = false
-  try {
-    await run('pnpm', [...installArguments, '--offline'], consumerDirectory)
-  }
-  catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    const offlineDataIsIncomplete = [
-      'ERR_PNPM_NO_MATCHING_VERSION',
-      'ERR_PNPM_NO_OFFLINE_META',
-      'ERR_PNPM_NO_OFFLINE_TARBALL',
-    ].some(code => message.includes(code))
-    if (!offlineDataIsIncomplete) {
-      throw error
-    }
-
-    requiredNetworkFallback = true
-    const missingTarball = message.match(/missing package may be downloaded from (https?:\/\/\S+)/i)?.[1]?.replace(/\.$/, '')
-    process.stdout.write(
-      `  local pnpm store or metadata is incomplete${missingTarball ? `; missing ${missingTarball}` : ''}; retrying with prefer-offline\n`,
-    )
-    await rm(join(consumerDirectory, 'node_modules'), { recursive: true, force: true })
-    await rm(join(consumerDirectory, 'pnpm-lock.yaml'), { force: true })
-    await run('pnpm', [...installArguments, '--prefer-offline'], consumerDirectory)
-  }
+  // Strict quarantine needs publication timestamps, which offline metadata can omit.
+  await run('pnpm', installArguments, consumerDirectory)
   timingsMilliseconds.install = performance.now() - installStartedAt
 
   const installedPackageRoot = await realpath(join(consumerDirectory, 'node_modules/@lupinum/nuxt-email'))
@@ -619,7 +600,6 @@ async function verifyFreshConsumer(
     h3Resolution: relative(consumerDirectory, h3Resolution).replaceAll('\\', '/'),
     htmlBytes: Buffer.byteLength(rendered.first.html),
     packageResolution: relative(consumerDirectory, installedPackageRoot).replaceAll('\\', '/'),
-    requiredNetworkFallback,
     run: runNumber,
     nuxtVersion: installedNuxtManifest.version,
     textBytes: Buffer.byteLength(rendered.first.text),
@@ -839,7 +819,6 @@ async function verifyRelease(): Promise<void> {
         run: consumer.run,
         variant: consumer.variant,
         nuxt: consumer.nuxtVersion,
-        requiredNetworkFallback: consumer.requiredNetworkFallback,
         isolatedResolution: {
           h3: consumer.h3Resolution,
           package: consumer.packageResolution,

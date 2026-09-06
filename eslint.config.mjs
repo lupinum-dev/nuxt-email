@@ -14,6 +14,9 @@ export default createConfigForNuxt({
     ],
   },
 }).append({
+  // This generated copy is byte-checked against the handbook by the fleet audit.
+  ignores: ['scripts/check-dependency-policy.mjs'],
+}).append({
   name: 'nuxt-email/no-tailwind-css-internals-outside-tailwind',
   files: ['src/**/*.ts'],
   ignores: ['src/runtime/tailwind/**/*.ts'],
