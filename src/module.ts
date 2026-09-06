@@ -227,9 +227,10 @@ export default defineNuxtModule<ModuleOptions>({
     alias['@lupinum/nuxt-email/errors'] = errorsPublicPath
     const externals = (nitro.externals ??= {})
     const inline = (externals.inline ??= [])
-    for (const publicRuntimePath of [defineEmailPublicPath, errorsPublicPath]) {
-      if (!inline.includes(publicRuntimePath)) {
-        inline.push(publicRuntimePath)
+    // The configured renderer imports generated TypeScript and must also be bundled in dev.
+    for (const runtimePath of [defineEmailPublicPath, errorsPublicPath, testingRendererPath]) {
+      if (!inline.includes(runtimePath)) {
+        inline.push(runtimePath)
       }
     }
     const typescript = (nitro.typescript ??= {})
