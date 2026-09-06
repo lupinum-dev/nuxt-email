@@ -9,6 +9,9 @@ const temporaryFixtureRoot = fileURLToPath(new URL('../.tmp/', import.meta.url))
 await mkdir(temporaryFixtureRoot, { recursive: true })
 const fixtureRoot = await mkdtemp(join(temporaryFixtureRoot, 'preview-test-'))
 const buildRoot = join(temporaryFixtureRoot, `${basename(fixtureRoot)}-build`)
+// Nuxt Test Utils removes a build directory concurrently with server teardown.
+// Precreating it lets our retrying cleanup own that race on macOS.
+await mkdir(buildRoot, { recursive: true })
 await cp(sourceFixtureRoot, fixtureRoot, {
   recursive: true,
   filter: source => !['.nuxt', '.output', 'node_modules'].includes(basename(source)),
@@ -68,12 +71,14 @@ describe('development email preview', async () => {
   })
   test.ctx.teardown = [async () => {
     try {
-      await rm(fixtureRoot, {
-        recursive: true,
-        force: true,
-        maxRetries: 3,
-        retryDelay: 100,
-      })
+      for (const directory of [fixtureRoot, buildRoot]) {
+        await rm(directory, {
+          recursive: true,
+          force: true,
+          maxRetries: 10,
+          retryDelay: 100,
+        })
+      }
     }
     catch (error) {
       if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EBUSY') {
