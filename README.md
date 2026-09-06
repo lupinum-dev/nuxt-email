@@ -43,9 +43,9 @@ Do not use it for marketing campaigns or a workflow shared by non-Nuxt applicati
 
 - Node.js `^22.18.0 || ^24.11.0 || ^26.0.0`.
 - Nuxt `>=4.5.1 <5`.
-- Vue `^3.5.35`.
+- Vue `^3.5.40`.
 
-CI tests every supported Node major. The release consumer installs Nuxt `4.5.2` without a dependency shim.
+CI tests every supported Node major. Release consumers verify the declared minimum and current Nuxt 4 and Vue 3 versions without a dependency shim.
 
 ## Installation
 

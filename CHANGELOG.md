@@ -109,6 +109,6 @@ Status: pre-1.0 candidate. The package identity is `@lupinum/nuxt-email`; the un
 
 - Node.js `^22.18.0 || ^24.11.0 || ^26.0.0`.
 - Nuxt `>=4.5.1 <5`.
-- Vue `^3.5.35`.
+- Vue `^3.5.40`.
 
 The repository's v1.0 readiness gate records the current contract and remaining approval steps; the live release ledger is intentionally excluded from the npm tarball.
