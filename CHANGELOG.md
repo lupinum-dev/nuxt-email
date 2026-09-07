@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.0.0-beta.3
+
+[compare changes](https://github.com/lupinum-dev/nuxt-email/compare/v1.0.0-beta.2...v1.0.0-beta.3)
+
+### 🩹 Fixes
+
+- **deps:** Enforce expiring quarantine exceptions ([#47](https://github.com/lupinum-dev/nuxt-email/pull/47))
+- **preview:** Bundle configured renderer during development ([#48](https://github.com/lupinum-dev/nuxt-email/pull/48))
+- **compatibility:** Prove supported Nuxt and Vue ranges ([#50](https://github.com/lupinum-dev/nuxt-email/pull/50))
+
+### 🏡 Chore
+
+- **maintenance:** Verify Email commands without repeated CI work ([#49](https://github.com/lupinum-dev/nuxt-email/pull/49))
+
+### ❤️ Contributors
+
+- Matthias Amon
+
 ## v1.0.0-beta.2
 
 ### Added
