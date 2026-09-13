@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.0.0-beta.4
+
+[compare changes](https://github.com/lupinum-dev/nuxt-email/compare/v1.0.0-beta.3...v1.0.0-beta.4)
+
+### 🚀 Enhancements
+
+- **docs:** Ship versioned package guidance ([#55](https://github.com/lupinum-dev/nuxt-email/pull/55))
+
+### 🩹 Fixes
+
+- **deps:** Clear workspace advisories and update Vitest ([#54](https://github.com/lupinum-dev/nuxt-email/pull/54))
+
+### ❤️ Contributors
+
+- Matthias Amon
+
 ## v1.0.0-beta.3
 
 [compare changes](https://github.com/lupinum-dev/nuxt-email/compare/v1.0.0-beta.2...v1.0.0-beta.3)
