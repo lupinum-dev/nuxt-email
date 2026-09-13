@@ -25,7 +25,7 @@
 </p>
 
 > [!WARNING]
-> [`1.0.0-beta.2`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.2) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> [`1.0.0-beta.3`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.3) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 
@@ -60,6 +60,34 @@ export default defineNuxtConfig({
   modules: ['@lupinum/nuxt-email'],
 })
 ```
+
+<!-- BEGIN:consumer-onboarding -->
+
+### Use a coding agent
+
+A coding agent is a development tool that can inspect and change your project.
+After installation, copy this prompt into your coding agent:
+
+```text
+Add Nuxt Email to this Nuxt application and render one transactional email from
+a Vue template. Read the project's existing instructions first. Resolve
+@lupinum/nuxt-email/agent-docs from this application's directory and read its
+starting pages. Use the installed version's examples and public types. Preserve
+existing routes, security boundaries, conventions, and AGENTS.md instructions.
+Add or update one short Nuxt Email pointer in AGENTS.md if the project allows
+it; do not duplicate the documentation. If the file is absent, create only that
+pointer. Report missing guidance. Verify the server render, HTML and plain-text
+output, and one invalid request. Keep delivery in application-owned code.
+```
+
+If the installed package has no `agent-docs` export, read its packaged README,
+types, and `CONFORMANCE.md`. Use documentation from the matching source tag when
+more detail is needed. Installing or updating the package does not edit project
+instructions. The pointer resolves the installed package, so upgrades and
+rollbacks select the matching documentation without copying it into your
+application.
+
+<!-- END:consumer-onboarding -->
 
 ## Quick start
 
