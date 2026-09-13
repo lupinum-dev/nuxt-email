@@ -21,6 +21,8 @@ import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import { verifyPackageAgentDocs } from './package-agent-docs.mjs'
+
 interface PackageManifest {
   name?: unknown
   version?: unknown
@@ -268,7 +270,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
 
   invariant(
     JSON.stringify(Object.keys(packed.exports ?? {}).sort())
-    === JSON.stringify(['.', './build', './define-email', './errors', './render', './testing']),
+    === JSON.stringify(['.', './agent-docs', './build', './define-email', './errors', './render', './testing']),
     'Packed package exports differ from the intentional public surface',
   )
 
@@ -281,6 +283,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(typeof testingExport === 'object' && testingExport !== null, 'Packed package must export its ./testing subpath')
   invariant('import' in testingExport && testingExport.import === './dist/runtime/testing/index.js', 'Packed ./testing import export must point to ./dist/runtime/testing/index.js')
   invariant('types' in testingExport && testingExport.types === './dist/runtime/testing/index.d.ts', 'Packed ./testing type export must point to ./dist/runtime/testing/index.d.ts')
+  invariant(packed.exports?.['./agent-docs'] === './dist/agent/AGENTS.md', 'Packed package must export its installed documentation entry')
 
   for (const [subpath, importPath, typePath] of [
     ['./build', './dist/build.mjs', './dist/build.d.mts'],
@@ -717,6 +720,8 @@ async function verifyRelease(): Promise<void> {
       'dist/runtime/dev-preview/page.get.js',
       'dist/runtime/dev-preview/render.get.js',
       'dist/runtime/dev-preview/templates.get.js',
+      'dist/agent/AGENTS.md',
+      'dist/agent/manifest.json',
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }
@@ -744,6 +749,7 @@ async function verifyRelease(): Promise<void> {
       'Packed package contains workspace-only source, test, script, playground, or dependency files',
     )
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
+    await verifyPackageAgentDocs(inspectedPackageRoot)
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
     for (const requiredText of ['wordmark-light.svg', '@lupinum/nuxt-email', 'renderEmail']) {

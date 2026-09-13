@@ -61,6 +61,12 @@ conformance evidence, tests, and documentation aligned.
 Follow [docs/WRITING.md](./docs/WRITING.md). Use `pnpm docs:build` for focused
 iteration, then `pnpm verify` once for handoff; it includes the docs build.
 
+The installation page owns the coding-agent onboarding prompt. Run
+`pnpm docs:onboarding` after editing its marked block to update the README.
+Keep `scripts/package-agent-docs.mjs` aligned with the reviewed Lupinum OSS
+shared implementation. The package exports the rendered documentation snapshot
+at `./agent-docs`. Do not add an install hook or consumer skill.
+
 ## Review dependencies
 
 Renovate opens focused dependency pull requests. It does not merge them.
