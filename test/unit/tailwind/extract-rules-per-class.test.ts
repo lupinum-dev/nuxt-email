@@ -4,6 +4,17 @@ import { setupTailwind } from '../../../src/runtime/tailwind/engine/setup-tailwi
 import { extractRulesPerClass } from '../../../src/runtime/tailwind/engine/css/extract-rules-per-class'
 
 describe('extractRulesPerClass()', () => {
+  it('does not discard unsupported wrappers around a requested utility', () => {
+    const stylesheet = parse('@scope (.card) {.utility {color:red}}') as StyleSheet
+    expect(() => extractRulesPerClass(stylesheet, ['utility'])).toThrow('@scope rules are not supported')
+    expect(extractRulesPerClass(stylesheet, ['other']).inlinable.size).toBe(0)
+  })
+
+  it('retains unconditional utilities inside a structural layer', () => {
+    const stylesheet = parse('@layer utilities {.utility {color:red}}') as StyleSheet
+    expect(extractRulesPerClass(stylesheet, ['utility']).inlinable.has('utility')).toBe(true)
+  })
+
   it('keeps enclosing media and supports conditions out of inline styles', () => {
     const stylesheet = parse(`
       .base { color: black }

@@ -55,14 +55,28 @@ export function extractRulesPerClass(
     // Only the prelude names the class that owns the rule; classes referenced
     // inside the block (e.g. `.group` in `:where(.group)`) must not key it.
     const selectorClasses: string[] = []
-    walk(rule.prelude, {
-      enter(node: CssNode) {
-        // Group/peer markers inside :is/:where are conditions, not owners.
-        if (node.type === 'PseudoClassSelector' || node.type === 'PseudoElementSelector') return walk.skip
-        if (node.type === 'ClassSelector') selectorClasses.push(string.decode(node.name))
-      },
-    })
+    if (rule.prelude.type === 'SelectorList') {
+      rule.prelude.children.forEach((selector) => {
+        const owners: string[] = []
+        const collect = (insideIs: boolean) => walk(selector, {
+          enter(node: CssNode) {
+            if (node.type === 'PseudoElementSelector') return walk.skip
+            if (node.type === 'PseudoClassSelector' && (!insideIs || node.name !== 'is')) return walk.skip
+            if (node.type === 'ClassSelector') owners.push(string.decode(node.name))
+          },
+        })
+        collect(false)
+        // Child variants put their owning class inside :is(). Group/peer
+        // variants have a direct owner, so their condition markers stay out.
+        if (!owners.length) collect(true)
+        selectorClasses.push(...owners)
+      })
+    }
     if (enclosingAtRules.length > 0) {
+      const unsupported = enclosingAtRules.find(atRule => !NON_INLINABLE_ATRULES.has(atRule.name.toLowerCase()))
+      if (unsupported && selectorClasses.some(className => classSet.has(className))) {
+        throw new TypeError(`Unable to render Tailwind CSS: @${unsupported.name} rules are not supported.`)
+      }
       // Tailwind 4.3.3 wraps variant rules in conditional at-rules. Restore
       // the nested shape expected by the existing email downlevel pass.
       const conditional = clone(rule) as Rule
@@ -111,11 +125,13 @@ export function extractRulesPerClass(
 
   walk(root, {
     enter(node: CssNode) {
-      if (node.type === 'Atrule' && NON_INLINABLE_ATRULES.has(node.name.toLowerCase())) enclosingAtRules.push(node)
+      // Layers group generated rules without a condition. Every other wrapper
+      // must be preserved or rejected; dropping one would make styles unconditional.
+      if (node.type === 'Atrule' && node.name.toLowerCase() !== 'layer') enclosingAtRules.push(node)
       else if (node.type === 'Rule') handleRule(node)
     },
     leave(node: CssNode) {
-      if (node.type === 'Atrule' && NON_INLINABLE_ATRULES.has(node.name.toLowerCase())) enclosingAtRules.pop()
+      if (node.type === 'Atrule' && node.name.toLowerCase() !== 'layer') enclosingAtRules.pop()
     },
   })
   return {

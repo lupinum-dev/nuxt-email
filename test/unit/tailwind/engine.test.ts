@@ -13,6 +13,24 @@ function styleOf(
 }
 
 describe('createTailwindEngine()', () => {
+  it.each([['@sm:bg-red-500'], ['@container', '@sm:bg-red-500']])('rejects unsupported container conditions for %j', async (...classes) => {
+    const engine = await createTailwindEngine({})
+    expect(() => engine.computeStyles(classes)).toThrow('@container rules are not supported')
+  })
+
+  it.each([
+    { utility: '*:bg-red-500', declaration: 'background-color:rgb(251,44,54)!important' },
+    { utility: '**:text-blue-500', declaration: 'color:rgb(43,127,255)!important' },
+  ])('preserves the actual owner of child variant $utility', async ({ utility, declaration }) => {
+    const engine = await createTailwindEngine({})
+    const result = engine.computeStyles([utility])
+    expect(result.inlinable.has(utility)).toBe(false)
+    expect(result.nonInlinableCss).toContain(declaration)
+    const residual = result.residualClassMap.get(utility)
+    expect(residual).toBe(utility.startsWith('**') ? '___text-blue-500' : '__bg-red-500')
+    expect(result.nonInlinableCss).toContain(`:is(.${residual}${utility.startsWith('**') ? ' *' : '>*'})`)
+  })
+
   it('produces per-class kebab-case inline styles with email-safe values', async () => {
     const engine = await createTailwindEngine({})
     const result = engine.computeStyles([
