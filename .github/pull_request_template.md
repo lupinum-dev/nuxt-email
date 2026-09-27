@@ -18,7 +18,7 @@
 
 ## Release note
 
-<!-- Add the user-visible release note, or explain why none is needed. -->
+<!-- Add a Changeset for package-facing changes, or an empty Changeset for invisible changes. -->
 
 ## Risk
 

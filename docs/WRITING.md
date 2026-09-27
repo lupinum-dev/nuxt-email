@@ -64,7 +64,7 @@ Do not use `render`, `send`, and `deliver` as interchangeable terms.
 - Do not add generic `Summary`, `Conclusion`, `Related`, or `Next steps`
   sections.
 
-Keep maintainer procedures in `MAINTAINING.md`. Do not put internal fixtures,
+Keep maintainer procedures in [Lupinum OSS](https://oss.lupinum.com). Do not put internal fixtures,
 release approval steps, or local paths in public documentation.
 
 Do not rewrite license text, code, API identifiers, command output, quotations,

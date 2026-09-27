@@ -232,7 +232,7 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Maintainers use the protected workflow in [MAINTAINING.md](https://github.com/lupinum-dev/nuxt-email/blob/main/MAINTAINING.md) for releases.
+Maintainers use the protected workflow in [Lupinum OSS](https://oss.lupinum.com/docs/releasing) for releases.
 
 ## Support and security
 

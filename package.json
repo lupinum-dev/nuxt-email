@@ -62,8 +62,6 @@
     "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
-    "changelog": "changelogen --no-output",
-    "audit:all": "pnpm audit",
     "conformance:check": "NUXT_EMAIL_CONFORMANCE_REPORT=check vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
     "conformance:write": "NUXT_EMAIL_CONFORMANCE_REPORT=write vitest run test/conformance --reporter=default --reporter=./test/conformance/tooling/reporter.ts",
     "prepack": "pnpm docs:build && pnpm docs:package",
@@ -79,20 +77,16 @@
     "docs:theme": "node scripts/check-docs-theme.mjs",
     "proofs:generate": "node --import tsx scripts/proofs/generate.ts",
     "proofs:send": "node --import tsx scripts/proofs/send.ts",
-    "repo:check": "node scripts/check-repository-policy.mjs",
-    "release:verify": "pnpm verify && pnpm release:pack",
-    "release:prepare": "changelogen --bump --clean --hideAuthorEmail",
-    "release:artifact": "pnpm release:verify --output .release/lupinum-nuxt-email.tgz && node scripts/write-release-manifest.mjs",
-    "lint": "node scripts/sync-consumer-onboarding.mjs && eslint .",
+    "lint": "node scripts/sync-consumer-onboarding.mjs && node scripts/lint-changesets.mjs && eslint .",
     "test": "pnpm build && vitest run --exclude test/preview.test.ts --reporter=default --reporter=./test/conformance/tooling/reporter.ts && pnpm test:preview",
     "test:preview": "vitest run test/preview.test.ts",
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
-    "test:types": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
-    "verify": "pnpm check:dependencies && pnpm audit:all && pnpm repo:check && pnpm lint && pnpm test:types && pnpm test && pnpm docs:build",
-    "check:dependencies": "node scripts/check-dependency-policy.mjs",
+    "verify": "pnpm audit --audit-level=high && pnpm lint && pnpm typecheck && pnpm test && pnpm oracle:check && pnpm test:packed",
     "build": "nuxt-module-build build",
-    "release:pack": "node --import tsx scripts/verify-release.ts"
+    "typecheck": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
+    "test:packed": "node --import tsx scripts/test-packed.ts",
+    "changeset": "changeset"
   },
   "peerDependencies": {
     "nuxt": ">=4.5.1 <5",
@@ -116,6 +110,8 @@
     "vue-tsc": "^3.3.3"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
     "@nuxt/schema": "4.5.2",
@@ -127,7 +123,6 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-vue": "6.0.8",
-    "changelogen": "0.6.2",
     "eslint": "^10.4.1",
     "nuxt": "4.5.2",
     "pkg-pr-new": "0.0.87",

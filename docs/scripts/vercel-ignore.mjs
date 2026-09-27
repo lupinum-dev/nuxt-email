@@ -19,6 +19,8 @@ process.exit(
     '--',
     'docs',
     'src',
+    'scripts',
+    'build.config.ts',
     'package.json',
     'pnpm-lock.yaml',
     'pnpm-workspace.yaml',

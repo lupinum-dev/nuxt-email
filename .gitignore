@@ -35,7 +35,7 @@ coverage
 *.lcov
 .nyc_output
 
-# Verified release artifacts
+# Local build artifacts
 .ginko
 release-artifacts
 .release
@@ -65,3 +65,5 @@ release-artifacts
 Network Trash Folder
 Temporary Items
 .apdisk
+
+/release/

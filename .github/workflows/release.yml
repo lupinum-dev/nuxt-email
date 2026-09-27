@@ -1,0 +1,299 @@
+name: release
+
+# Merging changesets into main opens or updates the "Version packages" PR.
+# Merging that PR publishes: pack (no credentials) -> publish (protected `npm`
+# environment, maintainer approval, OIDC) -> tag and GitHub release.
+# A manual run follows the same rules: it can re-offer a release that is already
+# versioned on main, never one whose changesets are still pending.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Runs dependency code (the Changesets CLI and its changelog plugin) with a read-only token.
+  # It can only produce a patch; version-pr checks that patch and pushes it.
+  version-prepare:
+    name: Prepare version
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # @changesets/changelog-github reads pull request and author names
+    outputs:
+      pending: ${{ steps.version.outputs.pending }}
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: corepack enable pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Only a changeset that bumps a public version is pending. Empty ones alone produce no
+      # patch, so they never open a Version packages PR and never block a release.
+      # `changeset version` exits 1 when there is no changeset at all, so it runs only when one exists.
+      - id: version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          OUT: ${{ runner.temp }}/version
+        run: |
+          if [[ -n "$(find .changeset -maxdepth 1 -name '*.md' ! -name README.md)" ]]; then
+            pnpm exec changeset version
+          fi
+          mkdir -p "$OUT"
+          git add --all
+          git diff --cached --name-only -- package.json layer/package.json 'packages/*/package.json' | while read -r file; do
+            jq -c --arg old "$(git show "HEAD:$file" | jq -r .version)" \
+              'select(.private != true and .version != $old) | {name, version}' "$file"
+          done | jq -s . > "$OUT/versions.json"
+          git diff --cached --binary --no-renames > "$OUT/version.patch"
+          echo "pending=$(jq 'length > 0' "$OUT/versions.json")" >> "$GITHUB_OUTPUT"
+      - if: steps.version.outputs.pending == 'true'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: version
+          path: ${{ runner.temp }}/version
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
+      - id: pr
+        if: steps.version.outputs.pending == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open="$(gh api "repos/$GITHUB_REPOSITORY/pulls?base=main&head=$GITHUB_REPOSITORY_OWNER:changeset-release/main&state=open" --jq length)"
+          echo "open=$open" >> "$GITHUB_OUTPUT"
+      # Offers a release only when nothing is pending: no changeset that bumps a version and no
+      # open Version packages PR. A manual run follows the same rule; it can re-offer a rejected
+      # or failed publish of an already-versioned release, but never packs main while changesets
+      # are pending.
+      - id: check
+        if: steps.pr.outputs.open == '0'
+        run: node scripts/release.mjs check
+
+  # Turns version.patch into the Version packages PR. Checks out main but installs and runs
+  # nothing from the repository, so no dependency code holds this write token.
+  version-pr:
+    name: Version packages
+    needs: version-prepare
+    if: needs.version-prepare.outputs.pending == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Job-level, so a publish waiting for approval never blocks updates of the Version packages PR.
+    concurrency:
+      group: release-version
+      cancel-in-progress: false
+    permissions:
+      contents: write # push the changeset-release/main branch
+      pull-requests: write # open or update the Version packages PR
+    outputs:
+      pushed: ${{ steps.push.outputs.pushed }}
+    steps:
+      # Keeps the checkout credentials to push; nothing from the repository runs in this job.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: version
+          path: ${{ runner.temp }}/version
+      # The patch may change only package.json versions (and the ranges of the repository's own
+      # packages), CHANGELOG.md files, changeset .md files (pre mode moves them to .changeset/pre/)
+      # and .changeset/pre.json, and may not create or delete a package.json. Anything else (a
+      # script, a dependency, `files`, .changeset/config.json, a symlink, an executable) fails.
+      - run: |
+          git apply --index "$RUNNER_TEMP/version/version.patch"
+          manifests='^((packages/[^/]+|layer)/)?package\.json$'
+          paths="$(git diff --cached --name-only --no-renames |
+            grep -Ev '^(((packages/[^/]+|layer)/)?(package\.json|CHANGELOG\.md)|\.changeset/((pre/)?[^/]+\.md|pre\.json))$' || true)"
+          modes="$(git diff --cached --summary --no-renames |
+            grep -Ev '^ (create|delete) mode 100644 (((packages/[^/]+|layer)/)?CHANGELOG\.md|\.changeset/((pre/)?[^/]+\.md|pre\.json))$' || true)"
+          own="$(git ls-tree -r --name-only HEAD | grep -E "$manifests" |
+            while read -r file; do git show "HEAD:$file"; done | jq -s '[.[].name | strings]')"
+          # shellcheck disable=SC2016 # a jq program: $own and $name are jq variables
+          # Normalize only numeric versions, retaining protocol and range operator. Wrap both
+          # recognized and unchanged values so an input cannot impersonate a normalization marker.
+          normalize='def own_range:
+            if type == "string" and test("^(?<prefix>(workspace:)?[~^]?)[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z-]+([.][0-9A-Za-z-]+)*)?([+][0-9A-Za-z-]+([.][0-9A-Za-z-]+)*)?$")
+            then {kind: "version-range", prefix: capture("^(?<prefix>(workspace:)?[~^]?)").prefix}
+            else {kind: "unmodified", value: .} end;
+            del(.version) | reduce ($own[]) as $name (.; reduce ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies") as $field (.; if .[$field][$name]? then .[$field][$name] |= own_range else . end))'
+          manifest=""
+          for file in $(git diff --cached --name-only --no-renames | grep -E "$manifests" || true); do
+            diff <(git show "HEAD:$file" | jq -S --argjson own "$own" "$normalize") \
+              <(jq -S --argjson own "$own" "$normalize" "$file") || manifest="$manifest $file"
+          done
+          if [[ -n "$paths$modes$manifest" ]]; then
+            echo "::error::version.patch changes files it must not change:"
+            printf '%s\n' "$paths" "$modes" "$manifest"
+            exit 1
+          fi
+      - id: push
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A newer push to main has its own run; do not overwrite its Version packages PR.
+          if [[ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$GITHUB_SHA" ]]; then
+            echo "main moved past $GITHUB_SHA; the newer run updates the PR."
+            echo pushed=false >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit --quiet --no-verify --message 'Version packages'
+          git push --force origin HEAD:refs/heads/changeset-release/main
+          {
+            echo 'Merging this pull request releases:'
+            echo
+            jq -r '.[] | "- `\(.name)@\(.version)`"' "$RUNNER_TEMP/version/versions.json"
+            echo
+            echo "The workflow checked that it changes only \`package.json\` versions, \`CHANGELOG.md\` files and consumed changesets."
+            echo "After the merge, approve the \`npm\` deployment."
+          } > "$RUNNER_TEMP/body.md"
+          pr="$(gh api "repos/$GITHUB_REPOSITORY/pulls?base=main&head=$GITHUB_REPOSITORY_OWNER:changeset-release/main&state=open" --jq '.[0].number // empty')"
+          if [[ -n "$pr" ]]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/$pr" \
+              -f title='Version packages' -F "body=@$RUNNER_TEMP/body.md" > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/pulls" -f title='Version packages' \
+              -f head=changeset-release/main -f base=main -F "body=@$RUNNER_TEMP/body.md" > /dev/null
+          fi
+          echo pushed=true >> "$GITHUB_OUTPUT"
+
+  # Pull requests opened with GITHUB_TOKEN start no workflows, so start ci here. This job
+  # checks out and installs nothing; its token expires before any other job could use it.
+  version-pr-ci:
+    needs: version-pr
+    if: needs.version-pr.outputs.pushed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: write # start ci.yml on the Version packages PR
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref changeset-release/main
+
+  pack:
+    needs: version-prepare
+    if: needs.version-prepare.outputs.publish == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: corepack enable pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: node scripts/release.mjs pack
+      # Rehearse the publish command on the exact tarballs, with the dist-tag publish will use,
+      # so a broken publish fails before the maintainer is asked to approve. No credentials.
+      - run: |
+          for tarball in ./release/*.tgz; do
+            version="$(tar -xOzf "$tarball" package/package.json | jq -r .version)"
+            tag=latest; if [[ "$version" == *-* ]]; then tag=next; fi
+            npm publish "$tarball" --dry-run --access public --ignore-scripts --tag "$tag"
+          done
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release
+          path: release
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: pack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: npm
+    # Approval order is not commit order. Serialize publication, then reject stale runs.
+    concurrency:
+      group: release-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read # check main after approval without checking out repository code
+      id-token: write # npm trusted publishing and provenance
+    steps:
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release
+          path: release
+      - name: Reject stale release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)"
+          if [[ "$current" != "$GITHUB_SHA" ]]; then
+            echo "::error::main moved past $GITHUB_SHA; run release again from current main."
+            exit 1
+          fi
+      # Skips versions already on npm, so "Re-run failed jobs" is safe after a partial publish.
+      # Versions with a `-` (prereleases) go to `next`, all others to `latest`.
+      - run: |
+          for tarball in ./release/*.tgz; do
+            version="$(tar -xOzf "$tarball" package/package.json | jq -r .version)"
+            spec="$(tar -xOzf "$tarball" package/package.json | jq -r .name)@$version"
+            if npm view "$spec" version --json > "$RUNNER_TEMP/npm-version.json" 2> "$RUNNER_TEMP/npm-version.err"; then
+              published="$(jq -er 'select(type == "string")' "$RUNNER_TEMP/npm-version.json")"
+              if [[ "$published" != "$version" ]]; then echo "::error::Unexpected npm version for $spec"; exit 1; fi
+              echo "$spec is already on npm"; continue
+            elif ! jq -e '.error.code == "E404"' "$RUNNER_TEMP/npm-version.json" > /dev/null 2>&1; then
+              cat "$RUNNER_TEMP/npm-version.err" >&2
+              echo "::error::Cannot verify whether $spec exists on npm"; exit 1
+            fi
+            tag=latest; if [[ "$version" == *-* ]]; then tag=next; fi
+            npm publish "$tarball" --provenance --access public --ignore-scripts --tag "$tag"
+          done
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write # create the tag and the GitHub release
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release
+          path: release
+      # One release per entry in releases.json; existing releases are skipped, so re-runs are
+      # safe. Tags point only at the released commit: an existing tag that points elsewhere
+      # fails the job.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(jq 'keys[]' release/releases.json); do
+            tag="$(jq -r ".[$i].tag" release/releases.json)"
+            target="$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" \
+              --jq ".[] | select(.ref == \"refs/tags/$tag\") | .object | \"\(.type) \(.sha)\"")"
+            if [[ "$target" == tag\ * ]]; then
+              target="commit $(gh api "repos/$GITHUB_REPOSITORY/git/tags/${target#tag }" --jq .object.sha)"
+            fi
+            if [[ -n "$target" && "$target" != "commit $GITHUB_SHA" ]]; then
+              echo "::error::Tag $tag exists but does not point at $GITHUB_SHA."; exit 1
+            fi
+            jq -r ".[$i].notes" release/releases.json > notes.md
+            prerelease=()
+            if [[ "$(jq -r ".[$i].prerelease" release/releases.json)" == true ]]; then prerelease=(--prerelease); fi
+            gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 ||
+              gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+                --title "$tag" --notes-file notes.md "${prerelease[@]}"
+          done

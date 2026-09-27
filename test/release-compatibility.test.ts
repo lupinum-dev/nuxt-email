@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, test } from 'vitest'
-import { consumerFrameworkVersions, installedFrameworkVersions } from '../scripts/verify-release'
+import { consumerFrameworkVersions, installedFrameworkVersions } from '../scripts/test-packed'
 
 const source = {
   peerDependencies: { nuxt: '>=4.1.0 <5', vue: '^3.2.0' },
