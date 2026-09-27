@@ -8,11 +8,19 @@ const git = (...args) => spawnSync('git', args, { encoding: 'utf8' })
 const bumps = text => [...text.matchAll(/^\s*(['"]?)(\S+?)\1\s*:\s*['"]?(major|minor|patch)['"]?\s*$/gm)].map(([, , name, bump]) => ({ name, bump }))
 
 const failures = []
-// Pre mode retains notes already included in a beta. Do not restyle published history
-// when an existing library adopts this helper; validate every unconsumed note.
-const pre = existsSync('.changeset/pre.json') ? JSON.parse(readFileSync('.changeset/pre.json', 'utf8')) : { changesets: [] }
-if (!Array.isArray(pre?.changesets) || pre.changesets.some(name => typeof name !== 'string')) throw new Error('.changeset/pre.json must contain a changesets array of names')
-const consumed = new Set(pre.changesets)
+// v2 retains consumed notes at the root; v3 moves them into pre/ and keeps only
+// mode/tag. Accept both real formats without treating malformed legacy state as empty.
+let consumedNames = []
+if (existsSync('.changeset/pre.json')) {
+  const pre = JSON.parse(readFileSync('.changeset/pre.json', 'utf8'))
+  if (!pre || !['pre', 'exit'].includes(pre.mode) || typeof pre.tag !== 'string' || !pre.tag.trim() || Object.keys(pre).some(key => !['mode', 'tag', 'changesets', 'initialVersions'].includes(key))) throw new Error('.changeset/pre.json requires a valid mode and tag')
+  if ('changesets' in pre || 'initialVersions' in pre) {
+    if (!Array.isArray(pre.changesets) || pre.changesets.some(name => typeof name !== 'string')) throw new Error('Legacy .changeset/pre.json must contain a changesets array of names')
+    if ('initialVersions' in pre && (!pre.initialVersions || typeof pre.initialVersions !== 'object' || Array.isArray(pre.initialVersions) || Object.values(pre.initialVersions).some(version => typeof version !== 'string'))) throw new Error('Legacy initialVersions must map package names to versions')
+    consumedNames = pre.changesets
+  }
+}
+const consumed = new Set(consumedNames)
 for (const file of readdirSync('.changeset').filter(name => name.endsWith('.md') && name !== 'README.md')) {
   if (consumed.has(file.slice(0, -3))) continue
   const match = /^---\r?\n([\s\S]*?)^---\r?\n?([\s\S]*)$/m.exec(readFileSync(`.changeset/${file}`, 'utf8'))
