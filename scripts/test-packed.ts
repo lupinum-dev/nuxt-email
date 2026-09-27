@@ -328,6 +328,17 @@ async function verifyStandaloneConsumer(consumerDirectory: string, installedPack
     assert.deepEqual(emails.map(email => email.subject), ['Welcome, Ada', 'Welcome, Grace'])
     assert.ok(emails[0].html.includes('font-weight:700'))
     assert.ok(emails[0].text.includes('https://example.test'))
+    await assert.rejects(renderEmail('css-variants', { variant: '@sm:bg-red-500' }), error => {
+      assert.match(String(error.cause ?? error), /@container rules are not supported/)
+      return true
+    })
+    for (const [variant, selector, declaration] of [
+      ['*:bg-red-500', ':is(.__bg-red-500>*)', 'background-color:rgb(251,44,54)!important'],
+      ['**:text-blue-500', ':is(.___text-blue-500 *)', 'color:rgb(43,127,255)!important'],
+    ]) {
+      const email = await renderEmail('css-variants', { variant })
+      assert.ok(email.html.includes(selector) && email.html.includes(declaration), 'Packed child variant lost its condition or style')
+    }
     const render = await import('@lupinum/nuxt-email/render')
     const testing = await import('@lupinum/nuxt-email/testing')
     const errors = await import('@lupinum/nuxt-email/errors')

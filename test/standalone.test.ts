@@ -62,6 +62,20 @@ describe('standalone production registry', () => {
     })
   })
 
+  it('retains child utilities and rejects unsupported container conditions after compilation', async () => {
+    await expect(renderEmail('css-variants', { variant: '@sm:bg-red-500' })).rejects.toMatchObject({
+      cause: { message: expect.stringContaining('@container rules are not supported') },
+    })
+    for (const [variant, selector, declaration] of [
+      ['*:bg-red-500', ':is(.__bg-red-500>*)', 'background-color:rgb(251,44,54)!important'],
+      ['**:text-blue-500', ':is(.___text-blue-500 *)', 'color:rgb(43,127,255)!important'],
+    ]) {
+      const email = await renderEmail('css-variants', { variant })
+      expect(email.html).toContain(selector)
+      expect(email.html).toContain(declaration)
+    }
+  })
+
   it('emits ordinary TypeScript declarations without requiring source SFC resolution', async () => {
     const check = join(temporary, 'check.mts')
     await writeFile(check, `import { renderEmail } from './generated/index.mjs'
