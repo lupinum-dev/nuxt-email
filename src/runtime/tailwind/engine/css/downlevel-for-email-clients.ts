@@ -20,6 +20,7 @@ import {
   type StyleSheet,
   walk,
 } from '../../css-tree'
+import { NON_INLINABLE_ATRULES } from './constants'
 
 /**
  * css-tree 3.x parses media range syntax, but the currently published type
@@ -264,7 +265,7 @@ function assertNoNestingSelector(selectors: SelectorList): void {
 }
 
 function isConditionalAtrule(atrule: Atrule): boolean {
-  return atrule.name === 'media' || atrule.name === 'supports'
+  return NON_INLINABLE_ATRULES.has(atrule.name.toLowerCase())
 }
 
 function clonePrelude(prelude: Atrule['prelude']): Atrule['prelude'] {

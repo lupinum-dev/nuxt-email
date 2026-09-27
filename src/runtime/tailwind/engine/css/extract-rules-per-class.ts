@@ -1,4 +1,5 @@
-import { type CssNode, type Rule, string, walk } from '../../css-tree'
+import { type Atrule, clone, type CssNode, List, type Rule, string, walk } from '../../css-tree'
+import { NON_INLINABLE_ATRULES } from './constants'
 import { isRuleInlinable } from './is-rule-inlinable'
 import { splitMixedRule } from './split-mixed-rule'
 
@@ -35,56 +36,86 @@ export function extractRulesPerClass(
     }
   }
 
-  walk(root, {
-    visit: 'Rule',
-    enter(rule) {
-      // A nested rule (e.g. group/peer's `&:is(:where(.group):hover *)`) belongs
-      // to its parent utility; processing it standalone emits a bare, parentless
-      // `&` rule into the <style> block, so skip it here.
-      const firstSelector
-        = rule.prelude.type === 'SelectorList'
-          ? rule.prelude.children.first
-          : null
-      if (
-        firstSelector?.type === 'Selector'
-        && firstSelector.children.first?.type === 'NestingSelector'
-      ) {
-        return
-      }
+  const enclosingAtRules: Atrule[] = []
+  const handleRule = (rule: Rule) => {
+    // A nested rule (e.g. group/peer's `&:is(:where(.group):hover *)`) belongs
+    // to its parent utility; processing it standalone emits a bare, parentless
+    // `&` rule into the <style> block, so skip it here.
+    const firstSelector
+      = rule.prelude.type === 'SelectorList'
+        ? rule.prelude.children.first
+        : null
+    if (
+      firstSelector?.type === 'Selector'
+      && firstSelector.children.first?.type === 'NestingSelector'
+    ) {
+      return
+    }
 
-      // Only the prelude names the class that owns the rule; classes referenced
-      // inside the block (e.g. `.group` in `:where(.group)`) must not key it.
-      const selectorClasses: string[] = []
-      walk(rule.prelude, {
-        visit: 'ClassSelector',
-        enter(classSelector) {
-          selectorClasses.push(string.decode(classSelector.name))
-        },
-      })
-      if (isRuleInlinable(rule)) {
-        for (const className of selectorClasses) {
-          if (classSet.has(className)) {
-            appendRule(inlinableRules, className, rule)
-          }
+    // Only the prelude names the class that owns the rule; classes referenced
+    // inside the block (e.g. `.group` in `:where(.group)`) must not key it.
+    const selectorClasses: string[] = []
+    walk(rule.prelude, {
+      enter(node: CssNode) {
+        // Group/peer markers inside :is/:where are conditions, not owners.
+        if (node.type === 'PseudoClassSelector' || node.type === 'PseudoElementSelector') return walk.skip
+        if (node.type === 'ClassSelector') selectorClasses.push(string.decode(node.name))
+      },
+    })
+    if (enclosingAtRules.length > 0) {
+      // Tailwind 4.3.3 wraps variant rules in conditional at-rules. Restore
+      // the nested shape expected by the existing email downlevel pass.
+      const conditional = clone(rule) as Rule
+      for (const atRule of [...enclosingAtRules].reverse()) {
+        conditional.block.children = new List<CssNode>().fromArray([{
+          type: 'Atrule',
+          name: atRule.name,
+          prelude: atRule.prelude ? clone(atRule.prelude) as Atrule['prelude'] : null,
+          block: { type: 'Block', children: conditional.block.children },
+        }])
+      }
+      let includesRequestedClass = false
+      for (const className of selectorClasses) {
+        if (!classSet.has(className)) continue
+        includesRequestedClass = true
+        appendRule(nonInlinableRules, className, conditional)
+      }
+      if (includesRequestedClass) orderedNonInlinableRules.push(conditional)
+      return
+    }
+    if (isRuleInlinable(rule)) {
+      for (const className of selectorClasses) {
+        if (classSet.has(className)) {
+          appendRule(inlinableRules, className, rule)
         }
       }
-      else {
-        const { inlinablePart, nonInlinablePart } = splitMixedRule(rule)
-        let includesRequestedClass = false
-        for (const className of selectorClasses) {
-          if (!classSet.has(className)) continue
-          includesRequestedClass = true
-          if (inlinablePart) {
-            appendRule(inlinableRules, className, inlinablePart)
-          }
-          if (nonInlinablePart) {
-            appendRule(nonInlinableRules, className, nonInlinablePart)
-          }
+    }
+    else {
+      const { inlinablePart, nonInlinablePart } = splitMixedRule(rule)
+      let includesRequestedClass = false
+      for (const className of selectorClasses) {
+        if (!classSet.has(className)) continue
+        includesRequestedClass = true
+        if (inlinablePart) {
+          appendRule(inlinableRules, className, inlinablePart)
         }
-        if (includesRequestedClass && nonInlinablePart) {
-          orderedNonInlinableRules.push(nonInlinablePart)
+        if (nonInlinablePart) {
+          appendRule(nonInlinableRules, className, nonInlinablePart)
         }
       }
+      if (includesRequestedClass && nonInlinablePart) {
+        orderedNonInlinableRules.push(nonInlinablePart)
+      }
+    }
+  }
+
+  walk(root, {
+    enter(node: CssNode) {
+      if (node.type === 'Atrule' && NON_INLINABLE_ATRULES.has(node.name.toLowerCase())) enclosingAtRules.push(node)
+      else if (node.type === 'Rule') handleRule(node)
+    },
+    leave(node: CssNode) {
+      if (node.type === 'Atrule' && NON_INLINABLE_ATRULES.has(node.name.toLowerCase())) enclosingAtRules.pop()
     },
   })
   return {

@@ -1,6 +1,6 @@
 # React Email conformance report
 
-Nuxt Email 1.0.0-beta.4 is compared against React Email 6.9.0 and @react-email/render 2.1.0. Compatibility is reported per behavior; no global compatibility percentage is claimed.
+Nuxt Email 1.0.0-beta.4 is compared against React Email 6.11.0 and @react-email/render 2.1.0. Compatibility is reported per behavior; no global compatibility percentage is claimed.
 
 ## Summary
 
@@ -8,9 +8,9 @@ Nuxt Email 1.0.0-beta.4 is compared against React Email 6.9.0 and @react-email/r
 | ---: | ---: | ---: | ---: |
 | 57 | 57 | 0 | 1 |
 
-Oracle source commit: `6eb428924c4c2774228a07cbec1977ad8898f143`  
-Published package commit: `71656573fa24b09e48173ae2357bf712fcb401b6`  
-Oracle SHA-256: `dbaa8433377c15cc029d3f42c943a87cbfa42e17e411e738e2deddeb26e5b768`
+Oracle source commit: `15419ff1f4cd0e32ed2c15a4a9182cc47a200a60`  
+Published package commit: `15419ff1f4cd0e32ed2c15a4a9182cc47a200a60`  
+Oracle SHA-256: `af76de6653bea190b336cab5f8661cf63eb05655459843c9435c795e0fb24924`
 
 ## Classifications
 

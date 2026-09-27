@@ -2,12 +2,9 @@
  * Vendors the bundled Tailwind CSS v4 stylesheets that drive the email engine's
  * `compile()` call into a single string-export module.
  *
- * React Email (`@react-email/render` / `react-email@6.9.0`) ships its own
- * hand-maintained copies of these stylesheets under
- * `components/tailwind/utils/tailwindcss/tailwind-stylesheets/*.ts`. Those copies
- * differ from the installed `tailwindcss` package ONLY inside CSS comments
- * (e.g. `` `:invalid` `` -> `` `: invalid` ``); the css-tree parser drops
- * comments before any rule is extracted, so the two are functionally identical.
+ * React Email keeps its own stylesheets. Nuxt Email pins the compiler and
+ * these stylesheets together; conformance tests compare their rendered output
+ * against the separately pinned React Email oracle.
  *
  * We deliberately vendor byte-for-byte from the installed `tailwindcss` package
  * instead of hand-copying, so the source of truth is the pinned dependency and a

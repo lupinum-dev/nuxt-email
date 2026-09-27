@@ -27,16 +27,16 @@ import {
 } from 'react-email'
 import { plainTextCorpus } from '../plain-text-corpus'
 
-const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.9.0.json', import.meta.url))
+const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.11.0.json', import.meta.url))
 const REACT_EMAIL_CHECKOUT = process.env.NUXT_EMAIL_REACT_EMAIL_CHECKOUT
   ? resolve(process.env.NUXT_EMAIL_REACT_EMAIL_CHECKOUT)
   : fileURLToPath(new URL('../../../../react-email', import.meta.url))
-const SOURCE_CHECKOUT_COMMIT = '6eb428924c4c2774228a07cbec1977ad8898f143'
-const PUBLISHED_PACKAGE_COMMIT = '71656573fa24b09e48173ae2357bf712fcb401b6'
+const SOURCE_CHECKOUT_COMMIT = '15419ff1f4cd0e32ed2c15a4a9182cc47a200a60'
+const PUBLISHED_PACKAGE_COMMIT = '15419ff1f4cd0e32ed2c15a4a9182cc47a200a60'
 
 const oracleMetadata = {
   package: 'react-email',
-  version: '6.9.0',
+  version: '6.11.0',
   rendererPackage: '@react-email/render',
   rendererVersion: '2.1.0',
   reactVersion: '19.2.7',

@@ -4,6 +4,22 @@ import { setupTailwind } from '../../../src/runtime/tailwind/engine/setup-tailwi
 import { extractRulesPerClass } from '../../../src/runtime/tailwind/engine/css/extract-rules-per-class'
 
 describe('extractRulesPerClass()', () => {
+  it('keeps enclosing media and supports conditions out of inline styles', () => {
+    const stylesheet = parse(`
+      .base { color: black }
+      @MEDIA (prefers-color-scheme: dark) {
+        @supports (color: red) { .conditional { color: white } }
+      }
+      .after { color: red }
+    `) as StyleSheet
+    const rules = extractRulesPerClass(stylesheet, ['base', 'conditional', 'after'])
+    expect([...rules.inlinable.keys()]).toEqual(['base', 'after'])
+    expect([...rules.nonInlinable.keys()]).toEqual(['conditional'])
+    expect(rules.orderedNonInlinable.map(rule => generate(rule))).toEqual([
+      '.conditional{@MEDIA (prefers-color-scheme:dark){@supports (color:red){color:white}}}',
+    ])
+  })
+
   function convertToComparable(
     map: Map<string, Rule[]>,
   ): Record<string, string[]> {
@@ -66,8 +82,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(inlinable)).toMatchInlineSnapshot(`
       {
         "box": [
-          ".box{border-radius:var(--radius-lg);background-color:var(--color-white);padding:calc(var(--spacing)*4)}",
-          ".box{background-color:var(--color-red-500)}",
+          ".box{border-radius:var(--radius-lg);background-color:var(--color-white);padding:calc(var(--spacing)*4);background-color:var(--color-red-500)}",
         ],
       }
     `)
@@ -203,7 +218,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "btn": [
-          ".btn{&:hover{color:red}}",
+          ".btn:hover{color:red}",
         ],
       }
     `)
@@ -226,7 +241,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "group-hover:underline": [
-          ".group-hover\\:underline{&:is(:where(.group):hover *){@media (hover:hover){text-decoration-line:underline}}}",
+          ".group-hover\\:underline:is(:where(.group):hover *){@media (hover:hover){text-decoration-line:underline}}",
         ],
       }
     `)

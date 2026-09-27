@@ -1,7 +1,7 @@
 import type { TailwindConfig } from '../../src/runtime/tailwind/engine/index'
 import type { Component, VNodeChild } from 'vue'
 import { generate, parse, type StyleSheet } from 'css-tree'
-import oracle from './oracle/react-email-6.9.0.json'
+import oracle from './oracle/react-email-6.11.0.json'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import {
@@ -100,8 +100,8 @@ describe('eTailwind conformance', () => {
   }, async () => {
     const html = await render(undefined, h(EText, { class: 'm-0' }, { default: () => 'Content' }))
     expectMatches(html, 'tw-component-style-override')
-    // m-0 => margin:0rem is fed into EText, which re-splits it into all four sides.
-    expect(html).toContain('style="font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem;"')
+    // m-0 => margin:0px is fed into EText, which re-splits it into all four sides.
+    expect(html).toContain('style="font-size:14px;line-height:24px;margin:0px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px;"')
   })
 
   it('tw-section-padding: utility padding is split onto the Section cell', {
@@ -279,7 +279,7 @@ describe('eTailwind conformance', () => {
     // The plain nested div: utilities inlined, md:text-lg sanitized and kept as residual.
     expect(html).toContain('<div class="md_text-lg" style="background-color:rgb(251,44,54);padding:1rem;">')
     // The nested EText: m-0 flows into its margin logic, killing the default 16px margins.
-    expect(html).toContain('margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem;')
+    expect(html).toContain('margin:0px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px;')
     // The nested EButton: px-4 (16px) drives the Outlook spacer width, derived at render time.
     expect(html).toContain('<!--[if mso]><i style="mso-font-width:400%;mso-text-raise:12px" hidden>&#8202;&#8202;</i><![endif]-->')
     // The nested-only md:text-lg media query reaches the head style.

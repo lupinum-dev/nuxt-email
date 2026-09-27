@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import oracle from './oracle/react-email-6.9.0.json'
+import oracle from './oracle/react-email-6.11.0.json'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import type { EFontProps } from '../../src/runtime/components/EFont'

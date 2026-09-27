@@ -104,7 +104,7 @@ describe('stripEmptyTailwindVars() with non-inlinable print: rules', () => {
     expect(result).not.toMatch(/var\(--tw-[^,()]+,\s*\)/)
     expect(result).not.toMatch(/--tw-[^:]+:/)
     expect(result).toMatchInlineSnapshot(
-      `"/*! tailwindcss v4.1.18 | MIT License | https://tailwindcss.com */@layer theme,base,components,utilities;@layer utilities{.print_border-solid{@media print{border-style:solid!important}}}"`,
+      `"/*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */@layer theme,base,components,utilities;@layer utilities{@media print{.print_border-solid{border-style:solid!important}}}"`,
     )
   })
 })
