@@ -1,5 +1,6 @@
 // Dependency audit for CI: a high or critical advisory blocks only when users would install it,
-// through the production dependencies of a published package. Everything else is a warning.
+// through the production dependencies of a published package. Every other production finding is a
+// warning. Dev tools are not audited here (`--prod`); Dependabot alerts cover them.
 import { spawnSync } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import { relative, resolve, sep } from 'node:path'
@@ -7,11 +8,10 @@ import { pathToFileURL } from 'node:url'
 
 export function classifyAdvisories(report, importers) {
   if (!report.advisories || report.error) throw new Error('pnpm audit did not return advisories')
-  return Object.values(report.advisories).map(advisory => ({
-    ...advisory,
-    blocks: ['high', 'critical'].includes(advisory.severity) && advisory.findings.some(finding =>
-      finding.paths.some(path => importers.has(path.split('>')[0]))),
-  }))
+  return Object.values(report.advisories).map((advisory) => {
+    const reachesUsers = advisory.findings.some(finding => finding.paths.some(path => importers.has(path.split('>')[0])))
+    return { ...advisory, reachesUsers, blocks: reachesUsers && ['high', 'critical'].includes(advisory.severity) }
+  })
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
@@ -25,7 +25,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const audited = run(['audit', '--prod', '--json']) // findings make pnpm exit nonzero
   const findings = classifyAdvisories(JSON.parse(audited.stdout), importers)
   for (const finding of findings) {
-    const where = finding.blocks ? 'users install it with a published package' : 'not installed by users of a published package'
+    const where = finding.reachesUsers ? 'users install it with a published package' : 'not installed by users of a published package'
     console.log(`${finding.blocks ? '::error::' : '::warning::'}${finding.module_name}: ${finding.title} (${finding.severity}; ${where}) ${finding.url ?? ''}`.trim())
   }
   const blocking = findings.filter(finding => finding.blocks).length
