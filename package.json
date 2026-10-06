@@ -83,7 +83,7 @@
     "test:conformance": "vitest run test/conformance",
     "test:watch": "vitest watch",
     "verify": "pnpm audit --audit-level=high && pnpm lint && pnpm typecheck && pnpm test && pnpm oracle:check && pnpm test:packed",
-    "build": "nuxt-module-build build",
+    "build": "nuxt-module-build prepare && nuxt-module-build build",
     "typecheck": "pnpm dev:prepare && nuxt prepare test/fixtures/basic && nuxt prepare test/fixtures/code-block && nuxt prepare test/fixtures/preview && vue-tsc --noEmit && vue-tsc --noEmit -p test/fixtures/basic/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/code-block/.nuxt/tsconfig.server.json && vue-tsc --noEmit -p test/fixtures/preview/.nuxt/tsconfig.server.json && cd playground && vue-tsc --noEmit",
     "test:packed": "node --import tsx scripts/test-packed.ts",
     "changeset": "changeset"
