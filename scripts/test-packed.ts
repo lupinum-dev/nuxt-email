@@ -19,8 +19,6 @@ import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { verifyPackageAgentDocs } from './package-agent-docs.mjs'
-
 interface PackageManifest {
   name?: unknown
   version?: unknown
@@ -286,6 +284,21 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
     ...packed.peerDependencies,
   })) {
     invariant(!/^(?:file|link|workspace):/.test(specifier), `Published dependency ${name} cannot use ${specifier}`)
+  }
+}
+
+// `scripts/agent-docs.mjs` writes dist/agent/AGENTS.md as an index of the rendered docs pages.
+// Agents in consuming projects follow its links, so every link must reach a packed page.
+async function verifyAgentDocs(packageDirectory: string, version: unknown): Promise<void> {
+  invariant(typeof version === 'string', 'Packed package has no version')
+  const agentRoot = join(packageDirectory, 'dist/agent')
+  const index = await readFile(join(agentRoot, 'AGENTS.md'), 'utf8')
+  invariant(index.startsWith(`# ${releaseContract.name} ${version} documentation\n`), 'Packed agent docs do not name the packed version')
+  const links = [...index.matchAll(/\]\((\.\/pages\/[^)\s]+)\)/g)].map(match => match[1]!)
+  invariant(links.length > 0, 'Packed agent docs list no pages')
+  const pages = new Set((await collectFiles(join(agentRoot, 'pages'))).map(path => relative(agentRoot, path).replaceAll('\\', '/')))
+  for (const link of links) {
+    invariant(pages.has(link.slice(2)), `Packed agent docs link to a missing page: ${link}`)
   }
 }
 
@@ -688,7 +701,6 @@ async function testPackedPackage(): Promise<void> {
       'dist/runtime/dev-preview/render.get.js',
       'dist/runtime/dev-preview/templates.get.js',
       'dist/agent/AGENTS.md',
-      'dist/agent/manifest.json',
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }
@@ -716,7 +728,7 @@ async function testPackedPackage(): Promise<void> {
       'Packed package contains workspace-only source, test, script, playground, or dependency files',
     )
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
-    await verifyPackageAgentDocs(inspectedPackageRoot)
+    await verifyAgentDocs(inspectedPackageRoot, packedManifest.version)
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
     for (const requiredText of ['wordmark-light.svg', '@lupinum/nuxt-email', 'renderEmail']) {
