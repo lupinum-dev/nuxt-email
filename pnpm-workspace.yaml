@@ -16,7 +16,7 @@ overrides:
   # Remove when @nuxt/devtools resolves @simple-git/argv-parser 2.0.1 or newer.
   '@simple-git/argv-parser': 2.0.1
   # Remove when every parent resolves brace-expansion 2.1.6 / 5.0.11 or newer.
-  'brace-expansion@>=2.0.0 <3.0.0': 2.1.6
+  'brace-expansion@>=2.0.0 <3.0.0': 5.0.12
   'brace-expansion@>=4.0.0 <6.0.0': 5.0.11
   # Remove when every parent resolves browserslist 4.28.7 or newer.
   browserslist: 4.28.7
@@ -40,3 +40,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+minimumReleaseAgeExclude:
+  # Renovate security update: brace-expansion@5.0.12
+  - brace-expansion@5.0.12
