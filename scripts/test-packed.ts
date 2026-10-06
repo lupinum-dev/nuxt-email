@@ -346,6 +346,7 @@ async function verifyFreshConsumer(
   workspaceStore: string,
   packedManifest: PackageManifest,
   frameworks: FrameworkVersions,
+  packageManager: string,
 ): Promise<FreshConsumerResult> {
   const freshInstallStartedAt = performance.now()
   const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}-${variant}`)
@@ -359,6 +360,8 @@ async function verifyFreshConsumer(
   invariant(consumerManifest.dependencies['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
   invariant(consumerManifest.dependencies.nuxt === '__NUXT_VERSION__' && consumerManifest.dependencies.vue === '__VUE_VERSION__', 'Fresh-install fixtures must derive framework versions from package.json')
   Object.assign(consumerManifest.dependencies, frameworks)
+  // Consumers live outside the repository, so Corepack would otherwise pick its newest pnpm.
+  consumerManifest.packageManager = packageManager
   consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
@@ -773,6 +776,7 @@ async function testPackedPackage(): Promise<void> {
             workspaceStore,
             packedManifest,
             frameworks,
+            sourceManifest.packageManager,
           ))
           process.stdout.write(`  ${variant} consumer passed: Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue}\n`)
         }
