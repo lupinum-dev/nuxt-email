@@ -30,3 +30,11 @@
   Directory `docs` and files outside the root included. Cancel pending runs from
   older workflow definitions and start a fresh current-main run; rerunning an old
   run does not add the new guards. No provider settings change in this code.
+- **D5 (2026-10-06): Ignore five tooling advisories that cannot be fixed yet.**
+  `pnpm audit` reports node-forge (via `@nuxt/cli` listhen) and braces (via
+  nitropack) with no patched release, and simple-git (via `@nuxt/devtools`), whose
+  fix needs simple-git 4, which stable devtools cannot load. All five run only in
+  local dev servers or builds, not in rendered emails or the published runtime.
+  `auditConfig.ignoreGhsas` in `pnpm-workspace.yaml` lists them so the audit gate
+  still catches new advisories. Remove each entry once a usable fix resolves it;
+  review by 2026-11-06.

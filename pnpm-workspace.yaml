@@ -42,3 +42,13 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+
+auditConfig:
+  # Dev and build tooling only, no fixed release usable today (see DECISIONS.md D5).
+  # Remove each entry when `pnpm audit` no longer reports it. Review by 2026-11-06.
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv # node-forge via @nuxt/cli listhen; no fix published
+    - GHSA-vfj7-8cjw-p6xm # braces via nitropack globby; no fix published
+    - GHSA-x6jw-m9v5-85vh # simple-git via @nuxt/devtools; fix needs simple-git 4
+    - GHSA-g4wm-2vf7-vfgr # simple-git via @nuxt/devtools; fix needs simple-git 4
+    - GHSA-858h-whjf-mvg5 # simple-git via @nuxt/devtools; fix needs simple-git 4
