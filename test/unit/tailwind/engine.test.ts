@@ -18,6 +18,11 @@ describe('createTailwindEngine()', () => {
     expect(() => engine.computeStyles(classes)).toThrow('@container rules are not supported')
   })
 
+  it.each(['scope (.card)', 'container (min-width: 10px)'])('rejects custom CSS that wraps a class in @%s', async (atRule) => {
+    const engine = await createTailwindEngine({ utility: `@${atRule} { .brand { color: red; } }` })
+    expect(() => engine.computeStyles(['brand'])).toThrow(`@${atRule.split(' ')[0]} rules are not supported`)
+  })
+
   it.each([
     { utility: '*:bg-red-500', declaration: 'background-color:rgb(251,44,54)!important' },
     { utility: '**:text-blue-500', declaration: 'color:rgb(43,127,255)!important' },
