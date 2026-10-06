@@ -36,7 +36,6 @@ interface TaggedResult {
 const REPORT_MODE = process.env.NUXT_EMAIL_CONFORMANCE_REPORT ?? 'check'
 const ROOT_PATH = fileURLToPath(new URL('../../..', import.meta.url))
 const ORACLE_PATH = fileURLToPath(new URL('../oracle/react-email-6.11.0.json', import.meta.url))
-const PACKAGE_PATH = fileURLToPath(new URL('../../../package.json', import.meta.url))
 const JSON_REPORT_PATH = fileURLToPath(new URL('../../../docs/conformance/report.json', import.meta.url))
 const MARKDOWN_REPORT_PATH = fileURLToPath(new URL('../../../docs/conformance/report.md', import.meta.url))
 const TAG_PREFIX = 'conformance:'
@@ -56,7 +55,6 @@ function markdownCell(value: string): string {
 function buildReports(results: Map<string, TaggedResult>): { json: string, markdown: string } {
   const oracleSource = readFileSync(ORACLE_PATH, 'utf8')
   const manifest = JSON.parse(oracleSource) as OracleManifest
-  const packageManifest = JSON.parse(readFileSync(PACKAGE_PATH, 'utf8')) as { version: string }
   const caseIds = Object.keys(manifest.cases).sort(compareCodePoints)
   const missingCases = caseIds.filter(caseId => !results.has(caseId))
   const unknownCases = [...results.keys()].filter(caseId => !(caseId in manifest.cases)).sort(compareCodePoints)
@@ -102,7 +100,6 @@ function buildReports(results: Map<string, TaggedResult>): { json: string, markd
 
   const report = {
     schemaVersion: 1,
-    nuxtEmailVersion: packageManifest.version,
     oracle: manifest.oracle,
     oracleSha256: createHash('sha256').update(oracleSource).digest('hex'),
     summary: {
@@ -153,7 +150,7 @@ function buildReports(results: Map<string, TaggedResult>): { json: string, markd
   ].join('\n')
   const markdown = `# React Email conformance report
 
-Nuxt Email ${packageManifest.version} is compared against React Email ${manifest.oracle.version} and @react-email/render ${manifest.oracle.rendererVersion}. Compatibility is reported per behavior; no global compatibility percentage is claimed.
+This commit of Nuxt Email is compared against React Email ${manifest.oracle.version} and @react-email/render ${manifest.oracle.rendererVersion}. Compatibility is reported per behavior; no global compatibility percentage is claimed.
 
 ## Summary
 
