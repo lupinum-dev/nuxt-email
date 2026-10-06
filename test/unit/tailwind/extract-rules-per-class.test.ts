@@ -10,6 +10,26 @@ describe('extractRulesPerClass()', () => {
     expect(extractRulesPerClass(stylesheet, ['other']).inlinable.size).toBe(0)
   })
 
+  it.each([
+    { css: ':not(.x){color:red}', requested: ['x'] },
+    { css: ':has(.child){color:red}', requested: ['child'] },
+    { css: ':where(.utility):not(.x){color:red}', requested: ['x'] },
+  ])('does not let a condition class in $css own the rule', ({ css, requested }) => {
+    const rules = extractRulesPerClass(parse(css) as StyleSheet, requested)
+    expect(rules.inlinable.size).toBe(0)
+    expect(rules.nonInlinable.size).toBe(0)
+    expect(rules.orderedNonInlinable).toEqual([])
+  })
+
+  it.each(['where', 'not', 'has'])('keys a [:%s(&)] arbitrary variant by its own utility', async (pseudo) => {
+    const utility = `[:${pseudo}(&)]:bg-red-500`
+    const tailwind = await setupTailwind()
+    tailwind.addUtilities([utility])
+    const rules = extractRulesPerClass(tailwind.getStyleSheet(), [utility])
+    expect([...rules.nonInlinable.keys()]).toEqual([utility])
+    expect(rules.inlinable.size).toBe(0)
+  })
+
   it('retains unconditional utilities inside a structural layer', () => {
     const stylesheet = parse('@layer utilities {.utility {color:red}}') as StyleSheet
     expect(extractRulesPerClass(stylesheet, ['utility']).inlinable.has('utility')).toBe(true)

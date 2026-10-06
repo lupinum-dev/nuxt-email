@@ -3,8 +3,19 @@ import { NON_INLINABLE_ATRULES } from './constants'
 import { isRuleInlinable } from './is-rule-inlinable'
 import { splitMixedRule } from './split-mixed-rule'
 
-// Selector functions whose arguments can name the class that owns a rule.
-const OWNER_FUNCTIONS = new Set(['is', 'where', 'not', 'has', 'matches'])
+// Selector functions whose arguments can name the class that owns a rule. A class
+// inside :not() or :has() is a condition on another element, never the owner.
+const OWNER_FUNCTIONS = new Set(['is', 'where', 'matches'])
+const SELECTOR_FUNCTIONS = new Set([...OWNER_FUNCTIONS, 'not', 'has'])
+
+// Tailwind builds an arbitrary variant such as `[:not(&)]:bg-red-500` by putting the
+// utility's own class where `&` stands. That class names the same functions it sits in,
+// so it owns the rule even inside :not() or :has(); any other class there is a condition.
+function isOwnArbitraryVariant(className: string, functions: string[]): boolean {
+  return className.includes('&') && functions
+    .filter(name => !OWNER_FUNCTIONS.has(name))
+    .every(name => className.toLowerCase().includes(`:${name}(`))
+}
 
 export interface ExtractedRules {
   inlinable: Map<string, Rule[]>
@@ -61,13 +72,27 @@ export function extractRulesPerClass(
     if (rule.prelude.type === 'SelectorList') {
       rule.prelude.children.forEach((selector) => {
         const owners: string[] = []
-        const collect = (insideFunctions: boolean) => walk(selector, {
-          enter(node: CssNode) {
-            if (node.type === 'PseudoElementSelector') return walk.skip
-            if (node.type === 'PseudoClassSelector' && (!insideFunctions || !OWNER_FUNCTIONS.has(node.name.toLowerCase()))) return walk.skip
-            if (node.type === 'ClassSelector') owners.push(string.decode(node.name))
-          },
-        })
+        const collect = (insideFunctions: boolean) => {
+          // Selector functions around the current node, innermost last.
+          const functions: string[] = []
+          walk(selector, {
+            enter(node: CssNode) {
+              if (node.type === 'PseudoElementSelector') return walk.skip
+              if (node.type === 'PseudoClassSelector') {
+                const name = node.name.toLowerCase()
+                if (!insideFunctions || !SELECTOR_FUNCTIONS.has(name)) return walk.skip
+                functions.push(name)
+              }
+              if (node.type === 'ClassSelector') {
+                const className = string.decode(node.name)
+                if (functions.every(name => OWNER_FUNCTIONS.has(name)) || isOwnArbitraryVariant(className, functions)) owners.push(className)
+              }
+            },
+            leave(node: CssNode) {
+              if (node.type === 'PseudoClassSelector' && insideFunctions && SELECTOR_FUNCTIONS.has(node.name.toLowerCase())) functions.pop()
+            },
+          })
+        }
         collect(false)
         // Some variants put their owning class inside a selector function:
         // child variants use :is(), arbitrary variants such as [:where(&)] use
