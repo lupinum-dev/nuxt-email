@@ -115,8 +115,8 @@ describe('nested-component Tailwind', () => {
     const html = await renderComponentToHtml(email(h(nested(() =>
       h(EText, { class: 'm-0' }, { default: () => 'Deep' }),
     ))))
-    // m-0 => margin:0rem flows into EText's margin logic, which re-splits all four sides.
-    expect(html).toContain('<p style="font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem;">Deep</p>')
+    // m-0 => margin:0px flows into EText's margin logic, which re-splits all four sides.
+    expect(html).toContain('<p style="font-size:14px;line-height:24px;margin:0px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px;">Deep</p>')
   })
 
   it('self-inlines a nested EBody before deriving its reset and wrapper styles', async () => {

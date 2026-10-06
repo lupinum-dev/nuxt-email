@@ -3,15 +3,15 @@
   "nuxtEmailVersion": "1.0.0-beta.4",
   "oracle": {
     "package": "react-email",
-    "version": "6.9.0",
+    "version": "6.11.0",
     "rendererPackage": "@react-email/render",
     "rendererVersion": "2.1.0",
     "reactVersion": "19.2.7",
     "reactDomVersion": "19.2.7",
-    "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
-    "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
+    "sourceCheckoutCommit": "15419ff1f4cd0e32ed2c15a4a9182cc47a200a60",
+    "publishedPackageCommit": "15419ff1f4cd0e32ed2c15a4a9182cc47a200a60"
   },
-  "oracleSha256": "dbaa8433377c15cc029d3f42c943a87cbfa42e17e411e738e2deddeb26e5b768",
+  "oracleSha256": "af76de6653bea190b336cab5f8661cf63eb05655459843c9435c795e0fb24924",
   "summary": {
     "failed": 0,
     "passed": 57,

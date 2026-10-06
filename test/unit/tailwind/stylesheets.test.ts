@@ -35,10 +35,10 @@ describe('vendored tailwind stylesheets', () => {
     },
   )
 
-  it('is vendored from the pinned tailwindcss@4.1.18', () => {
+  it('is vendored from the pinned tailwindcss@4.3.3', () => {
     const pkg = JSON.parse(
       readFileSync(join(tailwindPkgRoot, 'package.json'), 'utf8'),
     ) as { version: string }
-    expect(pkg.version).toBe('4.1.18')
+    expect(pkg.version).toBe('4.3.3')
   })
 })

@@ -1,4 +1,4 @@
-import oracle from './oracle/react-email-6.9.0.json'
+import oracle from './oracle/react-email-6.11.0.json'
 import { describe, expect, it } from 'vitest'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
 import { plainTextCorpus } from './plain-text-corpus'

@@ -2,12 +2,12 @@ React Email
 ===========
 
 Nuxt Email contains Vue adaptations of selected compatibility algorithms and
-markup strategies from React Email 6.9.0, pinned at source commit
-6eb428924c4c2774228a07cbec1977ad8898f143. The adapted surface covers button
+markup strategies from React Email 6.11.0, pinned at source commit
+15419ff1f4cd0e32ed2c15a4a9182cc47a200a60. The adapted surface covers button
 padding and Outlook spacing, text margin expansion, table padding placement,
 hidden preview text, the font-face declaration, inline code rendering, Markdown
 rendering, and Tailwind class inlining. The pinned upstream source is available at
-https://github.com/resend/react-email/tree/6eb428924c4c2774228a07cbec1977ad8898f143.
+https://github.com/resend/react-email/tree/15419ff1f4cd0e32ed2c15a4a9182cc47a200a60.
 
 Copyright 2024 Plus Five Five, Inc
 
@@ -44,7 +44,7 @@ whose text is reproduced once below.
 - css-tree 3.2.1 — CSS parsing and generation in the Tailwind inlining engine.
   Copyright (C) 2016-2026 by Roman Dvornov
 
-- tailwindcss 4.1.18 — utility compilation used by ETailwind; its stylesheet CSS
+- tailwindcss 4.3.3 — utility compilation used by ETailwind; its stylesheet CSS
   is also vendored byte-for-byte into the engine.
   Copyright (c) Tailwind Labs, Inc.
 

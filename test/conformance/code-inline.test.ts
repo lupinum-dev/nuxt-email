@@ -1,5 +1,5 @@
 import type { Component, VNodeChild } from 'vue'
-import oracle from './oracle/react-email-6.9.0.json'
+import oracle from './oracle/react-email-6.11.0.json'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { EText } from '../../src/runtime/components'

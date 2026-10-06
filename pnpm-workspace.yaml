@@ -32,7 +32,7 @@ overrides:
   sharp: 0.35.4
   # One Tailwind compiler for the vendored engine, the docs site and the tests.
   # Remove when no other package resolves a different tailwindcss version.
-  tailwindcss: 4.1.18
+  tailwindcss: 4.3.3
 
 allowBuilds:
   '@parcel/watcher': true

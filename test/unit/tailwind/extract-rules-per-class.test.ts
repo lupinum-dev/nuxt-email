@@ -4,6 +4,53 @@ import { setupTailwind } from '../../../src/runtime/tailwind/engine/setup-tailwi
 import { extractRulesPerClass } from '../../../src/runtime/tailwind/engine/css/extract-rules-per-class'
 
 describe('extractRulesPerClass()', () => {
+  it('does not discard unsupported wrappers around a requested utility', () => {
+    const stylesheet = parse('@scope (.card) {.utility {color:red}}') as StyleSheet
+    expect(() => extractRulesPerClass(stylesheet, ['utility'])).toThrow('@scope rules are not supported')
+    expect(extractRulesPerClass(stylesheet, ['other']).inlinable.size).toBe(0)
+  })
+
+  it.each([
+    { css: ':not(.x){color:red}', requested: ['x'] },
+    { css: ':has(.child){color:red}', requested: ['child'] },
+    { css: ':where(.utility):not(.x){color:red}', requested: ['x'] },
+  ])('does not let a condition class in $css own the rule', ({ css, requested }) => {
+    const rules = extractRulesPerClass(parse(css) as StyleSheet, requested)
+    expect(rules.inlinable.size).toBe(0)
+    expect(rules.nonInlinable.size).toBe(0)
+    expect(rules.orderedNonInlinable).toEqual([])
+  })
+
+  it.each(['where', 'not', 'has'])('keys a [:%s(&)] arbitrary variant by its own utility', async (pseudo) => {
+    const utility = `[:${pseudo}(&)]:bg-red-500`
+    const tailwind = await setupTailwind()
+    tailwind.addUtilities([utility])
+    const rules = extractRulesPerClass(tailwind.getStyleSheet(), [utility])
+    expect([...rules.nonInlinable.keys()]).toEqual([utility])
+    expect(rules.inlinable.size).toBe(0)
+  })
+
+  it('retains unconditional utilities inside a structural layer', () => {
+    const stylesheet = parse('@layer utilities {.utility {color:red}}') as StyleSheet
+    expect(extractRulesPerClass(stylesheet, ['utility']).inlinable.has('utility')).toBe(true)
+  })
+
+  it('keeps enclosing media and supports conditions out of inline styles', () => {
+    const stylesheet = parse(`
+      .base { color: black }
+      @MEDIA (prefers-color-scheme: dark) {
+        @supports (color: red) { .conditional { color: white } }
+      }
+      .after { color: red }
+    `) as StyleSheet
+    const rules = extractRulesPerClass(stylesheet, ['base', 'conditional', 'after'])
+    expect([...rules.inlinable.keys()]).toEqual(['base', 'after'])
+    expect([...rules.nonInlinable.keys()]).toEqual(['conditional'])
+    expect(rules.orderedNonInlinable.map(rule => generate(rule))).toEqual([
+      '.conditional{@MEDIA (prefers-color-scheme:dark){@supports (color:red){color:white}}}',
+    ])
+  })
+
   function convertToComparable(
     map: Map<string, Rule[]>,
   ): Record<string, string[]> {
@@ -66,8 +113,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(inlinable)).toMatchInlineSnapshot(`
       {
         "box": [
-          ".box{border-radius:var(--radius-lg);background-color:var(--color-white);padding:calc(var(--spacing)*4)}",
-          ".box{background-color:var(--color-red-500)}",
+          ".box{border-radius:var(--radius-lg);background-color:var(--color-white);padding:calc(var(--spacing)*4);background-color:var(--color-red-500)}",
         ],
       }
     `)
@@ -203,7 +249,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "btn": [
-          ".btn{&:hover{color:red}}",
+          ".btn:hover{color:red}",
         ],
       }
     `)
@@ -226,7 +272,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "group-hover:underline": [
-          ".group-hover\\:underline{&:is(:where(.group):hover *){@media (hover:hover){text-decoration-line:underline}}}",
+          ".group-hover\\:underline:is(:where(.group):hover *){@media (hover:hover){text-decoration-line:underline}}",
         ],
       }
     `)

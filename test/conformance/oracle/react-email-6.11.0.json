@@ -1,13 +1,13 @@
 {
   "oracle": {
     "package": "react-email",
-    "version": "6.9.0",
+    "version": "6.11.0",
     "rendererPackage": "@react-email/render",
     "rendererVersion": "2.1.0",
     "reactVersion": "19.2.7",
     "reactDomVersion": "19.2.7",
-    "sourceCheckoutCommit": "6eb428924c4c2774228a07cbec1977ad8898f143",
-    "publishedPackageCommit": "71656573fa24b09e48173ae2357bf712fcb401b6"
+    "sourceCheckoutCommit": "15419ff1f4cd0e32ed2c15a4a9182cc47a200a60",
+    "publishedPackageCommit": "15419ff1f4cd0e32ed2c15a4a9182cc47a200a60"
   },
   "cases": {
     "basic-document": {
@@ -694,7 +694,7 @@
       "semanticAssertions": [
         "utility overrides component default margins"
       ],
-      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><p style=\"font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem\">Content</p></td></tr></tbody></table><!--/$--></body></html>"
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style></style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><p style=\"font-size:14px;line-height:24px;margin:0px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px\">Content</p></td></tr></tbody></table><!--/$--></body></html>"
     },
     "tw-section-padding": {
       "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
@@ -805,7 +805,7 @@
         "pseudo and fraction classes sanitized",
         "residual classes on element"
       ],
-      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>.hover_bg-red-500{@media (hover:hover){&:hover{background-color:rgb(251,44,54)!important}}}@media (min-width:48rem){.md_w-1_2{width:50%!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"hover_bg-red-500 md_w-1_2\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>@media (hover:hover){.hover_bg-red-500:hover{background-color:rgb(251,44,54)!important}}@media (min-width:48rem){.md_w-1_2{width:50%!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"hover_bg-red-500 md_w-1_2\">Content</div></td></tr></tbody></table><!--/$--></body></html>"
     },
     "tw-important": {
       "reactReference": "packages/react-email/src/components/tailwind/tailwind.tsx",
@@ -887,7 +887,7 @@
         "nested Button Outlook spacers derived from utility padding",
         "nested-only media query reaches the head style"
       ],
-      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"md_text-lg\" style=\"background-color:rgb(251,44,54);padding:1rem\"><p style=\"font-size:14px;line-height:24px;margin:0rem;margin-top:0rem;margin-bottom:0rem;margin-left:0rem;margin-right:0rem\">Nested text</p><a href=\"https://example.com\" style=\"line-height:100%;text-decoration:none;display:inline-block;max-width:100%;mso-padding-alt:0px;background-color:rgb(21,93,252);padding-right:16px;padding-left:16px;padding-bottom:8px;padding-top:8px\" target=\"_blank\"><span><!--[if mso]><i style=\"mso-font-width:400%;mso-text-raise:12px\" hidden>&#8202;&#8202;</i><![endif]--></span><span style=\"max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:6px\">Nested button</span><span><!--[if mso]><i style=\"mso-font-width:400%\" hidden>&#8202;&#8202;&#8203;</i><![endif]--></span></a></div></td></tr></tbody></table><!--/$--></body></html>"
+      "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\"><html dir=\"ltr\" lang=\"en\"><head><meta content=\"text/html; charset=UTF-8\" http-equiv=\"Content-Type\"/><meta name=\"x-apple-disable-message-reformatting\"/><style>@media (min-width:48rem){.md_text-lg{font-size:1.125rem!important;line-height:1.5555555555555556!important}}</style></head><body dir=\"ltr\" lang=\"en\"><!--$--><!--html--><!--head--><!--body--><table border=\"0\" width=\"100%\" cellPadding=\"0\" cellSpacing=\"0\" role=\"presentation\" align=\"center\"><tbody><tr><td dir=\"ltr\" lang=\"en\"><div class=\"md_text-lg\" style=\"background-color:rgb(251,44,54);padding:1rem\"><p style=\"font-size:14px;line-height:24px;margin:0px;margin-top:0px;margin-bottom:0px;margin-left:0px;margin-right:0px\">Nested text</p><a href=\"https://example.com\" style=\"line-height:100%;text-decoration:none;display:inline-block;max-width:100%;mso-padding-alt:0px;background-color:rgb(21,93,252);padding-right:16px;padding-left:16px;padding-bottom:8px;padding-top:8px\" target=\"_blank\"><span><!--[if mso]><i style=\"mso-font-width:400%;mso-text-raise:12px\" hidden>&#8202;&#8202;</i><![endif]--></span><span style=\"max-width:100%;display:inline-block;line-height:120%;mso-padding-alt:0px;mso-text-raise:6px\">Nested button</span><span><!--[if mso]><i style=\"mso-font-width:400%\" hidden>&#8202;&#8202;&#8203;</i><![endif]--></span></a></div></td></tr></tbody></table><!--/$--></body></html>"
     }
   },
   "errors": {

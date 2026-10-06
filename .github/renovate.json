@@ -6,6 +6,11 @@
   "rangeStrategy": "replace",
   "schedule": ["before 6am on Monday"],
   "packageRules": [
-    { "groupName": "Nuxt ecosystem", "matchPackageNames": ["nuxt", "@nuxt/**", "vue", "vue-router"] }
+    { "groupName": "Nuxt ecosystem", "matchPackageNames": ["nuxt", "@nuxt/**", "vue", "vue-router"] },
+    {
+      "description": "Review the vendored email engine and upstream oracle together",
+      "groupName": "Email Tailwind compatibility",
+      "matchPackageNames": ["tailwindcss", "react-email", "@react-email/render"]
+    }
   ]
 }

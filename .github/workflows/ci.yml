@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           repository: resend/react-email
-          ref: 6eb428924c4c2774228a07cbec1977ad8898f143
+          ref: 15419ff1f4cd0e32ed2c15a4a9182cc47a200a60
           fetch-depth: 0
           persist-credentials: false
           path: .oracle/react-email

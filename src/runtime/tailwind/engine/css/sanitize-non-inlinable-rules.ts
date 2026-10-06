@@ -1,6 +1,7 @@
 import { type CssNode, string, walk } from '../../css-tree'
 import { sanitizeClassName } from '../compatibility/sanitize-class-name'
 import { isRuleInlinable } from './is-rule-inlinable'
+import { NON_INLINABLE_ATRULES } from './constants'
 import { stripEmptyTailwindVars } from './strip-empty-tailwind-vars'
 
 /**
@@ -19,10 +20,11 @@ import { stripEmptyTailwindVars } from './strip-empty-tailwind-vars'
  *    left as a bare empty-fallback ref would reach the client broken.
  */
 export function sanitizeNonInlinableRules(node: CssNode): void {
+  let conditionalDepth = 0
   walk(node, {
-    visit: 'Rule',
-    enter(rule) {
-      if (!isRuleInlinable(rule)) {
+    enter(rule: CssNode) {
+      if (rule.type === 'Atrule' && NON_INLINABLE_ATRULES.has(rule.name.toLowerCase())) conditionalDepth++
+      if (rule.type === 'Rule' && (conditionalDepth > 0 || !isRuleInlinable(rule))) {
         walk(rule.prelude, (node) => {
           if (node.type === 'ClassSelector') {
             const unescapedClassName = string.decode(node.name)
@@ -43,6 +45,9 @@ export function sanitizeNonInlinableRules(node: CssNode): void {
           },
         })
       }
+    },
+    leave(rule: CssNode) {
+      if (rule.type === 'Atrule' && NON_INLINABLE_ATRULES.has(rule.name.toLowerCase())) conditionalDepth--
     },
   })
 }
