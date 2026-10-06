@@ -20,12 +20,12 @@
   <a href="https://www.npmjs.com/package/@lupinum/nuxt-email"><img src="https://img.shields.io/npm/v/@lupinum/nuxt-email?color=00DC82" alt="npm version"></a>
   <a href="https://github.com/lupinum-dev/nuxt-email/actions/workflows/ci.yml"><img src="https://github.com/lupinum-dev/nuxt-email/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-00DC82" alt="MIT license"></a>
-  <a href="https://discord.gg/RPH6SeA36N"><img src="https://img.shields.io/badge/Discord-18181B?logo=discord" alt="Discord"></a>
+  <a href="https://discord.lupinum.com"><img src="https://img.shields.io/badge/Discord-18181B?logo=discord" alt="Discord"></a>
   <a href="https://deepwiki.com/lupinum-dev/nuxt-email"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 > [!WARNING]
-> [`1.0.0-beta.3`](https://www.npmjs.com/package/@lupinum/nuxt-email/v/1.0.0-beta.3) is published on npm's `next` tag. The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
+> The 1.0.0 beta is published on npm's [`next` tag](https://www.npmjs.com/package/@lupinum/nuxt-email?activeTab=versions). The [three-client beta smoke test](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md#100-beta1-smoke-test) passed against beta.1; the full eight-client checklist and an external transactional beta still block stable `1.0.0`. The unscoped `nuxt-email` package on npm is unrelated to this project.
 
 ## Why use Nuxt Email?
 
@@ -60,34 +60,6 @@ export default defineNuxtConfig({
   modules: ['@lupinum/nuxt-email'],
 })
 ```
-
-<!-- BEGIN:consumer-onboarding -->
-
-### Use a coding agent
-
-A coding agent is a development tool that can inspect and change your project.
-After installation, copy this prompt into your coding agent:
-
-```text
-Add Nuxt Email to this Nuxt application and render one transactional email from
-a Vue template. Read the project's existing instructions first. Resolve
-@lupinum/nuxt-email/agent-docs from this application's directory and read its
-starting pages. Use the installed version's examples and public types. Preserve
-existing routes, security boundaries, conventions, and AGENTS.md instructions.
-Add or update one short Nuxt Email pointer in AGENTS.md if the project allows
-it; do not duplicate the documentation. If the file is absent, create only that
-pointer. Report missing guidance. Verify the server render, HTML and plain-text
-output, and one invalid request. Keep delivery in application-owned code.
-```
-
-If the installed package has no `agent-docs` export, read its packaged README,
-types, and `CONFORMANCE.md`. Use documentation from the matching source tag when
-more detail is needed. Installing or updating the package does not edit project
-instructions. The pointer resolves the installed package, so upgrades and
-rollbacks select the matching documentation without copying it into your
-application.
-
-<!-- END:consumer-onboarding -->
 
 ## Quick start
 
@@ -141,20 +113,52 @@ export default defineEventHandler(async () => {
 
 The template name and props are generated from the Vue file. Invalid names and props fail during type checking. Use a sibling fixture to inspect it in `/__email`, then [pass the rendered result to your provider](https://nuxt-email.lupinum.com/docs/guides/sending-email).
 
-## Discord
+Questions? Ask in the [Lupinum OSS Discord](https://discord.lupinum.com).
 
-Join the Lupinum OSS community to discuss Nuxt Email, ask questions, and share
-what you build.
+## Agent setup
 
-<p align="center">
-  <a href="https://discord.gg/RPH6SeA36N">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/public/discord-dark.svg">
-      <source media="(prefers-color-scheme: light)" srcset="docs/public/discord-light.svg">
-      <img src="docs/public/discord-light.svg" width="500" alt="Join the Lupinum OSS Discord">
-    </picture>
-  </a>
-</p>
+`@lupinum/nuxt-email` ships its documentation inside the package for coding
+agents such as Claude Code, Codex and Cursor. The pages match the installed
+version, so an agent does not follow the website for a different version.
+
+To set it up, give your coding agent this task:
+
+```text
+Set up @lupinum/nuxt-email for coding agents as described under "Agent setup" in its README.
+```
+
+### Steps for the agent
+
+1. Find `node_modules/@lupinum/nuxt-email/dist/agent/AGENTS.md`. Look in the
+   directory of the project that depends on `@lupinum/nuxt-email` first, then
+   in its parent directories up to the repository root (workspaces can hoist
+   packages). Read it; it lists the documentation pages.
+2. Add the section below to the project's agent instructions: `AGENTS.md`, or
+   `CLAUDE.md` if the project has only that file. If it has neither, create
+   `AGENTS.md`. Write the path relative to the repository root, through
+   `node_modules/@lupinum/nuxt-email` (for example
+   `apps/web/node_modules/@lupinum/nuxt-email/...` in a workspace). Never write
+   a resolved path such as `node_modules/.pnpm/...`: it contains the version and
+   breaks after an upgrade. If a section for `@lupinum/nuxt-email` already
+   exists, leave it as it is.
+
+   Use the path you found in place of the sample path:
+
+   ```md
+   ## @lupinum/nuxt-email
+
+   Before you change code that uses @lupinum/nuxt-email, read
+   `node_modules/@lupinum/nuxt-email/dist/agent/AGENTS.md` and the pages it
+   lists. They document the installed version. Prefer them over what you
+   remember about this package and over the website.
+   ```
+
+3. Do not copy the documentation into the project and do not install a skill.
+   The section points into the installed package, so it stays correct after
+   every upgrade or downgrade.
+
+If the file does not exist, the installed version has no packaged
+documentation. Read the package README and its TypeScript types instead.
 
 ## Email components
 
@@ -224,7 +228,7 @@ See the [changelog](CHANGELOG.md) for released changes.
 
 ## Contributing and development
 
-Read the [contribution guide](https://github.com/lupinum-dev/nuxt-email/blob/main/CONTRIBUTING.md) before you open a pull request. Run the normal handoff gate before you submit a change:
+Read the [contribution guide](https://github.com/lupinum-dev/nuxt-email/blob/main/.github/CONTRIBUTING.md) before you open a pull request. Run the normal handoff gate before you submit a change:
 
 ```bash
 corepack enable
@@ -236,7 +240,7 @@ Maintainers use the protected workflow in [Lupinum OSS](https://oss.lupinum.com/
 
 ## Support and security
 
-Open a [GitHub issue](https://github.com/lupinum-dev/nuxt-email/issues) for bugs and focused proposals. Join the [Lupinum OSS Discord](https://discord.gg/RPH6SeA36N) for project discussion.
+Open a [GitHub issue](https://github.com/lupinum-dev/nuxt-email/issues) for bugs and focused proposals. Join the [Lupinum OSS Discord](https://discord.lupinum.com) for project discussion.
 
 Use the [private security process](https://github.com/lupinum-dev/nuxt-email/security/policy) to report a vulnerability. Do not report a vulnerability in a public issue.
 
