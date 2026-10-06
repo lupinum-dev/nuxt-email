@@ -1,25 +1,10 @@
-## Result
+## What and why
 
-<!-- State what changed and why it is necessary. -->
+<!-- One or two sentences: the change and the reason. Link the issue: "Closes #123". -->
 
-## Verification
+## How I checked it
 
-<!-- List the exact commands and manual checks that passed. -->
+<!-- The commands you ran, and for a visible change a screenshot or the browsers and widths you checked. -->
 
-- [ ] I ran `pnpm verify`, or I explained why it does not apply.
-
-## Documentation and compatibility
-
-- [ ] I updated user documentation when behavior changed.
-- [ ] I added tests for the changed invariant or failure behavior.
-- [ ] I updated versions, migration guidance, and compatibility notes when the public contract changed.
-- [ ] I kept this pull request focused on one concern.
-- [ ] I did not include credentials, private data, or generated build output.
-
-## Release note
-
-<!-- Add a Changeset for package-facing changes, or an empty Changeset for invisible changes. -->
-
-## Risk
-
-<!-- State the failure modes, affected users, and rollback path. -->
+- [ ] `pnpm verify` passes.
+- [ ] A changeset describes the change for users, or `pnpm changeset --empty` if users see no change.

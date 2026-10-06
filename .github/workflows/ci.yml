@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # release.yml starts this workflow on the Version packages PR, because pull
+  # requests opened with GITHUB_TOKEN trigger no workflows on their own.
   workflow_dispatch:
 
 permissions:
@@ -13,7 +15,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# The verify and compatibility jobs replace the starter's task matrix (internals/decisions.md D3).
 jobs:
+  # `pnpm verify`: lint, typecheck, test, build, React Email oracle, packed consumers, dependency audit.
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -65,6 +69,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck && pnpm test
 
+  # The one required status check for the main branch ruleset.
   ci:
     name: ci
     if: always()

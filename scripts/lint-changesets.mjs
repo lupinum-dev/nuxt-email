@@ -5,24 +5,10 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 
 const git = (...args) => spawnSync('git', args, { encoding: 'utf8' })
-const bumps = text => [...text.matchAll(/^\s*(['"]?)(\S+?)\1\s*:\s*['"]?(major|minor|patch)['"]?\s*$/gm)].map(([, , name, bump]) => ({ name, bump }))
+const bumps = text => [...text.matchAll(/^\s*['"]?([^\s'":]+)['"]?\s*:\s*['"]?(major|minor|patch)['"]?\s*$/gm)].map(([, name, bump]) => ({ name, bump }))
 
 const failures = []
-// v2 retains consumed notes at the root; v3 moves them into pre/ and keeps only
-// mode/tag. Accept both real formats without treating malformed legacy state as empty.
-let consumedNames = []
-if (existsSync('.changeset/pre.json')) {
-  const pre = JSON.parse(readFileSync('.changeset/pre.json', 'utf8'))
-  if (!pre || !['pre', 'exit'].includes(pre.mode) || typeof pre.tag !== 'string' || !pre.tag.trim() || Object.keys(pre).some(key => !['mode', 'tag', 'changesets', 'initialVersions'].includes(key))) throw new Error('.changeset/pre.json requires a valid mode and tag')
-  if ('changesets' in pre || 'initialVersions' in pre) {
-    if (!Array.isArray(pre.changesets) || pre.changesets.some(name => typeof name !== 'string')) throw new Error('Legacy .changeset/pre.json must contain a changesets array of names')
-    if ('initialVersions' in pre && (!pre.initialVersions || typeof pre.initialVersions !== 'object' || Array.isArray(pre.initialVersions) || Object.values(pre.initialVersions).some(version => typeof version !== 'string'))) throw new Error('Legacy initialVersions must map package names to versions')
-    consumedNames = pre.changesets
-  }
-}
-const consumed = new Set(consumedNames)
 for (const file of readdirSync('.changeset').filter(name => name.endsWith('.md') && name !== 'README.md')) {
-  if (consumed.has(file.slice(0, -3))) continue
   const match = /^---\r?\n([\s\S]*?)^---\r?\n?([\s\S]*)$/m.exec(readFileSync(`.changeset/${file}`, 'utf8'))
   if (!match) {
     failures.push(`${file}: missing the --- front matter block.`)
@@ -31,8 +17,8 @@ for (const file of readdirSync('.changeset').filter(name => name.endsWith('.md')
   const [, frontMatter, body] = match
   if (!frontMatter.trim() && !body.trim()) continue // `pnpm changeset --empty`
   // The first paragraph is the one-line summary; an optional short body follows after a blank line.
-  const [summary = '', ...details] = body.trim().split(/\r?\n\s*\r?\n/)
-  if (!/^(Fix|Add|Remove|Change) \S/.test(summary.trim())) {
+  const [summary = '', ...details] = body.trim().split(/\r?\n\s*\n/)
+  if (!/^(?:Fix|Add|Remove|Change) \S/.test(summary.trim())) {
     failures.push(`${file}: start with one user-facing line that begins with Fix, Add, Remove or Change.`)
   }
   if (summary.trim().includes('\n')) failures.push(`${file}: keep the summary to one line. Put details after a blank line.`)
@@ -44,12 +30,12 @@ for (const file of readdirSync('.changeset').filter(name => name.endsWith('.md')
 const base = git('merge-base', 'origin/main', 'HEAD').stdout.trim()
 if (base) {
   const changed = git('diff', '--name-only', `${base}...HEAD`).stdout.split('\n').filter(Boolean)
-  if (changed.some(path => /^(?:src|layer|packages\/[^/]+\/src)\//.test(path)) && spawnSync('pnpm', ['exec', 'changeset', 'status', `--since=${base}`], { stdio: 'inherit' }).status !== 0) {
+  if (changed.some(path => /^(?:src|packages\/[^/]+\/src)\//.test(path)) && spawnSync('pnpm', ['exec', 'changeset', 'status', `--since=${base}`], { stdio: 'inherit' }).status !== 0) {
     failures.push('Published source changed without a changeset. Run `pnpm changeset`, or `pnpm changeset --empty` if users see no change.')
   }
 
   // Users install new dependencies with the next version, so an empty changeset is not enough.
-  const manifests = ['package.json', 'layer/package.json', ...(existsSync('packages') ? readdirSync('packages').map(dir => `packages/${dir}/package.json`) : [])]
+  const manifests = ['package.json', ...(existsSync('packages') ? readdirSync('packages').map(dir => `packages/${dir}/package.json`) : [])]
     .filter(path => existsSync(path)).map(path => ({ path, now: JSON.parse(readFileSync(path, 'utf8')) }))
   const internal = new Set(manifests.map(({ now }) => now.name)) // Changesets itself bumps these ranges
   const external = deps => JSON.stringify(Object.entries(deps ?? {}).filter(([name]) => !internal.has(name)).sort())

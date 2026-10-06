@@ -15,7 +15,7 @@ export default createConfigForNuxt({
   },
 }).append({
   // Keep the shared, independently tested OSS helpers verbatim.
-  ignores: ['scripts/release.mjs', 'scripts/lint-changesets.mjs'],
+  ignores: ['scripts/release.mjs', 'scripts/lint-changesets.mjs', 'scripts/audit-deps.mjs', 'scripts/agent-docs.mjs'],
 }).append({
   name: 'nuxt-email/no-tailwind-css-internals-outside-tailwind',
   files: ['src/**/*.ts'],
