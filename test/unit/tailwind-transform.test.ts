@@ -130,3 +130,15 @@ describe('idempotence outside a Tailwind region', () => {
     expect(first).not.toContain('<style>')
   })
 })
+
+describe('arbitrary variants that wrap the utility in a functional selector', () => {
+  it.each(['where', 'not', 'has'])('keeps [:%s(&)] styles and the class that selects them', async (pseudo) => {
+    const utility = `[:${pseudo}(&)]:bg-red-500`
+    const html = await renderComponentToHtml(emailWith(h(EText, { class: utility }, () => 'x')))
+    const style = html.match(/<style>(.*?)<\/style>/s)?.[1] ?? ''
+    const rule = style.match(new RegExp(`:${pseudo}\\(\\.([\\w-]+)\\)\\{background-color:rgb\\(251,44,54\\)!important\\}`))
+    expect(rule, style).not.toBeNull()
+    expect(html).toMatch(new RegExp(`<p[^>]* class="${rule![1]}"`))
+    expect(html).not.toMatch(/style="[^"]*background-color/)
+  })
+})

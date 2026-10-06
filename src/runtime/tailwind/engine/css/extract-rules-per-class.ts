@@ -3,6 +3,9 @@ import { NON_INLINABLE_ATRULES } from './constants'
 import { isRuleInlinable } from './is-rule-inlinable'
 import { splitMixedRule } from './split-mixed-rule'
 
+// Selector functions whose arguments can name the class that owns a rule.
+const OWNER_FUNCTIONS = new Set(['is', 'where', 'not', 'has', 'matches'])
+
 export interface ExtractedRules {
   inlinable: Map<string, Rule[]>
   nonInlinable: Map<string, Rule[]>
@@ -58,16 +61,18 @@ export function extractRulesPerClass(
     if (rule.prelude.type === 'SelectorList') {
       rule.prelude.children.forEach((selector) => {
         const owners: string[] = []
-        const collect = (insideIs: boolean) => walk(selector, {
+        const collect = (insideFunctions: boolean) => walk(selector, {
           enter(node: CssNode) {
             if (node.type === 'PseudoElementSelector') return walk.skip
-            if (node.type === 'PseudoClassSelector' && (!insideIs || node.name !== 'is')) return walk.skip
+            if (node.type === 'PseudoClassSelector' && (!insideFunctions || !OWNER_FUNCTIONS.has(node.name.toLowerCase()))) return walk.skip
             if (node.type === 'ClassSelector') owners.push(string.decode(node.name))
           },
         })
         collect(false)
-        // Child variants put their owning class inside :is(). Group/peer
-        // variants have a direct owner, so their condition markers stay out.
+        // Some variants put their owning class inside a selector function:
+        // child variants use :is(), arbitrary variants such as [:where(&)] use
+        // any of them. Group/peer variants have a direct owner, so their
+        // condition markers inside :is(:where(.group)…) never key the rule.
         if (!owners.length) collect(true)
         selectorClasses.push(...owners)
       })
