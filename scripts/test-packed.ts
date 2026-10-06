@@ -332,12 +332,16 @@ async function verifyStandaloneConsumer(consumerDirectory: string, installedPack
       assert.match(String(error.cause ?? error), /@container rules are not supported/)
       return true
     })
-    for (const [variant, selector, declaration] of [
-      ['*:bg-red-500', ':is(.__bg-red-500>*)', 'background-color:rgb(251,44,54)!important'],
-      ['**:text-blue-500', ':is(.___text-blue-500 *)', 'color:rgb(43,127,255)!important'],
+    for (const [variant, owner, rule] of [
+      ['*:bg-red-500', '__bg-red-500', ':is(.__bg-red-500>*){background-color:rgb(251,44,54)!important}'],
+      ['**:text-blue-500', '___text-blue-500', ':is(.___text-blue-500 *){color:rgb(43,127,255)!important}'],
+      ['sm:bg-red-500', 'sm_bg-red-500', '@media (min-width:40rem){.sm_bg-red-500{background-color:rgb(251,44,54)!important}}'],
     ]) {
-      const email = await renderEmail('css-variants', { variant })
-      assert.ok(email.html.includes(selector) && email.html.includes(declaration), 'Packed child variant lost its condition or style')
+      const { html } = await renderEmail('css-variants', { variant })
+      const style = html.match(/<style>(.*?)<\\/style>/s)?.[1] ?? ''
+      assert.ok(style.includes(rule), 'Packed ' + variant + ' lost its condition or style')
+      assert.match(html, new RegExp('<p[^>]* class="' + owner + '"[^>]*><span>Child content</span>'), 'Packed ' + variant + ' lost the class on its owner')
+      assert.doesNotMatch(html.replace(/<style>.*?<\\/style>/s, ''), /style="[^"]*(background-color|color:rgb\\(43)/, 'Packed ' + variant + ' leaked a conditional style inline')
     }
     const render = await import('@lupinum/nuxt-email/render')
     const testing = await import('@lupinum/nuxt-email/testing')

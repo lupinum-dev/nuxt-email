@@ -66,13 +66,18 @@ describe('standalone production registry', () => {
     await expect(renderEmail('css-variants', { variant: '@sm:bg-red-500' })).rejects.toMatchObject({
       cause: { message: expect.stringContaining('@container rules are not supported') },
     })
-    for (const [variant, selector, declaration] of [
-      ['*:bg-red-500', ':is(.__bg-red-500>*)', 'background-color:rgb(251,44,54)!important'],
-      ['**:text-blue-500', ':is(.___text-blue-500 *)', 'color:rgb(43,127,255)!important'],
+    for (const { variant, owner, rule } of [
+      { variant: '*:bg-red-500', owner: '__bg-red-500', rule: ':is(.__bg-red-500>*){background-color:rgb(251,44,54)!important}' },
+      { variant: '**:text-blue-500', owner: '___text-blue-500', rule: ':is(.___text-blue-500 *){color:rgb(43,127,255)!important}' },
+      { variant: 'sm:bg-red-500', owner: 'sm_bg-red-500', rule: '@media (min-width:40rem){.sm_bg-red-500{background-color:rgb(251,44,54)!important}}' },
     ]) {
-      const email = await renderEmail('css-variants', { variant })
-      expect(email.html).toContain(selector)
-      expect(email.html).toContain(declaration)
+      const { html } = await renderEmail('css-variants', { variant })
+      const style = html.match(/<style>(.*?)<\/style>/s)?.[1]
+      expect(style, variant).toContain(rule)
+      // The rule only applies when the element that owns it keeps the sanitized class.
+      expect(html, variant).toMatch(new RegExp(`<p[^>]* class="${owner}"[^>]*><span>Child content</span>`))
+      // A conditional declaration must not leak into inline styles, where it would always apply.
+      expect(html.replace(/<style>.*?<\/style>/s, ''), variant).not.toMatch(/style="[^"]*(background-color|color:rgb\(43)/)
     }
   })
 
