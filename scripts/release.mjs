@@ -5,7 +5,7 @@
 // Tags: `v<version>` when there is one public package or all of them are in one Changesets `fixed`
 // group; otherwise one `<name>@<version>` tag and GitHub release per package.
 import { spawnSync } from 'node:child_process'
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const command = process.argv[2]
@@ -52,8 +52,30 @@ const destination = resolve('release')
 rmSync(destination, { recursive: true, force: true })
 mkdirSync(destination)
 
-const notes = unpublished.map((pkg) => {
-  run('pnpm', ['pack', '--pack-destination', destination], { cwd: pkg.path })
+// Dependencies first: a package that pins a sibling's exact version is not installable
+// until that sibling is on npm. The number prefix makes `release/*.tgz` publish in this order.
+const dependsOn = (pkg) => {
+  const manifest = JSON.parse(readFileSync(join(pkg.path, 'package.json'), 'utf8'))
+  return Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies, ...manifest.optionalDependencies })
+}
+const ordered = []
+const visit = (pkg, path = []) => {
+  if (ordered.includes(pkg)) return
+  // No publish order is safe in a cycle: whichever goes first pins a version that is not on npm yet.
+  if (path.includes(pkg)) throw new Error(`Dependency cycle: ${[...path, pkg].map(p => p.name).join(' -> ')}`)
+  for (const name of dependsOn(pkg)) {
+    const sibling = unpublished.find(other => other.name === name)
+    if (sibling) visit(sibling, [...path, pkg])
+  }
+  ordered.push(pkg)
+}
+unpublished.forEach(pkg => visit(pkg))
+
+const notes = ordered.map((pkg, index) => {
+  const scratch = join(destination, `pack-${index}`)
+  run('pnpm', ['pack', '--pack-destination', scratch], { cwd: pkg.path })
+  for (const file of readdirSync(scratch)) renameSync(join(scratch, file), join(destination, `${String(index + 1).padStart(Math.max(2, String(ordered.length).length), '0')}-${file}`))
+  rmSync(scratch, { recursive: true })
   // Changesets writes `## <version>` sections into each package's CHANGELOG.md.
   const changelogPath = join(pkg.path, 'CHANGELOG.md')
   const changelog = existsSync(changelogPath) ? readFileSync(changelogPath, 'utf8') : ''
