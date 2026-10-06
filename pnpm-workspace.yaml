@@ -29,7 +29,7 @@ overrides:
   # Remove when every parent resolves postcss 8.5.23 or newer.
   postcss: 8.5.23
   # Remove when every parent resolves sharp 0.35.4 or newer (some still ask for ^0.34.0).
-  sharp: 0.35.4
+  sharp: 0.35.5
   # One Tailwind compiler for the vendored engine, the docs site and the tests.
   # Remove when no other package resolves a different tailwindcss version.
   tailwindcss: 4.3.3
@@ -40,3 +40,6 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
+minimumReleaseAgeExclude:
+  # Renovate security update: sharp@0.35.5
+  - sharp@0.35.5
