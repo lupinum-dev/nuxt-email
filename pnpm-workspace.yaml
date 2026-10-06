@@ -9,32 +9,30 @@ minimumReleaseAgeIgnoreMissingTime: false
 enableGlobalVirtualStore: false
 
 overrides:
-  # Security floors for transitive build and documentation dependencies.
-  # Remove an override after every parent resolves a patched version. Review after 2026-09-01.
-  '@hono/node-server': 2.0.11
+  # Security floors for transitive dev, build and docs dependencies. Remove each one when
+  # deleting it and running `pnpm install` no longer brings back the version below the floor.
+  # Remove when Nuxt's dependencies stop resolving a @nuxt/devtools that needs simple-git 4.
   '@nuxt/devtools': 3.3.1
+  # Remove when @nuxt/devtools resolves @simple-git/argv-parser 2.0.1 or newer.
   '@simple-git/argv-parser': 2.0.1
+  # Remove when every parent resolves brace-expansion 2.1.6 / 5.0.11 or newer.
   'brace-expansion@>=2.0.0 <3.0.0': 2.1.6
   'brace-expansion@>=4.0.0 <6.0.0': 5.0.11
+  # Remove when every parent resolves browserslist 4.28.7 or newer.
   browserslist: 4.28.7
+  # Remove when every parent resolves esbuild 0.28.1 or newer.
   esbuild: 0.28.1
+  # Remove when satori requires fflate 0.7.5 or newer.
   'fflate@<0.7.5': 0.7.5
-  engine.io: 6.6.10
-  fast-uri: 3.1.7
-  h3: 1.15.11
-  hono: 4.13.7
-  ip-address: 10.5.1
+  # Remove when every parent resolves js-yaml 4.3.2 or newer.
   js-yaml: 4.3.2
-  nanoid: 3.3.18
+  # Remove when every parent resolves postcss 8.5.23 or newer.
   postcss: 8.5.23
-  proxy-addr: 2.0.8
-  seroval: 1.6.3
+  # Remove when every parent resolves sharp 0.35.4 or newer (some still ask for ^0.34.0).
   sharp: 0.35.4
-  source-map-js: 1.2.2
-  svgo: 4.1.0
-  tar: 7.5.22
+  # One Tailwind compiler for the vendored engine, the docs site and the tests.
+  # Remove when no other package resolves a different tailwindcss version.
   tailwindcss: 4.1.18
-  undici: 8.10.2
 
 allowBuilds:
   '@parcel/watcher': true
@@ -42,13 +40,3 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   vue-demi: true
-
-auditConfig:
-  # Dev and build tooling only, no fixed release usable today (see DECISIONS.md D5).
-  # Remove each entry when `pnpm audit` no longer reports it. Review by 2026-11-06.
-  ignoreGhsas:
-    - GHSA-86w9-cpqp-85rv # node-forge via @nuxt/cli listhen; no fix published
-    - GHSA-vfj7-8cjw-p6xm # braces via nitropack globby; no fix published
-    - GHSA-x6jw-m9v5-85vh # simple-git via @nuxt/devtools; fix needs simple-git 4
-    - GHSA-g4wm-2vf7-vfgr # simple-git via @nuxt/devtools; fix needs simple-git 4
-    - GHSA-858h-whjf-mvg5 # simple-git via @nuxt/devtools; fix needs simple-git 4

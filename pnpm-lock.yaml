@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@hono/node-server': 2.0.11
   '@nuxt/devtools': 3.3.1
   '@simple-git/argv-parser': 2.0.1
   brace-expansion@>=2.0.0 <3.0.0: 2.1.6
@@ -13,22 +12,10 @@ overrides:
   browserslist: 4.28.7
   esbuild: 0.28.1
   fflate@<0.7.5: 0.7.5
-  engine.io: 6.6.10
-  fast-uri: 3.1.7
-  h3: 1.15.11
-  hono: 4.13.7
-  ip-address: 10.5.1
   js-yaml: 4.3.2
-  nanoid: 3.3.18
   postcss: 8.5.23
-  proxy-addr: 2.0.8
-  seroval: 1.6.3
   sharp: 0.35.4
-  source-map-js: 1.2.2
-  svgo: 4.1.0
-  tar: 7.5.22
   tailwindcss: 4.1.18
-  undici: 8.10.2
 
 importers:
 
@@ -707,7 +694,7 @@ packages:
     resolution: {integrity: sha512-bjD221KPLoJTWUwso1J6fGKiTXEUFedG/s0visavY4zakFPkeGURMRNly+FhBHs7T8Dz4qHaZIMX9ZoJHSJtKA==}
     engines: {node: '>=20'}
     peerDependencies:
-      hono: 4.13.7
+      hono: ^4
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1381,7 +1368,7 @@ packages:
     peerDependencies:
       '@vue/compiler-sfc': ^3.5.40
       agents: '>=0.20.0'
-      h3: 1.15.11
+      h3: '>=1.15.11'
       secure-exec: '>=0.3.3'
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
       vue: ^3.5.40
