@@ -14,8 +14,8 @@ export default createConfigForNuxt({
     ],
   },
 }).append({
-  // This generated copy is byte-checked against the handbook by the fleet audit.
-  ignores: ['scripts/check-dependency-policy.mjs'],
+  // Keep the shared, independently tested OSS helpers verbatim.
+  ignores: ['scripts/release.mjs', 'scripts/lint-changesets.mjs', 'scripts/audit-deps.mjs', 'scripts/agent-docs.mjs'],
 }).append({
   name: 'nuxt-email/no-tailwind-css-internals-outside-tailwind',
   files: ['src/**/*.ts'],

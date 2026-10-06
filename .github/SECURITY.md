@@ -2,13 +2,17 @@
 
 ## Supported versions
 
-Lupinum OG provides security fixes for the latest published minor release.
-Before version 1.0, a security fix can use a hard cut when compatibility would
-keep unsafe behavior.
+Security fixes go into the newest release line: the npm `latest` tag, or the
+`next` tag while the package has no stable 1.0 release yet. Older versions do
+not receive fixes; upgrade to the newest release on that line. Before version
+1.0, a security fix can use a hard cut when compatibility would keep unsafe
+behavior.
 
 ## Report a vulnerability
 
-Use GitHub private vulnerability reporting. If that channel is not available,
+Do not open a public issue. Use
+[GitHub private vulnerability reporting](https://github.com/lupinum-dev/nuxt-email/security/advisories/new).
+If that channel is not available,
 email [info@lupinum.com](mailto:info@lupinum.com).
 
 Do not put an exploit, recipient data, rendered customer email, credential, or
@@ -28,6 +32,7 @@ Treat these defects as security-sensitive:
 
 ## Publication security
 
-Publication must use npm trusted publishing and a protected GitHub environment.
-The OIDC-capable job may publish only a previously certified tarball. It must
-not run repository code or install dependencies.
+Publication uses npm trusted publishing and the protected `npm` GitHub
+environment. The publish job only uploads the tarball that `release.yml` packed
+earlier; it does not check out the repository, install dependencies or run
+repository code.

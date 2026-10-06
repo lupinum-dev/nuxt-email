@@ -1,10 +1,8 @@
 import { execFile } from 'node:child_process'
-import { COPYFILE_EXCL } from 'node:constants'
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import {
   cp,
-  copyFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -15,13 +13,11 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises'
-import { arch, platform, release, tmpdir } from 'node:os'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { basename, join, relative, resolve } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { promisify } from 'node:util'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-
-import { verifyPackageAgentDocs } from './package-agent-docs.mjs'
 
 interface PackageManifest {
   name?: unknown
@@ -143,24 +139,6 @@ function displayArgument(argument: string): string {
   return /^[\w./:=@+-]+$/.test(argument) ? argument : JSON.stringify(argument)
 }
 
-function requestedArtifactPath(arguments_: readonly string[]): string | undefined {
-  if (arguments_.length === 0) {
-    return undefined
-  }
-
-  const [flag, requestedPath] = arguments_
-  invariant(
-    arguments_.length === 2
-    && flag === '--output'
-    && typeof requestedPath === 'string'
-    && requestedPath.trim().length > 0,
-    'Usage: pnpm release:pack [--output <path-to-tarball.tgz>]',
-  )
-  const outputPath = resolve(process.cwd(), requestedPath)
-  invariant(outputPath.endsWith('.tgz'), 'Release artifact output path must end in .tgz')
-  return outputPath
-}
-
 async function run(
   command: string,
   arguments_: string[],
@@ -199,7 +177,7 @@ async function run(
       .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
       .join('\n')
     throw new Error(
-      `Release verification command failed: ${renderedCommand}${output ? `\n${output.trim()}` : ''}`,
+      `Packed consumer verification command failed: ${renderedCommand}${output ? `\n${output.trim()}` : ''}`,
       { cause: error },
     )
   }
@@ -309,6 +287,21 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   }
 }
 
+// `scripts/agent-docs.mjs` writes dist/agent/AGENTS.md as an index of the rendered docs pages.
+// Agents in consuming projects follow its links, so every link must reach a packed page.
+async function verifyAgentDocs(packageDirectory: string, version: unknown): Promise<void> {
+  invariant(typeof version === 'string', 'Packed package has no version')
+  const agentRoot = join(packageDirectory, 'dist/agent')
+  const index = await readFile(join(agentRoot, 'AGENTS.md'), 'utf8')
+  invariant(index.startsWith(`# ${releaseContract.name} ${version} documentation\n`), 'Packed agent docs do not name the packed version')
+  const links = [...index.matchAll(/\]\((\.\/pages\/[^)\s]+)\)/g)].map(match => match[1]!)
+  invariant(links.length > 0, 'Packed agent docs list no pages')
+  const pages = new Set((await collectFiles(join(agentRoot, 'pages'))).map(path => relative(agentRoot, path).replaceAll('\\', '/')))
+  for (const link of links) {
+    invariant(pages.has(link.slice(2)), `Packed agent docs link to a missing page: ${link}`)
+  }
+}
+
 async function readTextOutput(directory: string): Promise<{ paths: string[], text: string }> {
   const files = await collectFiles(directory)
   const textFiles = files.filter(path => textFilePattern.test(path))
@@ -366,6 +359,7 @@ async function verifyFreshConsumer(
   workspaceStore: string,
   packedManifest: PackageManifest,
   frameworks: FrameworkVersions,
+  packageManager: string,
 ): Promise<FreshConsumerResult> {
   const freshInstallStartedAt = performance.now()
   const consumerDirectory = join(temporaryRoot, `fresh-consumer-${runNumber}-${variant}`)
@@ -379,14 +373,12 @@ async function verifyFreshConsumer(
   invariant(consumerManifest.dependencies['@lupinum/nuxt-email'] === 'file:__NUXT_EMAIL_TARBALL__', 'Fresh-install fixture lost its tarball placeholder')
   invariant(consumerManifest.dependencies.nuxt === '__NUXT_VERSION__' && consumerManifest.dependencies.vue === '__VUE_VERSION__', 'Fresh-install fixtures must derive framework versions from package.json')
   Object.assign(consumerManifest.dependencies, frameworks)
+  // Consumers live outside the repository, so Corepack would otherwise pick its newest pnpm.
+  consumerManifest.packageManager = packageManager
   consumerManifest.dependencies['@lupinum/nuxt-email'] = `file:${relative(consumerDirectory, tarballPath).replaceAll('\\', '/')}`
   await writeFile(consumerManifestPath, `${JSON.stringify(consumerManifest, null, 2)}\n`, 'utf8')
 
   process.stdout.write(`\n=== Fresh consumer: ${variant}, Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue} ===\n`)
-  await run(process.execPath, [
-    join(packageRoot, 'scripts/check-dependency-policy.mjs'),
-    join(consumerDirectory, 'pnpm-workspace.yaml'),
-  ], packageRoot)
   const installStartedAt = performance.now()
   const installArguments = [
     'install',
@@ -650,30 +642,18 @@ async function verifyFreshConsumer(
   }
 }
 
-async function verifyRelease(): Promise<void> {
-  const artifactOutputPath = requestedArtifactPath(process.argv.slice(2))
-  const sourceCommit = (await run('git', ['rev-parse', 'HEAD'], packageRoot)).stdout.trim()
-  invariant(/^[0-9a-f]{40}$/.test(sourceCommit), 'Release verification could not resolve a full source commit')
-  if (artifactOutputPath) {
-    const worktreeStatus = (await run('git', [
-      'status',
-      '--porcelain=v1',
-      '--untracked-files=all',
-    ], packageRoot)).stdout.trim()
-    invariant(worktreeStatus.length === 0, 'Refusing to create a release artifact from a dirty worktree')
-  }
-
+async function testPackedPackage(): Promise<void> {
   const sourceManifest = await readJson<PackageManifest>(join(packageRoot, 'package.json'))
   const frameworkTargets = consumerFrameworkVersions(sourceManifest)
   invariant(
     typeof sourceManifest.packageManager === 'string' && /^pnpm@\d+\.\d+\.\d+$/.test(sourceManifest.packageManager),
-    'package.json must pin pnpm with packageManager before release verification',
+    'package.json must pin pnpm with packageManager before packed consumer verification',
   )
   const expectedPnpmVersion = sourceManifest.packageManager.slice('pnpm@'.length)
   const pnpmVersion = (await run('pnpm', ['--version'], packageRoot)).stdout.trim()
   invariant(pnpmVersion === expectedPnpmVersion, `Expected pnpm ${expectedPnpmVersion}, received ${pnpmVersion}`)
 
-  const temporaryRoot = await realpath(await mkdtemp(join(tmpdir(), 'nuxt-email-release-verify-')))
+  const temporaryRoot = await realpath(await mkdtemp(join(tmpdir(), 'nuxt-email-packed-')))
   const artifactDirectory = join(temporaryRoot, 'artifacts')
   const tarballPath = join(artifactDirectory, 'lupinum-nuxt-email.tgz')
   const inspectionDirectory = join(temporaryRoot, 'package-inspection')
@@ -721,7 +701,6 @@ async function verifyRelease(): Promise<void> {
       'dist/runtime/dev-preview/render.get.js',
       'dist/runtime/dev-preview/templates.get.js',
       'dist/agent/AGENTS.md',
-      'dist/agent/manifest.json',
     ]) {
       invariant(packedFiles.includes(requiredFile), `Packed package is missing ${requiredFile}`)
     }
@@ -749,7 +728,7 @@ async function verifyRelease(): Promise<void> {
       'Packed package contains workspace-only source, test, script, playground, or dependency files',
     )
     invariant(packedFiles.every(path => !path.includes('.fixtures.')), 'Packed package contains an email fixture module')
-    await verifyPackageAgentDocs(inspectedPackageRoot)
+    await verifyAgentDocs(inspectedPackageRoot, packedManifest.version)
 
     const packedReadme = await readFile(join(inspectedPackageRoot, 'README.md'), 'utf8')
     for (const requiredText of ['wordmark-light.svg', '@lupinum/nuxt-email', 'renderEmail']) {
@@ -809,6 +788,7 @@ async function verifyRelease(): Promise<void> {
             workspaceStore,
             packedManifest,
             frameworks,
+            sourceManifest.packageManager,
           ))
           process.stdout.write(`  ${variant} consumer passed: Nuxt ${frameworks.nuxt}, Vue ${frameworks.vue}\n`)
         }
@@ -824,28 +804,10 @@ async function verifyRelease(): Promise<void> {
 
     const tarballBytes = (await stat(tarballPath)).size
     const tarballSha256 = createHash('sha256').update(await readFile(tarballPath)).digest('hex')
-    if (artifactOutputPath) {
-      await mkdir(dirname(artifactOutputPath), { recursive: true })
-      try {
-        await copyFile(tarballPath, artifactOutputPath, COPYFILE_EXCL)
-      }
-      catch (error) {
-        if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
-          throw new Error(`Refusing to overwrite existing release artifact: ${artifactOutputPath}`, { cause: error })
-        }
-        throw error
-      }
-      const outputSha256 = createHash('sha256').update(await readFile(artifactOutputPath)).digest('hex')
-      invariant(outputSha256 === tarballSha256, 'Copied release artifact does not match the verified tarball')
-    }
-
     process.stdout.write(`\n${JSON.stringify({
       package: `${packedManifest.name}@${packedManifest.version}`,
       source: {
-        commit: sourceCommit,
         node: process.version,
-        operatingSystem: `${platform()} ${release()}`,
-        architecture: arch(),
         pnpm: pnpmVersion,
         frameworkTargets,
       },
@@ -853,7 +815,6 @@ async function verifyRelease(): Promise<void> {
         bytes: tarballBytes,
         files: packedFiles.length,
         name: basename(tarballPath),
-        output: artifactOutputPath ?? null,
         sha256: tarballSha256,
       },
       packSeconds: Number((pack.durationMilliseconds / 1_000).toFixed(3)),
@@ -888,9 +849,9 @@ async function verifyRelease(): Promise<void> {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(await realpath(process.argv[1])).href) {
-  await verifyRelease().catch((error) => {
+  await testPackedPackage().catch((error) => {
     const message = error instanceof Error ? error.stack ?? error.message : String(error)
-    process.stderr.write(`\nRelease verification failed:\n${message}\n`)
+    process.stderr.write(`\nPacked consumer verification failed:\n${message}\n`)
     process.exitCode = 1
   })
 }

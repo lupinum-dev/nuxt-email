@@ -20,12 +20,14 @@ Use the Node and pnpm versions in `package.json`.
 pnpm install --frozen-lockfile
 pnpm dev:prepare
 pnpm lint
-pnpm test:types
+pnpm typecheck
 pnpm test
 ```
 
-Run `pnpm release:verify` when you change package metadata, exports, release
-scripts, or release workflows.
+Run `pnpm verify` before handoff. It includes the real package and isolated
+consumer checks. See `AGENTS.md` for the pinned oracle source prerequisite.
+Add a Changeset for package-facing changes; release operations follow
+[Lupinum OSS](https://oss.lupinum.com/docs/releasing).
 
 ## Keep the change focused
 

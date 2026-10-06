@@ -1,96 +1,68 @@
-# Repository instructions
+# Nuxt Email
 
-## Purpose
-
-Nuxt Email lets Nuxt applications author typed transactional emails as Vue
-components. It renders email on the Nitro server. The application owns delivery.
-
-Keep one template registry and one rendering core. Do not add provider adapters,
-send endpoints, a second renderer, or a second metadata format without an
-accepted design decision.
-
-## Repository map
-
-- `src/` contains the published Nuxt module and server runtime.
-- `test/` contains unit, conformance, fixture, and package tests.
-- `docs/` contains the public Ginko Docs site and versioned engineering records.
-- `playground/` contains the development application.
-- `scripts/` contains release verification and proof generation.
-- `MAINTAINING.md` contains dependency and release procedures.
-
-## Sources of truth
-
-- `package.json` owns package metadata, versions, exports, and commands.
-- `pnpm-lock.yaml` owns resolved dependencies.
-- `src/` owns runtime behavior and public types.
-- `docs/conformance/report.md` is generated conformance evidence.
-- The verified `.tgz` file is the release candidate.
-
-Do not edit generated files under `.nuxt/`, `.output/`, `dist/`, or
-`release-artifacts/`.
+Typed Vue email templates for Nuxt and standalone Node rendering, published to
+npm as `@lupinum/nuxt-email`. The application owns recipients and delivery.
+Maintenance and releases follow [Lupinum OSS](https://oss.lupinum.com); local
+choices and exceptions are in [internals/decisions.md](internals/decisions.md).
 
 ## Commands
 
-Use the Node and pnpm versions declared in `package.json`.
+Use the Node and pnpm versions in `package.json`.
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm dev            # run the module in playground/
+pnpm docs:dev       # run the documentation site
+pnpm build          # module, standalone compiler, docs site and dist/agent/
+pnpm typecheck      # module, fixtures and playground
+pnpm test           # unit, conformance and production isolation
+pnpm test:packed    # packs the `pnpm build` output and installs it in isolated consumers
+pnpm format         # apply lint fixes
+pnpm verify         # exactly what CI runs
+pnpm changeset      # describe a user-facing change for the next release
 ```
 
-Use these focused commands:
+`pnpm oracle:check` (part of `verify`) compares against a React Email checkout
+at the commit pinned in `.github/workflows/ci.yml`. Set
+`NUXT_EMAIL_REACT_EMAIL_CHECKOUT` to a checkout at exactly that commit; CI
+checks it out under `.oracle/react-email`. Regenerate the oracle and the
+conformance report only through `oracle:write` and `conformance:write`.
 
-- `pnpm build` builds the publishable module.
-- `pnpm lint` checks source and documentation rules.
-- `pnpm test:types` checks the module, fixtures, and playground.
-- `pnpm test:conformance` runs the conformance suite.
-- `pnpm conformance:check` is the focused generated-report check; `pnpm test` already includes it.
-- `pnpm oracle:check` checks the pinned React Email oracle.
-- `pnpm verify` runs the normal handoff gate.
-- `pnpm audit:all` audits the complete workspace dependency graph.
-- `pnpm release:verify` builds and tests the installable package.
-- `pnpm docs:theme` checks the Nuxt visual tokens and Ginko Docs version.
-- `pnpm docs:build` builds the package and then the public documentation.
+`pnpm build` also writes `dist/agent/`, a copy of the rendered docs that ships
+as `@lupinum/nuxt-email/agent-docs`, so agents in consuming projects read
+documentation that matches the installed version. The "Agent setup" section of
+the README tells those agents how to add a pointer to it. Keep the
+`./agent-docs` export and that section.
 
-Read `MAINTAINING.md` for the complete working procedure and delegated authority.
-Run focused checks while editing, then `pnpm verify` before handoff. Run
-`pnpm release:verify` instead for package or release changes.
+## Hard rules
 
-## Architecture boundaries
+- Never publish to npm, push to `main`, create tags or release by hand.
+  Releases happen when a maintainer merges the "Version packages" PR and
+  approves the protected `npm` environment. Do not move dist-tags.
+- Never add `NPM_TOKEN` or any other long-lived publish credential.
+- Add a changeset (`pnpm changeset`) to every pull request that changes what
+  package users install: code, types, runtime behaviour or dependencies.
+  Documentation, tests and CI changes need none. CI requires one when `src/`
+  changes; use `pnpm changeset --empty` if users see nothing. A change to
+  `dependencies` or `peerDependencies` needs at least a patch changeset.
+- Changeset style: one summary line in present tense that starts with Fix, Add,
+  Remove or Change and says what changed for users. A major change, or any
+  breaking change before 1.0, adds a line that starts with `Migration:`.
+- Do not bypass the 24-hour dependency quarantine (`minimumReleaseAge`). Do not
+  add dependencies to `allowBuilds` without a reason.
+- Pin GitHub Actions to full commit SHAs. Give each job only the permissions it needs.
+- Keep tooling lean. Add a script, check or workflow only when it guards
+  behaviour users rely on or closes a real attack path.
 
-- Email templates and rendering stay on the server.
-- The client bundle must not contain templates or the renderer.
-- Preview data and fixtures must not enter production output.
-- Development preview and production rendering use the same rendering core.
-- The active Nuxt application owns one template registry.
-- Nuxt layers do not merge email templates into that registry.
-- The module renders email. It does not send email or own recipients.
-- Syntax highlighting remains opt-in and uses a closed language set.
+## Boundaries
 
-Keep delivery-provider behavior outside this repository.
+- Keep one template registry and one rendering core; dev preview shares it.
+- Templates and rendering stay on the server. Exclude preview fixtures from production.
+- The active application owns its registry; Nuxt layers do not merge templates.
+- Do not add delivery adapters, send endpoints, recipient policy or a second renderer.
+- Syntax highlighting stays opt-in with a closed language set.
 
-## Tests and documentation
-
-Add tests for boundaries and failure behavior. Update public documentation when
-user-visible behavior changes. Update conformance evidence only through its
-generator.
-
-Follow `docs/WRITING.md`. Keep the README focused on evaluation and first use.
-Put detailed guidance in Ginko Docs. Put maintainer operations in
-`MAINTAINING.md`.
-
-Do not rewrite legal text, code, API identifiers, quotations, or generated
-reports to match the controlled-English profile.
-
-## Publication safety
-
-Agents must not publish packages, approve npm environments, move npm dist-tags,
-create release tags, or handle publication credentials. Agents can prepare and
-verify an exact release artifact.
-
-Use a short branch name that describes the work, such as
-`fix/preview-isolation`. Do not require an agent or tool prefix such as
-`codex/`, `claude/`, or `cursor/`.
-
-Prefer deletion and simplification. Use a hard cut for unreleased paths after
-the replacement passes its tests.
+Run focused tests for changed behavior and `pnpm verify` for handoff. Keep the
+docs source in `docs/` and follow `docs/WRITING.md`; update it in the same pull
+request as the behaviour it describes. Preserve legal text and generated
+conformance evidence. Do not hand-edit `.nuxt`, `.output`, `dist`, or generated docs.
