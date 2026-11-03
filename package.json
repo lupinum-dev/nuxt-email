@@ -120,7 +120,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-vue": "6.0.8",
     "eslint": "^10.4.1",
-    "nuxt": "4.5.2",
+    "nuxt": "4.6.2",
     "pkg-pr-new": "0.0.87",
     "react": "19.2.7",
     "react-dom": "19.2.7",
