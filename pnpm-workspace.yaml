@@ -26,6 +26,8 @@ overrides:
   'fflate@<0.7.5': 0.7.5
   # Remove when every parent resolves js-yaml 4.3.2 or newer.
   js-yaml: 4.3.2
+  # Remove when every parent resolves launch-editor 2.14.2 or newer (GHSA-587h-7wmj-h5pm).
+  launch-editor: 2.14.2
   # Remove when every parent resolves postcss 8.5.23 or newer.
   postcss: 8.5.23
   # Remove when every parent resolves sharp 0.35.4 or newer (some still ask for ^0.34.0).
@@ -33,6 +35,8 @@ overrides:
   # One Tailwind compiler for the vendored engine, the docs site and the tests.
   # Remove when no other package resolves a different tailwindcss version.
   tailwindcss: 4.3.3
+  # Remove when unplugin and Nuxt resolve vite 8.2.4 or newer (GHSA-587h-7wmj-h5pm).
+  'vite@>=8.2.0 <8.2.4': 8.2.4
 
 allowBuilds:
   '@parcel/watcher': true
