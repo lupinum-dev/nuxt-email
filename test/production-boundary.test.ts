@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { buildNuxt, loadNuxt } from '@nuxt/kit'
 import { describe, expect, it } from 'vitest'
+import { createTestRenderer } from '../src/testing'
 
 interface CapturedModule {
   id: string
@@ -25,8 +26,9 @@ interface BuildResult {
 const basicFixture = fileURLToPath(new URL('./fixtures/basic', import.meta.url))
 const clientImportFixture = fileURLToPath(new URL('./fixtures/client-import', import.meta.url))
 const codeBlockFixture = fileURLToPath(new URL('./fixtures/code-block', import.meta.url))
+const codeBlockMissingFixture = fileURLToPath(new URL('./fixtures/code-block-missing', import.meta.url))
 const previewFixture = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
-const testingClientImportFixture = fileURLToPath(new URL('./fixtures/testing-client-import', import.meta.url))
+const styleBlockFixture = fileURLToPath(new URL('./fixtures/style-block', import.meta.url))
 const executeFile = promisify(execFile)
 const childOutputStart = 'NUXT_EMAIL_PRODUCTION_RESULT_START'
 const childOutputEnd = 'NUXT_EMAIL_PRODUCTION_RESULT_END'
@@ -176,7 +178,20 @@ describe('production server boundary', () => {
       expect(serverOutput).not.toContain('ECodeBlock')
       expect(serverOutput).not.toContain('@shikijs')
       expect(serverOutput).not.toContain('createHighlighterCore')
-      expect(serverFiles.some(path => path.includes('/ECodeBlock-'))).toBe(false)
+      // Nuxt serves the real /__nuxt_island/** renderer, with a chunk per server component,
+      // only when a server component exists. The email components are not app components.
+      expect(serverOutput).not.toContain('islandComponents')
+      expect(serverFiles.map(path => path.replaceAll('\\', '/')).filter(path => /\/E[A-Z]\w*-[\w-]+\.mjs$/.test(path))).toEqual([])
+      expect(serverFiles.some(path => path.replaceAll('\\', '/').includes('/ECodeBlock-'))).toBe(false)
+
+      // Tailwind, Lightning CSS and the CSS parser run at build time only.
+      const allServerPaths = (await collectFiles(join(result.outputDir, 'server')))
+        .map(path => relative(result.outputDir, path).replaceAll('\\', '/'))
+      expect(allServerPaths.filter(path => path.includes('/tailwindcss/') || path.includes('/css-tree/') || path.includes('/lightningcss'))).toEqual([])
+      expect(serverOutput).not.toContain('tailwindcss')
+      expect(serverOutput).not.toContain('css-tree')
+      // pnpm folder names in source maps can contain `lightningcss@x` as a peer; look for an import or package path.
+      expect(serverOutput).not.toMatch(/["']lightningcss["']|\/lightningcss\//)
 
       const routeDirectory = join(result.outputDir, 'server/chunks/routes/api')
       const routeUrls = [
@@ -184,6 +199,7 @@ describe('production server boundary', () => {
         'render-reset.get.mjs',
         'render-unsupported-auto-import.get.mjs',
         'render-unknown.get.mjs',
+        'render-transactional-missing.get.mjs',
       ].map(filename => pathToFileURL(join(routeDirectory, filename)).href)
       const { stdout } = await executeFile(process.execPath, [
         '--input-type=module',
@@ -192,13 +208,33 @@ describe('production server boundary', () => {
       ], {
         env: { ...process.env, NODE_ENV: 'production' },
       })
-      const [rendered, reset, unsupportedAutoImport, unknown] = parseChildOutput<[
-        { html: string, text: string },
+      const [rendered, reset, unsupportedAutoImport, unknown, missing] = parseChildOutput<[
+        { html: string, text: string, subject: string },
         { html: string, text: string },
         { cause: string, name: string },
         { knownNames: string[], name: string, requestedName: string },
+        { cause: string, name: string, templateName: string },
       ]>(stdout)
 
+      expect(rendered.subject).toBe('Activate your account, Ada')
+      // The Nuxt production build and the standalone compiler produce the same bytes.
+      const tested = await createTestRenderer({ rootDir: basicFixture })
+      expect(await tested.renderEmail('transactional', {
+        activationUrl: 'https://example.com/activate?token=fixture&source=email',
+        firstName: 'Ada',
+        logoUrl: 'https://example.com/logo.png',
+      })).toEqual(rendered)
+      expect(rendered.html).toContain('<p class="sm_text-lg" style="font-size:16px;line-height:1.5;color:#314158;')
+      expect(rendered.html).toContain(
+        '<style>@media (min-width:640px){.sm_text-lg{font-size:18px!important;line-height:1.5555555555555556!important}}</style>',
+      )
+      // `bg-brand` comes from `@theme { --color-brand: #00dc82 }` in app/emails/tailwind.css.
+      expect(rendered.html).toContain('background-color:#00dc82')
+      expect(missing).toEqual({
+        cause: 'Missing required email component prop: firstName',
+        name: 'EmailRenderError',
+        templateName: 'transactional',
+      })
       expect(rendered.html).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
       expect(rendered.html).toContain('Welcome, Ada')
       expect(rendered.text).toContain('Activate account https://example.com/activate?token=fixture&source=email')
@@ -208,7 +244,7 @@ describe('production server boundary', () => {
         name: 'EmailRenderError',
       })
       expect(unknown).toMatchObject({
-        knownNames: ['account/reset-password', 'transactional', 'unsupported-auto-import'],
+        knownNames: ['account/reset-password', 'server-auto-import', 'shared-component', 'transactional', 'unsupported-auto-import'],
         name: 'UnknownEmailTemplateError',
         requestedName: 'not-registered',
       })
@@ -230,6 +266,7 @@ describe('production server boundary', () => {
 
       expect(serverOutput).toContain('ECodeBlock')
       expect(serverOutput).toContain('source.ts')
+      expect(serverOutput).not.toContain('islandComponents')
       expect(serverOutput).not.toContain('source.python')
       expect(serverOutput).not.toContain('bundle/web')
 
@@ -247,13 +284,16 @@ describe('production server boundary', () => {
       })
       const rendered = parseChildOutput<{
         concurrentEqual: boolean
-        configuredTest: { html: string, text: string }
         production: { html: string, text: string }
       }>(stdout)
-      const { configuredTest, production } = rendered
+      const { production } = rendered
 
       expect(rendered.concurrentEqual).toBe(true)
-      expect(configuredTest).toEqual(production)
+      const tested = await createTestRenderer({
+        rootDir: codeBlockFixture,
+        codeBlock: { languages: ['typescript'], theme: 'github-dark' },
+      })
+      expect(await tested.renderEmail('code-example', { source: 'const answer: string = "<script>"' })).toEqual(production)
       expect(production.html).toContain('data-code-theme="github-dark"')
       expect(production.html).toContain('color:#F97583')
       expect(production.html).toContain('color:#9ECBFF')
@@ -268,14 +308,20 @@ describe('production server boundary', () => {
     }
   })
 
-  it('fails clearly when application code imports renderEmail', { timeout: 120_000 }, async () => {
-    await expect(buildFixture(clientImportFixture)).rejects.toThrow(/failed to find "renderEmail" imported from "#imports"/i)
+  it('fails the build when a template uses ECodeBlock without the codeBlock option', { timeout: 120_000 }, async () => {
+    await expect(buildFixture(codeBlockMissingFixture)).rejects.toThrow(
+      /<ECodeBlock> in .*code-example\.vue needs the nuxtEmail codeBlock module option\./,
+    )
   })
 
-  it('rejects the generated testing renderer from the client graph', { timeout: 120_000 }, async () => {
-    await expect(buildFixture(testingClientImportFixture)).rejects.toThrow(
-      /resolving "#nuxt-email\/testing"|missing "#nuxt-email\/testing" specifier/i,
+  it('fails the build when a template has a <style> block', { timeout: 120_000 }, async () => {
+    await expect(buildFixture(styleBlockFixture)).rejects.toThrow(
+      /Email templates do not support style or custom blocks \(.*styled-email\.vue\)\./,
     )
+  })
+
+  it('fails clearly when application code imports renderEmail', { timeout: 120_000 }, async () => {
+    await expect(buildFixture(clientImportFixture)).rejects.toThrow(/failed to find "renderEmail" imported from "#imports"/i)
   })
 
   it('omits preview routes and fixtures while keeping production email rendering', { timeout: 120_000 }, async () => {

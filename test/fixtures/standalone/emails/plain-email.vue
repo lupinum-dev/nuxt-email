@@ -1,7 +1,8 @@
 <template>
-  <EHtml lang="en">
-    <EBody>
-      <EText>A template without a script.</EText>
-    </EBody>
-  </EHtml>
+  <EEmail
+    subject="Plain email"
+    lang="en"
+  >
+    <EText>A template without a script.</EText>
+  </EEmail>
 </template>

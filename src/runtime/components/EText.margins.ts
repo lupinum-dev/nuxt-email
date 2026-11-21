@@ -3,7 +3,7 @@ import { normalizeEmailStyle } from './style'
 
 type MarginValue = string | number | undefined
 
-export interface MarginProperties {
+interface MarginProperties {
   margin?: MarginValue
   marginTop?: MarginValue
   marginRight?: MarginValue
@@ -11,7 +11,7 @@ export interface MarginProperties {
   marginLeft?: MarginValue
 }
 
-export interface ComputedMargins {
+interface ComputedMargins {
   marginTop: MarginValue
   marginRight: MarginValue
   marginBottom: MarginValue

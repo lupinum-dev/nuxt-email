@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { $fetch, createTest, fetch as testFetch, setupMaps } from '@nuxt/test-utils/e2e'
@@ -24,6 +24,10 @@ await writeFile(
 )
 const welcomeTemplate = join(fixtureRoot, 'app/emails/welcome.vue')
 const welcomeFixture = join(fixtureRoot, 'app/emails/welcome.fixtures.ts')
+// Outside app/emails; welcome.vue imports it through `~`.
+const sharedComponent = join(fixtureRoot, 'app/components/PreviewFooter.vue')
+const tailwindCss = join(fixtureRoot, 'app/emails/tailwind.css')
+const fixturelessFixture = join(fixtureRoot, 'app/emails/without-fixture.fixtures.ts')
 
 async function renderedHtmlDuringReload(name: string) {
   const response = await testFetch(`/sub/__email/render?name=${name}&format=json`, {
@@ -37,17 +41,13 @@ async function renderedHtmlDuringReload(name: string) {
   return (await response.json() as { html: string }).html
 }
 
-async function templateNamesDuringReload() {
+async function fixtureDuringReload(name: string) {
   const response = await testFetch('/sub/__email/api/templates', {
     signal: AbortSignal.timeout(1_000),
   }).catch(() => undefined)
-  if (!response) return []
-  if (response.status === 500) return []
-  if (!response.ok) {
-    throw new Error(`Preview registry returned HTTP ${response.status}.`)
-  }
-  const result = await response.json() as { templates: Array<{ name: string }> }
-  return result.templates.map(template => template.name)
+  if (!response?.ok) return undefined
+  const result = await response.json() as { templates: Array<{ name: string, hasFixture: boolean }> }
+  return result.templates.find(template => template.name === name)?.hasFixture
 }
 
 describe('development email preview', async () => {
@@ -89,18 +89,14 @@ describe('development email preview', async () => {
   }]
   await setupMaps.vitest(test)
 
-  it('serves the standalone sandboxed preview application', async () => {
+  it('serves the preview page with its security headers under the app base URL', async () => {
     const response = await testFetch('/sub/__email')
-    const html = await response.text()
 
-    expect(html).toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
-    expect(html).toContain('role="tabpanel" aria-labelledby="tab-preview" sandbox')
-    // Surface controls ship with accessible labelling.
-    expect(html).toContain('role="group" aria-label="Preview viewport width"')
-    expect(html).toContain('id="subject"')
-    expect(html).toContain('id="size-badge"')
+    expect(response.status).toBe(200)
     expect(response.headers.get('cache-control')).toBe('no-store')
     expect(response.headers.get('content-security-policy')).toContain('frame-src \'self\'')
+    // The Nuxt DevTools tab frames the page from the same origin.
+    expect(response.headers.get('content-security-policy')).toContain('frame-ancestors \'self\'')
     expect(response.headers.get('x-content-type-options')).toBe('nosniff')
   })
 
@@ -111,21 +107,23 @@ describe('development email preview', async () => {
 
     expect(result.templates).toEqual([
       { name: 'broken', hasFixture: true },
+      { name: 'kept-classes', hasFixture: true },
       { name: 'welcome', hasFixture: true },
       { name: 'without-fixture', hasFixture: false },
     ])
   })
 
   it('matches canonical direct rendering in JSON and raw HTML views', async () => {
-    const preview = await $fetch<{ name: string, html: string, text: string, bytes: number }>(
+    const preview = await $fetch<{ name: string, html: string, text: string, bytes: number, unknownClasses: string[] }>(
       '/sub/__email/render?name=welcome&format=json',
     )
     const direct = await $fetch<{ html: string, text: string }>('/sub/api/direct-render')
     const raw = await testFetch('/sub/__email/render?name=welcome')
     const rawHtml = await raw.text()
 
-    const { bytes, ...previewOutput } = preview
+    const { bytes, unknownClasses, ...previewOutput } = preview
     expect(previewOutput).toEqual({ name: 'welcome', ...direct })
+    expect(unknownClasses).toEqual([])
     expect(bytes).toBe(Buffer.byteLength(preview.html, 'utf8'))
     expect(rawHtml).toBe(preview.html)
     expect(raw.headers.get('cache-control')).toBe('no-store')
@@ -134,21 +132,19 @@ describe('development email preview', async () => {
     expect(raw.headers.get('content-security-policy')).toContain('object-src \'none\'')
   })
 
-  it('reports the exact UTF-8 byte size of the rendered html for the Gmail clipping budget', async () => {
-    const preview = await $fetch<{ html: string, bytes: number }>(
+  it('returns the subject from the EEmail root', async () => {
+    const welcome = await $fetch<{ subject: string }>(
       '/sub/__email/render?name=welcome&format=json',
     )
 
-    expect(preview.bytes).toBe(Buffer.byteLength(preview.html, 'utf8'))
-    expect(preview.bytes).toBeGreaterThan(0)
+    expect(welcome.subject).toBe('Welcome, Ada')
   })
 
-  it('omits the subject for templates that do not call defineEmail', async () => {
-    const welcome = await $fetch<{ subject?: string }>(
-      '/sub/__email/render?name=welcome&format=json',
-    )
+  it('reports the classes a render kept as written', async () => {
+    const unknownClasses = async (name: string) => (await $fetch<{ unknownClasses: string[] }>(`/sub/__email/render?name=${name}&format=json`)).unknownClasses
 
-    expect(welcome).not.toHaveProperty('subject')
+    expect(await unknownClasses('kept-classes')).toEqual(['brand-footer', 'ring-blue-500'])
+    expect(await unknownClasses('welcome')).toEqual([])
   })
 
   it('returns actionable development errors and rejects fixtureless templates', async () => {
@@ -192,6 +188,44 @@ describe('development email preview', async () => {
     // and the poll window must fit inside the test's own timeout.
   }, 30_000)
 
+  it('rebuilds the style table when a template adds a class no template used before', async () => {
+    const originalSource = await readFile(welcomeTemplate, 'utf8')
+    expect(originalSource).not.toContain('text-rose-700')
+    const updatedSource = originalSource.replace('<EText>PREVIEW_VERSION_ONE', '<EText class="text-rose-700">PREVIEW_VERSION_ONE')
+    expect(updatedSource).not.toBe(originalSource)
+
+    try {
+      await writeFile(welcomeTemplate, updatedSource)
+      await expect.poll(() => renderedHtmlDuringReload('welcome'), {
+        interval: 100,
+        timeout: 20_000,
+      }).toContain('color:#c70036')
+    }
+    finally {
+      await writeFile(welcomeTemplate, originalSource)
+    }
+  }, 30_000)
+
+  // Catches a stale registry or style table after an edit to a file outside app/emails
+  // that a template imports: it must reload like a template file.
+  it('rebuilds after a class edit in a component imported from outside app/emails', async () => {
+    const originalSource = await readFile(sharedComponent, 'utf8')
+    const updatedSource = originalSource.replace('text-sky-700', 'text-emerald-700')
+    expect(updatedSource).not.toBe(originalSource)
+    expect(await renderedHtmlDuringReload('welcome')).toContain('color:#0069a8')
+
+    try {
+      await writeFile(sharedComponent, updatedSource)
+      await expect.poll(() => renderedHtmlDuringReload('welcome'), {
+        interval: 100,
+        timeout: 20_000,
+      }).toContain('color:#007a55')
+    }
+    finally {
+      await writeFile(sharedComponent, originalSource)
+    }
+  }, 30_000)
+
   it('refreshes edited fixture data without restarting the development server', async () => {
     const originalSource = await readFile(welcomeFixture, 'utf8')
     const updatedSource = originalSource.replace('firstName: \'Ada\'', 'firstName: \'Grace\'')
@@ -208,41 +242,44 @@ describe('development email preview', async () => {
     }
   }, 30_000)
 
-  it('regenerates the registry for real add, rename, and delete events', async () => {
-    const emailDirectory = join(fixtureRoot, 'app/emails')
-    const addedTemplate = join(emailDirectory, 'dynamic.vue')
-    const addedFixture = join(emailDirectory, 'dynamic.fixtures.ts')
-    const renamedTemplate = join(emailDirectory, 'renamed-dynamic.vue')
-    const renamedFixture = join(emailDirectory, 'renamed-dynamic.fixtures.ts')
-    const templateSource = '<template><EHtml lang="en"><EBody><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EBody></EHtml></template>'
-    const fixtureSource = 'export default {}\n'
+  // Rename and delete are covered at the hook level in module-registry.test.ts.
+  it('picks up a template added while the development server runs', async () => {
+    const addedTemplate = join(fixtureRoot, 'app/emails/dynamic.vue')
+    const addedFixture = join(fixtureRoot, 'app/emails/dynamic.fixtures.ts')
     try {
-      await writeFile(addedFixture, fixtureSource)
-      await writeFile(addedTemplate, templateSource)
-      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
-        .toContain('dynamic')
+      await writeFile(addedFixture, 'export default {}\n')
+      await writeFile(addedTemplate, '<template><EEmail subject="Dynamic" lang="en"><EText>DYNAMIC_REGISTRY_TEMPLATE</EText></EEmail></template>')
       await expect.poll(() => renderedHtmlDuringReload('dynamic'), {
         interval: 100,
         timeout: 20_000,
       }).toContain('DYNAMIC_REGISTRY_TEMPLATE')
-
-      await rename(addedTemplate, renamedTemplate)
-      await rename(addedFixture, renamedFixture)
-      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
-        .toContain('renamed-dynamic')
-      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
-        .not.toContain('dynamic')
-
-      await rm(renamedTemplate)
-      await rm(renamedFixture)
-      await expect.poll(templateNamesDuringReload, { interval: 100, timeout: 20_000 })
-        .not.toContain('renamed-dynamic')
     }
     finally {
       await rm(addedTemplate, { force: true })
       await rm(addedFixture, { force: true })
-      await rm(renamedTemplate, { force: true })
-      await rm(renamedFixture, { force: true })
     }
-  }, 60_000)
+  }, 30_000)
+
+  it('lists a fixture added to an existing template while the development server runs', async () => {
+    expect(await fixtureDuringReload('without-fixture')).toBe(false)
+    try {
+      await writeFile(fixturelessFixture, 'export default {}\n')
+      await expect.poll(() => fixtureDuringReload('without-fixture'), { interval: 100, timeout: 20_000 }).toBe(true)
+    }
+    finally {
+      await rm(fixturelessFixture, { force: true })
+    }
+  }, 30_000)
+
+  it('applies an edited @theme colour in tailwind.css to the next render', async () => {
+    const originalSource = await readFile(tailwindCss, 'utf8')
+    expect(await renderedHtmlDuringReload('welcome')).toContain('color:#00dc82')
+    try {
+      await writeFile(tailwindCss, originalSource.replace('#00dc82', '#123456'))
+      await expect.poll(() => renderedHtmlDuringReload('welcome'), { interval: 100, timeout: 20_000 }).toContain('color:#123456')
+    }
+    finally {
+      await writeFile(tailwindCss, originalSource)
+    }
+  }, 30_000)
 })

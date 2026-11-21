@@ -25,7 +25,7 @@ pnpm test
 ```
 
 Run `pnpm verify` before handoff. It includes the real package and isolated
-consumer checks. See `AGENTS.md` for the pinned oracle source prerequisite.
+consumer checks.
 Add a Changeset for package-facing changes; release operations follow
 [Lupinum OSS](https://oss.lupinum.com/docs/releasing).
 

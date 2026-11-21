@@ -1,7 +1,7 @@
 # Email client QA checklist
 
 Manual visual verification of the [proof batch](../../scripts/proofs/README.md) across
-real email clients. Automated rendering conformance does not prove client display;
+real email clients. Automated rendering tests do not prove client display;
 only a human looking at real mail does. The three-client smoke test blocks the beta;
 the complete eight-client table blocks stable `1.0.0`.
 
@@ -73,6 +73,13 @@ Graceful-degradation note: media queries and `dark:` variants are expected to be
 honored only in some clients (notably Apple Mail) and ignored in others (Gmail,
 Outlook classic). "Pass" for P5/P6/P9 means the email is **correct and readable in both
 cases** — enhanced where supported, sensible base rendering where not.
+
+Font family note: Tailwind font family utilities such as `font-sans` write
+multi-word family names such as `Segoe UI` and `Helvetica Neue` without quotes.
+`proof-kit` does not use these utilities. When a release changes font family
+output, check one template that uses `font-sans` in Outlook classic, Gmail and
+Apple Mail: the text must use a sans-serif family from the stack, never a serif
+fallback.
 
 ## Sign-off
 

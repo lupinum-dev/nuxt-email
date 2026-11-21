@@ -1,6 +1,6 @@
 import { generate, parse } from 'css-tree'
 import { describe, expect, it } from 'vitest'
-import { resolveCalcExpressions } from '../../../src/runtime/tailwind/engine/css/resolve-calc-expressions'
+import { resolveCalcExpressions } from '../../../src/compiler/tailwind/css/resolve-calc-expressions'
 
 describe('resolveCalcExpressions()', () => {
   it('resolves spacing calc expressions from tailwind v4', () => {

@@ -21,7 +21,7 @@ Writes to `release-artifacts/proofs/` (git-ignored):
 
 | Proof | Source | Risk areas exercised |
 | --- | --- | --- |
-| `proof-kit` | dedicated template in `generate.ts` | `defineEmail` subject (non-ASCII), `EPreview` preheader, `EFont` webfont, `ETailwind` with a `sm:` media query and a `dark:` variant, an MSO-padded `EButton`, a `Section`/`Row`/`Column` table layout, and `EMarkdown`. |
+| `proof-kit` | `emails/proof-kit.vue`, rendered with `createTestRenderer()` | `EEmail` subject (non-ASCII) and preview text, `EFont` webfont, Tailwind classes with a `sm:` media query and a `dark:` variant, an MSO-padded `EButton`, a `Section`/`Row`/`Column` table layout, and `EMarkdown`. |
 
 For each proof it emits:
 

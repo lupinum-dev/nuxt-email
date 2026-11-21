@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { loadNuxt } from '@nuxt/kit'
 import { afterEach, describe, expect, it } from 'vitest'
 import NuxtEmail from '../src/module'
-import { EMAIL_COMPONENT_NAMES } from '../src/runtime/components/email-component-names'
+import { EMAIL_TAGS } from '../src/runtime/components/email-tags'
 
 const temporaryDirectories: string[] = []
 const workspaceDirectory = fileURLToPath(new URL('..', import.meta.url))
@@ -15,7 +15,7 @@ async function temporaryNuxtDirectory(): Promise<string> {
   temporaryDirectories.push(directory)
   await mkdir(join(directory, 'app/emails/account'), { recursive: true })
   await writeFile(join(directory, 'app/app.vue'), '<template><div>fixture</div></template>')
-  await writeFile(join(directory, 'app/emails/welcome.vue'), '<template><html><body>Welcome</body></html></template>')
+  await writeFile(join(directory, 'app/emails/welcome.vue'), '<template><EEmail subject="Welcome" lang="en">Welcome</EEmail></template>')
   return directory
 }
 
@@ -93,7 +93,7 @@ describe('Nuxt email registry regeneration', () => {
     const rootDir = await temporaryNuxtDirectory()
     const srcDir = join(rootDir, 'custom-source')
     await mkdir(join(srcDir, 'emails'), { recursive: true })
-    await writeFile(join(srcDir, 'emails/custom.vue'), '<template><html><body>Custom</body></html></template>')
+    await writeFile(join(srcDir, 'emails/custom.vue'), '<template><EEmail subject="Custom" lang="en">Custom</EEmail></template>')
     const nuxt = await loadNuxt({
       cwd: workspaceDirectory,
       dev: false,
@@ -126,7 +126,7 @@ describe('Nuxt email registry regeneration', () => {
     const layerDir = join(rootDir, 'layer')
     await mkdir(join(layerDir, 'app/emails'), { recursive: true })
     await writeFile(join(layerDir, 'nuxt.config.ts'), 'export default defineNuxtConfig({})')
-    await writeFile(join(layerDir, 'app/emails/layer-only.vue'), '<template><html><body>Layer</body></html></template>')
+    await writeFile(join(layerDir, 'app/emails/layer-only.vue'), '<template><EEmail subject="Layer" lang="en">Layer</EEmail></template>')
     const nuxt = await loadNuxt({
       cwd: workspaceDirectory,
       dev: false,
@@ -186,23 +186,14 @@ describe('Nuxt email registry regeneration', () => {
         include?: string[]
       }
 
-      const components: Array<{ export: string, filePath: string, mode: string, pascalName: string }> = []
+      // Registered as Nuxt server components, they would open /__nuxt_island/** in production.
+      const components: Array<{ filePath: string, pascalName: string }> = []
       await nuxt.callHook('components:dirs', [])
       await nuxt.callHook('components:extend', components as never)
-      const emailComponents = components
-        .filter(component => component.filePath.replaceAll('\\', '/').includes('/runtime/components/E'))
-        .map(component => ({
-          export: component.export,
-          mode: component.mode,
-          pascalName: component.pascalName,
-        }))
-        .sort((left, right) => left.pascalName.localeCompare(right.pascalName))
-
-      expect(emailComponents).toEqual([...EMAIL_COMPONENT_NAMES].sort().map(componentName => ({
-        export: componentName,
-        mode: 'server',
-        pascalName: componentName,
-      })))
+      expect(components.filter(component => component.filePath.replaceAll('\\', '/').includes('/runtime/components/E'))).toEqual([])
+      const componentTypes = nuxt.options.build.templates.find(template => template.filename === 'types/nuxt-email-components.d.ts')
+      const declaration = await (componentTypes?.getContents as (() => string) | undefined)?.()
+      for (const name of EMAIL_TAGS) expect(declaration).toContain(`    ${name}: typeof import(`)
 
       const nitroOptions = nuxt.options.nitro as {
         alias?: Record<string, string>
@@ -210,12 +201,9 @@ describe('Nuxt email registry regeneration', () => {
         typescript?: { tsConfig?: { exclude?: string[], include?: string[] } }
       }
       const nitroAlias = nitroOptions.alias
-      expect(nitroAlias?.['@lupinum/nuxt-email/define-email']?.replaceAll('\\', '/'))
-        .toMatch(/\/runtime\/define-email\.(?:js|ts)$/)
       expect(nitroAlias?.['@lupinum/nuxt-email/errors']?.replaceAll('\\', '/'))
         .toMatch(/\/runtime\/errors\.(?:js|ts)$/)
-      expect(nitroAlias?.['#nuxt-email/testing']?.replaceAll('\\', '/'))
-        .toMatch(/\/runtime\/testing\/index\.(?:js|ts)$/)
+      expect(nitroAlias).not.toHaveProperty('#nuxt-email/testing')
       expect(nitroOptions.typescript?.tsConfig?.include).toContain(
         `${join(rootDir, 'app/emails').replaceAll('\\', '/')}/**/*.vue`,
       )
@@ -230,12 +218,7 @@ describe('Nuxt email registry regeneration', () => {
       expect(appTsConfig.exclude).toContain(
         `${join(rootDir, 'app/emails/components').replaceAll('\\', '/')}/**/*.vue`,
       )
-      for (const specifier of [
-        '@lupinum/nuxt-email/define-email',
-        '@lupinum/nuxt-email/errors',
-      ]) {
-        expect(nitroOptions.externals?.inline).toContain(nitroAlias?.[specifier])
-      }
+      expect(nitroOptions.externals?.inline).toContain(nitroAlias?.['@lupinum/nuxt-email/errors'])
     }
     finally {
       await nuxt.close()
@@ -278,7 +261,7 @@ describe('Nuxt email registry regeneration', () => {
       expect(await generatedTypes()).toContain('"welcome"')
 
       const resetPath = join(rootDir, 'app/emails/account/reset.vue')
-      await writeFile(resetPath, '<template><html><body>Reset</body></html></template>')
+      await writeFile(resetPath, '<template><EEmail subject="Reset" lang="en">Reset</EEmail></template>')
       await nuxt.callHook('builder:watch', 'add', resetPath)
 
       expect(await registrySource()).toContain('["account/reset"]')

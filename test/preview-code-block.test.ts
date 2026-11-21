@@ -9,14 +9,12 @@ describe('development preview with configured code blocks', async () => {
     serverStartTimeout: 180_000,
   })
 
-  it('bundles the generated renderer and shares it with production rendering', async () => {
+  it('renders configured code blocks through the production registry', async () => {
     expect(await $fetch('/__email')).toContain('NUXT_EMAIL_PREVIEW_PAGE_V01')
     const rendered = await $fetch<{
       concurrentEqual: boolean
-      configuredTest: { html: string }
       production: { html: string }
     }>('/api/render-code')
-    expect(rendered.configuredTest.html).toBe(rendered.production.html)
     expect(rendered.concurrentEqual).toBe(true)
     expect(rendered.production.html).toContain('answer')
   })

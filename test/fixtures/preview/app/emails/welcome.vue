@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import PreviewFooter from '~/components/PreviewFooter.vue'
+
 defineOptions({ name: 'EmailWelcome' })
 
 defineProps<{
@@ -7,16 +9,20 @@ defineProps<{
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EHead>
+  <EEmail
+    :subject="`Welcome, ${firstName}`"
+    preview="Welcome from the preview fixture."
+    lang="en"
+  >
+    <template #head>
       <title>Preview welcome</title>
-    </EHead>
-    <EBody>
-      <EPreview>Welcome from the preview fixture.</EPreview>
-      <EContainer>
-        <EHeading>Welcome, {{ firstName }}</EHeading>
-        <EText>PREVIEW_VERSION_ONE</EText>
-      </EContainer>
-    </EBody>
-  </EHtml>
+    </template>
+    <EContainer>
+      <EHeading class="text-brand">
+        Welcome, {{ firstName }}
+      </EHeading>
+      <EText>PREVIEW_VERSION_ONE</EText>
+      <PreviewFooter />
+    </EContainer>
+  </EEmail>
 </template>

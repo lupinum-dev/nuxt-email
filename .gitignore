@@ -41,9 +41,6 @@ release-artifacts
 .release
 .package-preview
 
-# Explicitly checked out React Email oracle source
-.oracle
-
 # VSCode
 .vscode/*
 !.vscode/settings.json
