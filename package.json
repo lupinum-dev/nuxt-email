@@ -110,7 +110,7 @@
     "@changesets/cli": "3.0.3",
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "4.5.2",
+    "@nuxt/schema": "4.6.4",
     "@nuxt/test-utils": "^4.0.3",
     "@react-email/render": "2.1.0",
     "@types/css-tree": "2.3.11",
