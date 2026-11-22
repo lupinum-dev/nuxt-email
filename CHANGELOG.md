@@ -1,5 +1,89 @@
 # Changelog
 
+## 1.0.0-beta.6
+
+### Major Changes
+
+- [#77](https://github.com/lupinum-dev/nuxt-email/pull/77) [`638353c`](https://github.com/lupinum-dev/nuxt-email/commit/638353ccc2a8319f891944d92edf05d31dd6405f) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Change email templates to one `EEmail` root with Tailwind classes resolved at build time, so a production render no longer loads Tailwind or a CSS parser.
+  
+  A template's root is `<EEmail :subject="…" lang="en">`. Tailwind classes work on every element and component without a wrapper. A responsive padding class such as `sm:p-8` on `ESection`, `ERow` or `EContainer` changes the padding of the inner cell at that breakpoint. A template has a `<template>` block and optional `<script>` blocks in JavaScript or TypeScript; style blocks, custom blocks and `src=` blocks fail the build. `renderEmail()` always returns a `subject` string.
+  
+  The Nuxt module, `@lupinum/nuxt-email/build` and the new `createTestRenderer()` use the same compiler and render the same HTML. The build reads classes from every file a template imports; files in `node_modules` are not read. In the Nuxt module and `createTestRenderer()`, a shared component outside the email directory gets its styles too, and `createTestRenderer()` resolves Nuxt's default `~`, `@`, `~~` and `@@` aliases. `@lupinum/nuxt-email/build` compiles a self-contained email directory: it fails with a clear error on an import from outside that directory or a Nuxt alias. The build inlines the styles of the classes it finds; responsive and pseudo-class rules go into the email's `<style>`. It converts that CSS with the new `lightningcss` dependency, so inline styles write colors as hex or `rgba()` and drop leading zeros, with the same rendered result. Sizes from Tailwind classes are written in `px` (16 px per `rem`), because Outlook on Windows does not support `rem`. `unplugin-vue` is no longer a dependency.
+  
+  Fix the module registering the email components as Nuxt server components, which switched on Nuxt's `/__nuxt_island/**` route in production for every app that installs the module. Editors and `vue-tsc` still know the tags through a generated type declaration.
+  
+  A `codeBlock.languages` entry listed twice, for example by a Nuxt layer and the app, is now used once instead of failing setup. `CodeBlockOptions` is exported as a type from the module entry and from `@lupinum/nuxt-email/testing`.
+  
+  Fix the Nuxt DevTools tab of the email preview, which stayed empty because the preview page refused to be framed.
+  
+  Tailwind declarations merge in stylesheet order whatever the order in `class`, and author `style` declarations come last, so an author `padding` beats a Tailwind `padding-left`.
+  
+  Logical utilities such as `ps-4`, `text-start` and `rounded-s-lg` produce left-to-right physical properties; a right-to-left email uses physical utilities.
+  
+  An exclusive upper breakpoint such as `max-sm:` ends at 0.02px below the breakpoint, so it no longer overlaps the next one.
+  
+  A utility that only sets a custom property for another class, such as `ring-blue-500`, has no effect on its own and stays in `class`.
+  
+  `ELink` and `EButton` reject an `href` with a `javascript:`, `vbscript:` or `data:` scheme, and `EImg` rejects a `src` with a `javascript:` or `vbscript:` scheme.
+  
+  Migration: replace `EHtml`, `EHead`, `EBody` and `EPreview` with one `EEmail` root. Use its `lang`, `dir` and `preview` props, put `<head>` content in `<template #head>`, and move body `class` and `style` to `EEmail`.
+  
+  Migration: replace `defineEmail({ subject, text })` with the `subject` and `text` props of `EEmail`. Remove imports of `@lupinum/nuxt-email/define-email`.
+  
+  Migration: replace `ETailwind` with nothing. Put Tailwind classes directly on elements and components inside `EEmail`.
+  
+  Migration: move the `ETailwind` `config`, `theme` and `utility` props into `app/emails/tailwind.css`, for example `@theme { --color-brand: #00dc82; }` or `@utility` blocks.
+  
+  Migration: remove `<style>` blocks, custom blocks and `src=` blocks from templates and from the components they import, in Nuxt too. Use Tailwind classes or inline styles, and import local components instead of `src=`.
+  
+  Migration: write every class completely in the template source, or list the possible names with `@source inline()` in `app/emails/tailwind.css`. Other class names built at run time, such as `` `bg-${color}-500` ``, are no longer resolved and stay in `class` unchanged.
+  
+  Migration: replace `renderEmailComponent()` and `#nuxt-email/testing` with `createTestRenderer({ rootDir })` from `@lupinum/nuxt-email/testing`. It returns `renderEmail(name, props)`. Pass the `codeBlock` option when templates use `ECodeBlock`, and pass the generated `EmailTemplateProps` type for typed names and props.
+  
+  Migration: replace `renderEmailComponent()` from `@lupinum/nuxt-email/render` with a registry compiled by `buildEmailRegistry()` from `@lupinum/nuxt-email/build`, and call its `renderEmail(name, props)`. `@lupinum/nuxt-email/render` now exports only what that registry imports.
+  
+  Migration: install `typescript` and `vue-tsc` in projects that call `@lupinum/nuxt-email/build`. They are now optional peer dependencies.
+  
+  Migration: add `unplugin-vue` to your own dependencies if your project imported it through this package.
+  
+  Migration: pass `EMarkdown` content to its now required `source` prop, for example `<EMarkdown :source="body" />`. Content in its default slot now throws instead of rendering.
+  
+  Migration: remove references to `DefineEmailOutsideRenderError`, `DuplicateEmailDefinitionError` and `TailwindMissingHeadError`. `@lupinum/nuxt-email/errors` now exports only `EmailRenderError` and `UnknownEmailTemplateError`.
+
+- [#85](https://github.com/lupinum-dev/nuxt-email/pull/85) [`ae171fe`](https://github.com/lupinum-dev/nuxt-email/commit/ae171fe0d9b00536fbe089593e5f2879549adf3a) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Change the minimum Node.js versions to 22.22.3 and 24.15.0, the versions that Nuxt 4.6 supports.
+  
+  The package is now tested with Nuxt 4.6.4 as the current Nuxt version. The supported Nuxt range `>=4.5.1 <5` does not change.
+  
+  Migration: update Node.js to 22.22.3 or newer on the Node 22 line, or to 24.15.0 or newer on the Node 24 line. Node 26 needs no change.
+
+- [#89](https://github.com/lupinum-dev/nuxt-email/pull/89) [`49b31de`](https://github.com/lupinum-dev/nuxt-email/commit/49b31de3182941eec8dc8ddf731a0afe835b5cfe) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Change the Shiki packages to optional peer dependencies, so only applications that use `ECodeBlock` install them.
+  
+  The package no longer installs `@shikijs/core`, `@shikijs/engine-javascript`, `@shikijs/langs` and `@shikijs/themes`. Syntax highlighting works as before once they are installed. If `codeBlock` is set and they are missing, module setup and `createTestRenderer()` fail with the install instruction.
+  
+  Migration: if your `nuxt.config.ts` sets `nuxtEmail.codeBlock`, run `pnpm add @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes`. Applications without `codeBlock` need no change.
+
+### Minor Changes
+
+- [#79](https://github.com/lupinum-dev/nuxt-email/pull/79) [`8c5c391`](https://github.com/lupinum-dev/nuxt-email/commit/8c5c39165165d0084a27db049dfa76e18b81b19f) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Add `@source inline()` in `app/emails/tailwind.css` for class names that are built at run time, and make `createTestRenderer()` fail on classes that have no effect.
+  
+  `@source inline("text-{red,emerald}-600")` adds classes that are not written completely in the source, for example a name built from a prop. Tailwind expands the braces. `@source` with a path was ignored and now fails the build with a clear message.
+  
+  The `renderEmail` function of `createTestRenderer()` fails when a render keeps a class as written: a wrong name, a name built at run time, or a utility that only changes another class. List the classes that must stay in the new `allowUnknownClasses` option, or pass `true` to allow every class. Production renders and the development preview do not change.
+  
+  A class that a plain rule in `tailwind.css` defines is now known to the build even when its name is built at run time.
+  
+  Fix named `group` and `peer` marker classes such as `group/item`: they now get the class name that the `group-hover/item:` rule selects.
+
+### Patch Changes
+
+- [#80](https://github.com/lupinum-dev/nuxt-email/pull/80) [`03c50d3`](https://github.com/lupinum-dev/nuxt-email/commit/03c50d3a68b089be9c10269ed6243ca367f97043) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Fix the `underline`, `no-underline` and `line-through` classes and the `EMarkdown` heading sizes in Outlook on Windows.
+  
+  An inline style writes the line as `text-decoration` at its start instead of `text-decoration-line`, because Outlook on Windows reads only the shorthand. Before, a link with `no-underline` stayed underlined there, and `underline` had no effect. Other clients show the same result as before.
+  
+  The default heading sizes of `EMarkdown` are `px` instead of `rem` (`40px` for a first-level heading), which is the same size at the default font size of 16 px. Outlook on Windows does not support `rem` and showed its default size.
+  
+  Fix the condition of a `supports-[…]:` variant, which was written with `!important` and never matched.
+
 ## 1.0.0-beta.5
 
 ### Patch Changes
