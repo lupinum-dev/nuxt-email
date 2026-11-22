@@ -81,6 +81,14 @@ export interface ModuleOptions {
   codeBlock?: CodeBlockOptions
 }
 
+/**
+ * Nitro 2 exposes its auto-import list as `nitro.unimport`. Nuxt 4.6 types the property as
+ * `unknown`, because the server builder declares the Nitro instance type and Nitro 3 differs.
+ */
+function hasInjectImports(value: unknown): value is { injectImports: (code: string, id: string) => Promise<{ code: string }> } {
+  return typeof value === 'object' && value !== null && 'injectImports' in value && typeof value.injectImports === 'function'
+}
+
 export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: '@lupinum/nuxt-email',
@@ -147,7 +155,7 @@ export default defineNuxtModule<ModuleOptions>({
         // Nitro's auto-import plugin skips virtual modules; inject what templates use
         // (server/utils, h3) with Nitro's own import list, as it would for a template file.
         const unimport = useNitro().unimport
-        return unimport === undefined ? code : (await unimport.injectImports(code, registryId)).code
+        return hasInjectImports(unimport) ? (await unimport.injectImports(code, registryId)).code : code
       },
     })
     const registryTypePaths = {
