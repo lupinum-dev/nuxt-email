@@ -9,5 +9,11 @@ declare module '#nuxt-email/registry' {
   export function renderEmail(
     name: string,
     props: Record<string, unknown>,
-  ): Promise<import('../render/types').RenderedEmail>
+  ): Promise<import('../render-email').RenderedEmail>
+
+  /** Exported by the development registry only. */
+  export function inspectEmail(
+    name: string,
+    props: Record<string, unknown>,
+  ): Promise<import('../render-email').InspectedEmail>
 }

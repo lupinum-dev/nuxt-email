@@ -10,20 +10,68 @@ when a decision changes; git keeps the history.
   and `scripts/agent-docs.mjs` are copies from the starter; change them there first. Changesets replaces
   changelogen and `publish.yml`; existing versions and public exports stay the same. Pre mode keeps the
   `beta` line (`1.0.0-beta.4` → `1.0.0-beta.5`) until the maintainer exits it.
-- **D2 (2026-09-28): Test the real package and compiler boundaries.** — `pnpm verify` runs the React Email
-  oracle, the conformance report, server isolation, module and fixture types, the docs build, the packaged
-  agent docs and isolated consumers of the packed tarball at the minimum and current Nuxt and Vue versions
+- **D2 (2026-11-12): Test the real package and compiler boundaries.** — `pnpm verify` runs server isolation,
+  module and fixture types, owned golden files of the rendered output, the docs build, the packaged agent docs and
+  isolated consumers of the packed tarball at the minimum and current Nuxt and Vue versions
   (`scripts/test-packed.ts`). These checks catch what users would hit: template leaks into client bundles,
-  broken exports and rendering differences from React Email.
-- **D3 (2026-10-06): Keep two extra CI jobs.** — `ci.yml` runs one `verify` job (`pnpm verify` with the
-  pinned React Email checkout, about 30 minutes) instead of the starter's task matrix, because the oracle,
-  the build and the packed consumers share one install and one build. A `compatibility` job runs the
-  compiler checks on the Node floor and on Windows and macOS. The final `ci` job needs both.
+  broken exports and output changes. The React Email oracle was removed with the runtime Tailwind path (D6).
+- **D3 (2026-11-12): Keep two extra CI jobs.** — `ci.yml` runs one `verify` job (`pnpm verify`) instead of the
+  starter's task matrix, because the build and the packed consumers share one install and one build. A
+  `compatibility` job runs the compiler checks on the Node floor and on Windows and macOS. The final `ci` job
+  needs both.
 - **D4 (2026-10-06): Keep the email proof and consumer tooling above the script budget
   (FILE-08: lean).** — `scripts/test-packed.ts` and `scripts/proofs/` hold most of the lines in `scripts/`.
   The first guards the published package in real consumers; the second renders the email-client proof batch
   that the client QA checklist needs. Neither has a smaller replacement.
-- **D5 (2026-10-06): One Tailwind compiler version.** — The `tailwindcss` override keeps the vendored email
+- **D5 (2026-10-06): One Tailwind compiler version.** — The exact `tailwindcss` pin keeps the build-time email
   engine, the docs site and the tests on the same compiler, because the engine rewrites that compiler's
-  output and breaks silently on a different one. Renovate groups it with `react-email` and
-  `@react-email/render`.
+  output and breaks silently on a different one.
+- **D6 (2026-11-22): Resolve Tailwind classes at build time, with one compile path for every entry.** — The Nuxt
+  module, `@lupinum/nuxt-email/build` and `createTestRenderer()` compile templates with one function,
+  `compileEmailDirectory()` (esbuild, one SFC step, one transform, one style table from the files the bundle
+  read), so they render the same bytes, and production renders carry no Tailwind or Lightning CSS code ([ADR 0003](../docs/architecture/0003-build-time-tailwind.md)). Owned golden files in
+  `test/render/golden/` replace the React Email oracle.
+- **D7 (2026-11-12): Nothing under `src/runtime/` imports from `src/compiler/`.** — The compiler, including the
+  Tailwind engine and its reads of Tailwind's stylesheets, runs only at build time; an import from the runtime would put
+  it back into production bundles. ESLint enforces the rule.
+- **D8 (2026-11-12): `@lupinum/nuxt-email/errors` is the one documented import for `EmailRenderError` and
+  `UnknownEmailTemplateError`.** — `/render` and `/testing` re-export the same classes, so `instanceof` works
+  whichever entry a test or backend imports.
+- **D9 (2026-11-12): `typescript` and `vue-tsc` are optional peer dependencies.** — Only
+  `@lupinum/nuxt-email/build` needs them, to emit template declarations; Nuxt applications already have them,
+  and other users should not install a compiler they never run. `/build` fails with an install hint when
+  they are missing.
+- **D10 (2026-11-12): Runtime dependencies use caret ranges at the locked version, except `tailwindcss` (D5).**
+  — Exact pins blocked users from deduplicating patch releases; the lockfile still fixes what CI tests.
+- **D11 (2026-11-22): Generated CSS uses `px`, hex and `rgba()`, and Lightning CSS does the standard CSS
+  conversion.** — Outlook on Windows does not read `rem`, and email clients do not support `oklch()`, nesting
+  or media range syntax. Owned steps stay only where Lightning CSS does not do the job or changes the result
+  (`var()`, `calc()`, `oklch()` clipping, logical shorthands; see ADR 0003). The forbidden-syntax test in
+  `test/render/css-output.test.ts` fails when a utility gains or loses such syntax.
+- **D12 (2026-11-22): The SFC compile step is the package's own esbuild plugin (`src/compiler/compile-sfc.ts`),
+  not `unplugin-vue/esbuild`.** — That plugin compiles `lang="ts"` through Vite, which loads the nearest
+  `tsconfig.json`. A Nuxt project's `tsconfig.json` extends `.nuxt/tsconfig.json`, which does not exist before
+  `nuxt prepare`, so `/build` and `createTestRenderer()` failed with "Tsconfig not found". It was tried twice.
+- **D13 (2026-11-22): Templates compile to normal render functions, not to SSR render functions.** — SSR mode
+  gave the same golden files but only 3.8% faster renders of the 48-row email (3.36 ms against 3.50 ms). That
+  does not pay for a second compile mode.
+- **D14 (2026-11-22): A template reaches the class lookup as `_ctx._tw`, a global property of the Vue app of
+  one render.** — A compiled template reads an unknown identifier from `_ctx`, which falls through to
+  `app.config.globalProperties`, so no `inject()` runs for each element. This needs `inlineTemplate: false` in
+  `compile-sfc.ts`; an inlined template does not see global properties. `EEmail` reads the render state with `inject`.
+- **D15 (2026-11-22): Tailwind's `theme.css` is imported with `theme(inline)`.** — Theme values then arrive as
+  values in the utilities, and the owned `var()` resolver handles only what remains (`--tw-*` variables and
+  tokens from `app/emails/tailwind.css`).
+- **D16 (2026-11-22): The value of `text-decoration-line` becomes `text-decoration` at render, not in the style
+  table.** — Outlook on Windows reads only the shorthand. Replacing the property in the table reset a decoration
+  color or thickness in two cases: a plain rule in `tailwind.css` comes after the utilities, and an `!important`
+  shorthand beats the longhands after it. At render the shorthand is always the first declaration
+  (`withDecorationShorthand` in `src/runtime/tw.ts`).
+- **D17 (2026-11-22): `createTestRenderer()` fails a render that keeps a class as written; production does
+  not.** — A wrong or run-time class name gives an unstyled element without an error, and an opt-in check does
+  not find it. The list of kept classes comes from `inspectEmail`, which only the development and test
+  registries export, so diagnostics never change `RenderedEmail` or reach production.
+- **D18 (2026-11-22): Not built until a project needs it: right-to-left output for logical utilities, packages
+  in `node_modules` as email source, and attributes on `<html>`.** — Each needs a new mechanism (a second set of
+  declarations chosen by `dir`, an option that names packages to read and compile, pass-through props on
+  `EEmail`). The Tailwind guide lists the first two as limits.

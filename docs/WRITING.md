@@ -68,4 +68,4 @@ Keep maintainer procedures in [Lupinum OSS](https://oss.lupinum.com). Do not put
 release approval steps, or local paths in public documentation.
 
 Do not rewrite license text, code, API identifiers, command output, quotations,
-changelog identifiers, or generated conformance reports.
+or changelog identifiers.

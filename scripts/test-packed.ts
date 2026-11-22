@@ -40,6 +40,7 @@ interface PackageManifest {
   devDependencies?: Record<string, string>
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>
 }
 
 interface CommandResult {
@@ -248,7 +249,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
 
   invariant(
     JSON.stringify(Object.keys(packed.exports ?? {}).sort())
-    === JSON.stringify(['.', './agent-docs', './build', './define-email', './errors', './render', './testing']),
+    === JSON.stringify(['.', './agent-docs', './build', './errors', './render', './testing']),
     'Packed package exports differ from the intentional public surface',
   )
 
@@ -257,16 +258,12 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant('import' in rootExport && rootExport.import === './dist/module.mjs', 'Packed import export must point to ./dist/module.mjs')
   invariant('types' in rootExport && rootExport.types === './dist/module.d.mts', 'Packed type export must point to ./dist/module.d.mts')
 
-  const testingExport = packed.exports?.['./testing']
-  invariant(typeof testingExport === 'object' && testingExport !== null, 'Packed package must export its ./testing subpath')
-  invariant('import' in testingExport && testingExport.import === './dist/runtime/testing/index.js', 'Packed ./testing import export must point to ./dist/runtime/testing/index.js')
-  invariant('types' in testingExport && testingExport.types === './dist/runtime/testing/index.d.ts', 'Packed ./testing type export must point to ./dist/runtime/testing/index.d.ts')
   invariant(packed.exports?.['./agent-docs'] === './dist/agent/AGENTS.md', 'Packed package must export its installed documentation entry')
 
   for (const [subpath, importPath, typePath] of [
     ['./build', './dist/build.mjs', './dist/build.d.mts'],
     ['./render', './dist/runtime/render/index.js', './dist/runtime/render/index.d.ts'],
-    ['./define-email', './dist/runtime/define-email.js', './dist/runtime/define-email.d.ts'],
+    ['./testing', './dist/testing.mjs', './dist/testing.d.mts'],
     ['./errors', './dist/runtime/errors.js', './dist/runtime/errors.d.ts'],
   ] as const) {
     const packageExport = packed.exports?.[subpath]
@@ -278,6 +275,10 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
   invariant(packed.peerDependencies?.nuxt === source.peerDependencies?.nuxt, 'Packed Nuxt peer range differs from package.json')
   invariant(packed.peerDependencies?.vue === source.peerDependencies?.vue, 'Packed Vue peer range differs from package.json')
+  for (const name of ['typescript', 'vue-tsc']) {
+    invariant(packed.peerDependenciesMeta?.[name]?.optional === true, `Packed ${name} must be an optional peer dependency`)
+    invariant(packed.dependencies?.[name] === undefined, `Packed ${name} must not be a runtime dependency`)
+  }
 
   for (const [name, specifier] of Object.entries({
     ...packed.dependencies,
@@ -317,9 +318,11 @@ async function verifyStandaloneConsumer(consumerDirectory: string, installedPack
   await cp(join(packageRoot, 'test/fixtures/standalone/emails'), join(consumerDirectory, 'standalone-emails'), { recursive: true })
   await run(process.execPath, ['--input-type=module', '--eval', `
     import { buildEmailRegistry } from '@lupinum/nuxt-email/build'
-    import { rename } from 'node:fs/promises'
+    import { mkdir, rename, writeFile } from 'node:fs/promises'
     import assert from 'node:assert/strict'
+    import { createTestRenderer } from '@lupinum/nuxt-email/testing'
     await buildEmailRegistry({ rootDir: '.', templatesDir: 'standalone-emails', outDir: 'generated-emails' })
+    const testRenderer = await createTestRenderer({ rootDir: '.', templatesDir: 'standalone-emails' })
     await rename('standalone-emails', 'standalone-emails-hidden')
     const { renderEmail } = await import('./generated-emails/index.mjs')
     const emails = await Promise.all(['Ada', 'Grace'].map(name => renderEmail('welcome', {
@@ -328,14 +331,14 @@ async function verifyStandaloneConsumer(consumerDirectory: string, installedPack
     assert.deepEqual(emails.map(email => email.subject), ['Welcome, Ada', 'Welcome, Grace'])
     assert.ok(emails[0].html.includes('font-weight:700'))
     assert.ok(emails[0].text.includes('https://example.test'))
-    await assert.rejects(renderEmail('css-variants', { variant: '@sm:bg-red-500' }), error => {
-      assert.match(String(error.cause ?? error), /@container rules are not supported/)
-      return true
+    const tested = await testRenderer.renderEmail('welcome', {
+      name: 'Ada', destination: 'https://example.test', items: ['One', 'Two'], brand: 'blue',
     })
+    assert.deepEqual(tested, emails[0], 'createTestRenderer diverged from the built registry')
     for (const [variant, owner, rule] of [
-      ['*:bg-red-500', '__bg-red-500', ':is(.__bg-red-500>*){background-color:rgb(251,44,54)!important}'],
-      ['**:text-blue-500', '___text-blue-500', ':is(.___text-blue-500 *){color:rgb(43,127,255)!important}'],
-      ['sm:bg-red-500', 'sm_bg-red-500', '@media (min-width:40rem){.sm_bg-red-500{background-color:rgb(251,44,54)!important}}'],
+      ['*:bg-red-500', '__bg-red-500', '.__bg-red-500>*{background-color:#fb2c36!important}'],
+      ['**:text-blue-500', '___text-blue-500', '.___text-blue-500 *{color:#2b7fff!important}'],
+      ['sm:bg-red-500', 'sm_bg-red-500', '@media (min-width:640px){.sm_bg-red-500{background-color:#fb2c36!important}}'],
     ]) {
       const { html } = await renderEmail('css-variants', { variant })
       const style = html.match(/<style>(.*?)<\\/style>/s)?.[1] ?? ''
@@ -343,12 +346,20 @@ async function verifyStandaloneConsumer(consumerDirectory: string, installedPack
       assert.match(html, new RegExp('<p[^>]* class="' + owner + '"[^>]*><span>Child content</span>'), 'Packed ' + variant + ' lost the class on its owner')
       assert.doesNotMatch(html.replace(/<style>.*?<\\/style>/s, ''), /style="[^"]*(background-color|color:rgb\\(43)/, 'Packed ' + variant + ' leaked a conditional style inline')
     }
+    // Unsupported Tailwind conditions fail the build, not the render.
+    await mkdir('unsupported-emails')
+    await writeFile('unsupported-emails/container.vue', '<template><EEmail subject="x" lang="en" class="@sm:bg-red-500" /></template>')
+    await assert.rejects(
+      buildEmailRegistry({ rootDir: '.', templatesDir: 'unsupported-emails', outDir: 'unsupported-output' }),
+      /@container rules are not supported/,
+    )
     const render = await import('@lupinum/nuxt-email/render')
     const testing = await import('@lupinum/nuxt-email/testing')
     const errors = await import('@lupinum/nuxt-email/errors')
-    assert.equal(render.renderEmailComponent, testing.renderEmailComponent)
     assert.equal(render.EmailRenderError, errors.EmailRenderError)
     assert.equal(render.UnknownEmailTemplateError, errors.UnknownEmailTemplateError)
+    assert.equal(testing.EmailRenderError, errors.EmailRenderError)
+    assert.equal(testing.UnknownEmailTemplateError, errors.UnknownEmailTemplateError)
   `], consumerDirectory)
   const check = join(consumerDirectory, 'standalone-types.mts')
   await writeFile(check, `import { renderEmail } from './generated-emails/index.mjs'
@@ -363,7 +374,7 @@ renderEmail('missing', {})
   const packageRequire = createRequire(join(installedPackageRoot, 'package.json'))
   await run(process.execPath, [packageRequire.resolve('typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2022', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', check], consumerDirectory)
   const module = await readFile(join(consumerDirectory, 'generated-emails/index.mjs'), 'utf8')
-  invariant(!/NUXT_EMAIL_STANDALONE_FIXTURE_SECRET|vue-tsc|compiler-sfc|unplugin-vue|\/testing/.test(module), 'Standalone runtime contains build-only or preview code')
+  invariant(!/NUXT_EMAIL_STANDALONE_FIXTURE_SECRET|vue-tsc|compiler-sfc|\/testing/.test(module), 'Standalone runtime contains build-only or preview code')
 }
 
 async function verifyFreshConsumer(
@@ -427,32 +438,22 @@ async function verifyFreshConsumer(
     '--input-type=module',
     '--eval',
     `const specifiers = ${JSON.stringify([
-      '@lupinum/nuxt-email/define-email',
       '@lupinum/nuxt-email/errors',
       '@lupinum/nuxt-email/testing',
     ])};`
     + ` const resolved = Object.fromEntries(specifiers.map(specifier => [specifier, import.meta.resolve(specifier)]));`
-    + ` const [defineEmail, errors, testing] = await Promise.all(specifiers.map(specifier => import(specifier)));`
+    + ` const [errors, testing] = await Promise.all(specifiers.map(specifier => import(specifier)));`
+    + ` let defineEmailRemoved = false; try { import.meta.resolve('@lupinum/nuxt-email/define-email') } catch { defineEmailRemoved = true }`
     + ` const renderError = new errors.EmailRenderError('welcome', new Error('cause'));`
     + ` const checks = {`
-    + ` defineEmail: typeof defineEmail.defineEmail === 'function',`
-    + ` defineEmailOutside: typeof defineEmail.DefineEmailOutsideRenderError === 'function',`
-    + ` duplicateDefinition: typeof defineEmail.DuplicateEmailDefinitionError === 'function',`
-    + ` defineEmailSurface: JSON.stringify(Object.keys(defineEmail).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'defineEmail']),`
-    + ` noCreateRenderContext: !('createEmailRenderContext' in defineEmail),`
-    + ` noGetRenderContext: !('getEmailRenderContext' in defineEmail),`
-    + ` noRunRenderContext: !('runWithEmailRenderContext' in defineEmail),`
-    + ` errorsDefineEmailOutside: typeof errors.DefineEmailOutsideRenderError === 'function',`
-    + ` errorsDuplicateDefinition: typeof errors.DuplicateEmailDefinitionError === 'function',`
+    + ` defineEmailRemoved,`
     + ` emailRenderError: typeof errors.EmailRenderError === 'function',`
     + ` emailRenderErrorContract: renderError.templateName === 'welcome' && !('componentName' in renderError) && renderError.cause?.message === 'cause',`
-    + ` tailwindMissingHeadError: typeof errors.TailwindMissingHeadError === 'function',`
     + ` unknownTemplateError: typeof errors.UnknownEmailTemplateError === 'function',`
-    + ` errorsSurface: JSON.stringify(Object.keys(errors).sort()) === JSON.stringify(['DefineEmailOutsideRenderError', 'DuplicateEmailDefinitionError', 'EmailRenderError', 'TailwindMissingHeadError', 'UnknownEmailTemplateError']),`
-    + ` defineEmailErrorIdentity: defineEmail.DefineEmailOutsideRenderError === errors.DefineEmailOutsideRenderError && defineEmail.DuplicateEmailDefinitionError === errors.DuplicateEmailDefinitionError,`
-    + ` renderEmailComponent: typeof testing.renderEmailComponent === 'function',`
-    + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'renderEmailComponent']),`
-    + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError } ;`
+    + ` errorsSurface: JSON.stringify(Object.keys(errors).sort()) === JSON.stringify(['EmailRenderError', 'UnknownEmailTemplateError']),`
+    + ` createTestRenderer: typeof testing.createTestRenderer === 'function',`
+    + ` testingSurface: JSON.stringify(Object.keys(testing).sort()) === JSON.stringify(['EmailRenderError', 'UnknownEmailTemplateError', 'createTestRenderer']),`
+    + ` testingErrorIdentity: testing.EmailRenderError === errors.EmailRenderError && testing.UnknownEmailTemplateError === errors.UnknownEmailTemplateError } ;`
     + ` process.stdout.write(${JSON.stringify(publicProbeMarker)} + JSON.stringify({ checks, resolved }));`,
   ], consumerDirectory)
   const publicProbeStart = publicProbe.stdout.indexOf(publicProbeMarker)
@@ -471,9 +472,9 @@ async function verifyFreshConsumer(
 
   const consumerRequire = createRequire(join(consumerDirectory, 'package.json'))
   const previewHandlerPath = join(installedPackageRoot, 'dist/runtime/dev-preview/page.get.js')
-  const renderComponentPath = join(installedPackageRoot, 'dist/runtime/render/render-component.js')
+  const renderEmailPath = join(installedPackageRoot, 'dist/runtime/render-email.js')
   const h3Resolution = await realpath(createRequire(pathToFileURL(previewHandlerPath)).resolve('h3'))
-  const vueServerRendererResolution = await realpath(createRequire(pathToFileURL(renderComponentPath)).resolve('vue/server-renderer'))
+  const vueServerRendererResolution = await realpath(createRequire(pathToFileURL(renderEmailPath)).resolve('vue/server-renderer'))
   invariant(isInside(temporaryRoot, h3Resolution), `Packed h3 import escaped the isolated consumer: ${h3Resolution}`)
   invariant(isInside(temporaryRoot, vueServerRendererResolution), `Packed vue/server-renderer import escaped the isolated consumer: ${vueServerRendererResolution}`)
   const h3Module = await import(pathToFileURL(h3Resolution).href)
@@ -491,22 +492,8 @@ async function verifyFreshConsumer(
   const prepare = await run('pnpm', ['exec', 'nuxt', 'prepare'], consumerDirectory)
   timingsMilliseconds.prepare = prepare.durationMilliseconds
   if (variant === 'code-block') {
-    const standaloneTests = await run('pnpm', [
-      'exec',
-      'vitest',
-      'run',
-      '--config',
-      'vitest.standalone.config.ts',
-    ], consumerDirectory)
-    timingsMilliseconds.standaloneTests = standaloneTests.durationMilliseconds
-    const configuredTests = await run('pnpm', [
-      'exec',
-      'vitest',
-      'run',
-      '--config',
-      'vitest.configured.config.ts',
-    ], consumerDirectory)
-    timingsMilliseconds.configuredTests = configuredTests.durationMilliseconds
+    const tests = await run('pnpm', ['exec', 'vitest', 'run'], consumerDirectory)
+    timingsMilliseconds.tests = tests.durationMilliseconds
   }
   const serverTypes = await run('pnpm', [
     'exec',
@@ -570,7 +557,7 @@ async function verifyFreshConsumer(
   // Nitro emits the route handler as a bare `export default` for a light module
   // graph, but re-exports it through a frozen Module namespace (its lazy loader
   // takes `import(route).then(n => n.e)`) once a shared module — e.g.
-  // `defineEmail`'s render-context module used by the template — is hoisted into
+  // the renderer module used by the template — is hoisted into
   // this chunk. Resolve the handler for both shapes exactly as Nitro does before
   // rendering, so this probe exercises the real production handler.
   const resolveHandler
@@ -634,6 +621,11 @@ async function verifyFreshConsumer(
   }
   invariant(rendered.first.text.includes('View order https://example.com/orders/7319'), 'Production plain text did not preserve the email link')
   invariant(rendered.first.subject === 'Order 7319 confirmed', 'Production render did not preserve the computed subject')
+  if (variant === 'code-block') {
+    const tested = await readFile(join(consumerDirectory, 'test-render.json'), 'utf8')
+    invariant(tested === JSON.stringify(rendered.first), 'createTestRenderer diverged from the production render')
+    invariant(/<style>@media[^<]*sm_text-lg/.test(rendered.first.html), 'Production render omitted the Tailwind head rule')
+  }
 
   const freshInstallMilliseconds = performance.now() - freshInstallStartedAt
   invariant(
@@ -703,13 +695,11 @@ async function testPackedPackage(): Promise<void> {
       'dist/runtime/render/index.js',
       'dist/runtime/render/index.d.ts',
       'dist/types.d.mts',
-      'dist/runtime/render/render-component.js',
-      'dist/runtime/define-email.js',
-      'dist/runtime/define-email.d.ts',
+      'dist/runtime/render-email.js',
       'dist/runtime/errors.js',
       'dist/runtime/errors.d.ts',
-      'dist/runtime/testing/index.js',
-      'dist/runtime/testing/index.d.ts',
+      'dist/testing.mjs',
+      'dist/testing.d.mts',
       'dist/runtime/dev-preview/page-script.js',
       'dist/runtime/dev-preview/page.css.js',
       'dist/runtime/dev-preview/page.get.js',

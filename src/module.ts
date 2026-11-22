@@ -1,6 +1,5 @@
 import { isAbsolute, relative, resolve } from 'node:path'
 import {
-  addComponent,
   addServerImports,
   addServerHandler,
   addServerTemplate,
@@ -10,23 +9,21 @@ import {
   updateTemplates,
   useNitro,
 } from '@nuxt/kit'
-import vueRollup from 'unplugin-vue/rollup'
 import type { CodeBlockOptions } from './code-block/options'
+import { compileEmailDirectory } from './compiler/build-templates'
 import { attachPreviewFixtures } from './dev-preview/fixtures'
-import { EMAIL_COMPONENT_NAMES } from './runtime/components/email-component-names'
+import { EMAIL_TAGS } from './runtime/components/email-tags'
 import { discoverEmailTemplates } from './template-registry/discovery'
-import { generateEmailRegistry, generateEmailTypes } from './template-registry/generation'
+import { generateEmailTypes } from './template-registry/generation'
 
-export type { EmailComponentProps, RenderedEmail } from './runtime/render/types'
+export type { EmailComponentProps, RenderedEmail } from './runtime/render-email'
+export type { CodeBlockOptions } from './code-block/options'
 
 type NitroRollupOptions = {
   nitro?: {
     alias?: Record<string, string>
     externals?: {
       inline?: Array<string | RegExp | ((id: string, importer?: string) => boolean | Promise<boolean>)>
-    }
-    rollupConfig?: {
-      plugins?: unknown
     }
     typescript?: {
       tsConfig?: EmailTypeProjectConfig
@@ -99,15 +96,26 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     const resolver = createResolver(import.meta.url)
-    const defineEmailPublicPath = await resolver.resolvePath('./runtime/define-email')
     const errorsPublicPath = await resolver.resolvePath('./runtime/errors')
-    let renderEmailComponentPath = await resolver.resolvePath('./runtime/render/index')
-    let testingRendererPath = await resolver.resolvePath('./runtime/testing')
+    let codeBlockPath: string | undefined
     if (options.codeBlock !== undefined) {
       const { setupCodeBlock } = await import('./code-block/setup')
-      renderEmailComponentPath = setupCodeBlock(options.codeBlock, resolver)
-      testingRendererPath = renderEmailComponentPath
+      const codeBlock = setupCodeBlock(options.codeBlock, resolver)
+      codeBlockPath = codeBlock.componentPath
     }
+    // The email compiler supplies the tags, so they are not Nuxt components: a server
+    // component would make Nuxt serve the /__nuxt_island/** renderer in production.
+    // Editors and vue-tsc learn the tags from this declaration.
+    const componentTypes = [
+      ...EMAIL_TAGS.map(name => [name, resolver.resolve(`./runtime/components/${name}`)] as const),
+      ...(codeBlockPath === undefined ? [] : [['ECodeBlock', codeBlockPath.replace(/\.ts$/, '')] as const]),
+    ]
+    addTypeTemplate({
+      filename: 'types/nuxt-email-components.d.ts',
+      getContents: () => `declare module 'vue' {\n  export interface GlobalComponents {\n${
+        componentTypes.map(([name, path]) => `    ${name}: typeof import(${JSON.stringify(path)})['${name}']\n`).join('')
+      }  }\n}\nexport {}\n`,
+    })
     const emailDirectory = resolve(nuxt.options.srcDir, 'emails')
     const loadTemplates = async () => {
       const discoveredTemplates = await discoverEmailTemplates(emailDirectory)
@@ -116,19 +124,35 @@ export default defineNuxtModule<ModuleOptions>({
         : discoveredTemplates
     }
     let templates = await loadTemplates()
-    const registryRuntimePaths = {
-      emailRenderError: resolver.resolve('./runtime/render/errors'),
-      renderEmailComponent: renderEmailComponentPath,
-      templateRegistryErrors: resolver.resolve('./runtime/template-registry/errors'),
-    }
-    const registryTypePaths = {
-      renderedEmail: resolver.resolve('./runtime/render/types'),
-    }
     const registryId = '#nuxt-email/registry'
+    const rendererPath = resolver.resolve('./runtime/render-email')
+    // Files the last registry build read; a change to one of them rebuilds it in development.
+    let registryInputs = new Set<string>()
+    // Built on every load, so a dev rebuild always sees the current sources and tailwind.css.
     addServerTemplate({
       filename: registryId,
-      getContents: () => generateEmailRegistry(templates, registryRuntimePaths),
+      getContents: async () => {
+        const { code, inputs } = await compileEmailDirectory({
+          directory: emailDirectory,
+          templates,
+          renderer: rendererPath,
+          inspect: nuxt.options.dev,
+          codeBlock: codeBlockPath,
+          packages: 'external',
+          alias: nuxt.options.alias,
+          externalHashImports: true,
+          absWorkingDir: nuxt.options.rootDir,
+        })
+        registryInputs = new Set(inputs)
+        // Nitro's auto-import plugin skips virtual modules; inject what templates use
+        // (server/utils, h3) with Nitro's own import list, as it would for a template file.
+        const unimport = useNitro().unimport
+        return unimport === undefined ? code : (await unimport.injectImports(code, registryId)).code
+      },
     })
+    const registryTypePaths = {
+      renderedEmail: rendererPath,
+    }
     const typeTemplate = addTypeTemplate({
       filename: 'types/nuxt-email.d.ts',
       write: true,
@@ -144,14 +168,6 @@ export default defineNuxtModule<ModuleOptions>({
         from: registryId,
       },
     ])
-    for (const name of EMAIL_COMPONENT_NAMES) {
-      addComponent({
-        name,
-        export: name,
-        filePath: resolver.resolve(`./runtime/components/${name}`),
-        mode: 'server',
-      })
-    }
     if (nuxt.options.dev) {
       nuxt.hook('devtools:customTabs', (tabs) => {
         tabs.push({
@@ -194,24 +210,24 @@ export default defineNuxtModule<ModuleOptions>({
 
     let registryUpdates = Promise.resolve()
     nuxt.hook('builder:watch', (event, path) => {
-      const structureChanged = ['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)
-      if (!structureChanged) {
+      const roots = [nuxt.options.rootDir, nuxt.options.srcDir]
+      const relativePath = relativeEmailPath(emailDirectory, path, roots)
+      // `resolve` also normalises an absolute path, so it matches the native separators of the inputs on Windows.
+      const imported = roots.some(root => registryInputs.has(resolve(root, path)))
+      if (relativePath === undefined && !imported) {
         return
       }
 
-      const relativePath = relativeEmailPath(emailDirectory, path, [
-        nuxt.options.rootDir,
-        nuxt.options.srcDir,
-      ])
-      if (relativePath === undefined) {
-        return
-      }
-
+      // Any change can add a class or edit tailwind.css, so every event rebuilds the
+      // registry; only structure changes inside app/emails rediscover templates and types.
+      const structureChanged = relativePath !== undefined && ['add', 'unlink', 'addDir', 'unlinkDir'].includes(event)
       const update = async () => {
-        templates = await loadTemplates()
-        await updateTemplates({
-          filter: template => template.filename === typeTemplate.filename,
-        })
+        if (structureChanged) {
+          templates = await loadTemplates()
+          await updateTemplates({
+            filter: template => template.filename === typeTemplate.filename,
+          })
+        }
         await reloadRegistry()
       }
       const queuedUpdate = registryUpdates.then(update, update)
@@ -222,26 +238,14 @@ export default defineNuxtModule<ModuleOptions>({
     const nuxtOptions = nuxt.options as typeof nuxt.options & NitroRollupOptions
     const nitro = (nuxtOptions.nitro ??= {})
     const alias = (nitro.alias ??= {})
-    alias['#nuxt-email/testing'] = testingRendererPath
-    alias['@lupinum/nuxt-email/define-email'] = defineEmailPublicPath
     alias['@lupinum/nuxt-email/errors'] = errorsPublicPath
     const externals = (nitro.externals ??= {})
     const inline = (externals.inline ??= [])
-    // The configured renderer imports generated TypeScript and must also be bundled in dev.
-    for (const runtimePath of [defineEmailPublicPath, errorsPublicPath, testingRendererPath]) {
-      if (!inline.includes(runtimePath)) {
-        inline.push(runtimePath)
-      }
+    if (!inline.includes(errorsPublicPath)) {
+      inline.push(errorsPublicPath)
     }
     const typescript = (nitro.typescript ??= {})
     const tsConfig = (typescript.tsConfig ??= {})
-    const paths = configureEmailTypeProject(tsConfig, emailDirectory, registryId, typeTemplate.dst)
-    paths['#nuxt-email/testing'] = [testingRendererPath]
-
-    nitro.rollupConfig ??= {}
-    const existingPlugins = nitro.rollupConfig.plugins
-    nitro.rollupConfig.plugins = existingPlugins
-      ? [existingPlugins, vueRollup()]
-      : [vueRollup()]
+    configureEmailTypeProject(tsConfig, emailDirectory, registryId, typeTemplate.dst)
   },
 })

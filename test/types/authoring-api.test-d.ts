@@ -1,7 +1,6 @@
 import { defineComponent } from 'vue'
 import type { EmailComponentProps } from '../../src/module'
-import type { EHtmlProps } from '../../src/runtime/components/EHtml'
-import { defineEmail } from '../../src/runtime/render/define-email'
+import type { EEmailProps } from '../../src/runtime/components/EEmail'
 
 const FixtureEmail = defineComponent({
   props: {
@@ -37,30 +36,21 @@ const invalidFixtureKey = {
   unknown: true,
 } satisfies EmailComponentProps<typeof FixtureEmail>
 
-const htmlProps: EHtmlProps = { lang: 'en' }
-// @ts-expect-error EHtml requires an explicit language
-const htmlWithoutLang: EHtmlProps = {}
+const emailProps: EEmailProps = { subject: 'Welcome', lang: 'en', preview: 'Hello', dir: 'rtl', text: 'Plain' }
+// @ts-expect-error EEmail requires an explicit language
+const emailWithoutLang: EEmailProps = { subject: 'Welcome' }
+// @ts-expect-error EEmail requires a subject
+const emailWithoutSubject: EEmailProps = { lang: 'en' }
+// @ts-expect-error dir is ltr, rtl or auto
+const emailWithBadDir: EEmailProps = { subject: 'Welcome', lang: 'en', dir: 'up' }
 
-defineEmail({ subject: 'Constant subject' })
-defineEmail({ text: 'Constant text' })
-defineEmail({
-  subject: () => `Welcome, ${fixture.firstName}`,
-  text: () => `Plain welcome for ${fixture.firstName}`,
-})
-
-// @ts-expect-error defineEmail requires at least one metadata value
-defineEmail({})
-// @ts-expect-error metadata values must be strings or synchronous string functions
-defineEmail({ subject: 42 })
-// @ts-expect-error subject functions are synchronous
-defineEmail({ subject: async () => 'Async subject' })
-// @ts-expect-error text functions are synchronous
-defineEmail({ text: async () => 'Async text' })
-
+void fixture
 void invalidFixtureKey
 void invalidListenerFixture
 void EmittingEmail
 void FixtureEmail
-void htmlProps
-void htmlWithoutLang
+void emailProps
+void emailWithoutLang
+void emailWithoutSubject
+void emailWithBadDir
 void missingFixtureProp

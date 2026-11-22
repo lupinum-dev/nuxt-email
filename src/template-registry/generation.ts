@@ -1,12 +1,6 @@
 import type { DiscoveredEmailTemplate } from './discovery'
 
-export interface RegistryRuntimePaths {
-  emailRenderError: string
-  renderEmailComponent: string
-  templateRegistryErrors: string
-}
-
-export interface RegistryTypePaths {
+interface RegistryTypePaths {
   renderedEmail: string
 }
 
@@ -14,11 +8,20 @@ function importPath(path: string): string {
   return JSON.stringify(path.replaceAll('\\', '/'))
 }
 
-export function generateEmailRegistry(
-  templates: readonly DiscoveredEmailTemplate[],
-  runtimePaths: RegistryRuntimePaths,
-): string {
-  const entries = templates.map((template) => {
+interface RendererRegistryPaths {
+  createEmailRenderer: string
+  styleTable: string
+  /** Generated `ECodeBlock` module when the `codeBlock` option is set. */
+  codeBlock?: string
+  /**
+   * Development and tests only: also export `inspectEmail`, imported as `createEmailInspector`
+   * from the `createEmailRenderer` module. The production registry never exports it.
+   */
+  inspect?: boolean
+}
+
+function templateEntries(templates: readonly DiscoveredEmailTemplate[]): string {
+  return templates.map((template) => {
     const fixture = template.fixturePath
       ? `\n    fixture: () => import(${importPath(template.fixturePath)}),`
       : ''
@@ -26,33 +29,34 @@ export function generateEmailRegistry(
     return `  [${JSON.stringify(template.name)}]: {
     component: () => import(${importPath(template.sourcePath)}),${fixture}
   },`
-  })
+  }).join('\n')
+}
 
-  return `import { EmailRenderError } from ${importPath(runtimePaths.emailRenderError)}
-import { renderEmailComponent } from ${importPath(runtimePaths.renderEmailComponent)}
-import { UnknownEmailTemplateError } from ${importPath(runtimePaths.templateRegistryErrors)}
-
+/** Registry for the build-time Tailwind renderer (`#nuxt-email/registry`). */
+export function generateEmailRendererRegistry(
+  templates: readonly DiscoveredEmailTemplate[],
+  paths: RendererRegistryPaths,
+): string {
+  const codeBlock = paths.codeBlock === undefined
+    ? ''
+    : `import { ECodeBlock } from ${importPath(paths.codeBlock.replace(/\.ts$/, ''))}\n`
+  const imports = paths.inspect ? 'createEmailInspector, createEmailRenderer' : 'createEmailRenderer'
+  const inspect = paths.inspect ? '\nexport const inspectEmail = createEmailInspector(options)\n' : ''
+  return `import { ${imports} } from ${importPath(paths.createEmailRenderer)}
+import styleTable from ${importPath(paths.styleTable)}
+${codeBlock}
 export const emailTemplates = Object.freeze({
-${entries.join('\n')}
+${templateEntries(templates)}
 })
 
-export async function renderEmail(name, props) {
-  const loader = typeof name === 'string' && Object.hasOwn(emailTemplates, name)
-    ? emailTemplates[name]
-    : undefined
-  if (!loader) {
-    throw new UnknownEmailTemplateError(String(name), Object.keys(emailTemplates))
-  }
-
-  try {
-    const templateModule = await loader.component()
-    return await renderEmailComponent(templateModule.default, props)
-  }
-  catch (error) {
-    throw new EmailRenderError(name, error instanceof EmailRenderError ? error.cause : error)
-  }
+const options = {
+  templates: emailTemplates,
+  styleTable,
+  components: { ${paths.codeBlock === undefined ? '' : 'ECodeBlock '}},
 }
-`
+
+export const renderEmail = createEmailRenderer(options)
+${inspect}`
 }
 
 export function generateEmailTypes(

@@ -9,31 +9,10 @@
  *
  * Run: `node --import tsx scripts/proofs/generate.ts` (or `pnpm proofs:generate`).
  */
-import type { Component } from 'vue'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { defineComponent, h } from 'vue'
-import {
-  EBody,
-  EButton,
-  EColumn,
-  EContainer,
-  EFont,
-  EHead,
-  EHeading,
-  EHr,
-  EHtml,
-  ELink,
-  EMarkdown,
-  EPreview,
-  ERow,
-  ESection,
-  ETailwind,
-  EText,
-} from '../../src/runtime/components'
-import { defineEmail } from '../../src/runtime/render/define-email'
-import { renderEmailComponent } from '../../src/runtime/render/render-email-component'
+import { createTestRenderer } from '../../src/testing'
 
 const proofToolingDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = dirname(dirname(proofToolingDir))
@@ -220,147 +199,27 @@ export function buildEml(options: BuildEmlOptions): string {
   return [...headers, '', ...body].join('\r\n')
 }
 
-const slot = (children: unknown) => ({ default: () => children })
-
-/**
- * Dedicated proof template exercising every client-risk area in one email:
- * defineEmail subject, EPreview preheader, EFont webfont, ETailwind with a responsive
- * media query (`sm:`) and a dark-mode variant (`dark:`), an MSO-padded EButton, a
- * Section/Row/Column table layout and EMarkdown.
- */
-const ProofKitEmail = defineComponent({
-  name: 'ProofKitEmail',
-  props: {
-    firstName: { type: String, required: true },
-    dashboardUrl: { type: String, required: true },
-  },
-  setup(props) {
-    defineEmail({
-      // Em dash is non-ASCII -> exercises the RFC 2047 encoded-word subject path.
-      subject: () => `Proof kit — every client-risk area (${props.firstName})`,
-    })
-
-    return () => {
-      const font = h(EFont, {
-        fontFamily: 'Inter',
-        fallbackFontFamily: ['Helvetica', 'sans-serif'],
-        webFont: { url: 'https://fonts.example.invalid/inter.woff2', format: 'woff2' },
-      })
-
-      const heading = h(EHeading, {
-        class: 'text-2xl sm:text-3xl dark:text-white',
-        style: { color: '#17211c', margin: '0 0 16px' },
-      }, slot(`Hello, ${props.firstName}`))
-
-      const intro = h(EText, {
-        class: 'text-base dark:text-gray-200',
-        style: { color: '#415148', lineHeight: '26px', margin: '0 0 24px' },
-      }, slot('This proof exercises every rendering risk area in a single email.'))
-
-      const layoutRow = h(ESection, { style: { padding: '0 0 24px' } }, slot(
-        h(ERow, null, slot([
-          h(EColumn, { style: { color: '#607067', fontSize: '13px' } }, slot('Table layout: left column')),
-          h(EColumn, { style: { color: '#607067', fontSize: '13px', textAlign: 'right' } }, slot('right column')),
-        ])),
-      ))
-
-      const button = h(ESection, { style: { padding: '0 0 28px' } }, slot(
-        h(EButton, {
-          href: props.dashboardUrl,
-          style: {
-            backgroundColor: '#16794d',
-            borderRadius: '6px',
-            color: '#ffffff',
-            fontSize: '15px',
-            fontWeight: '700',
-            padding: '13px 20px',
-          },
-        }, slot('Open your workspace')),
-      ))
-
-      const markdown = h(EMarkdown, {
-        source: [
-          '## Markdown block',
-          '',
-          'Spacing and **bold** plus a list:',
-          '',
-          '- first item',
-          '- second item',
-          '',
-          'Inline `code` and a [link](https://example.invalid).',
-        ].join('\n'),
-      })
-
-      const container = h(EContainer, {
-        style: {
-          backgroundColor: '#ffffff',
-          border: '1px solid #d9dfdc',
-          borderRadius: '12px',
-          maxWidth: '600px',
-          padding: '40px',
-        },
-      }, slot([
-        heading,
-        intro,
-        layoutRow,
-        button,
-        h(EHr, { style: { borderTopColor: '#d9dfdc', margin: '0 0 24px' } }),
-        markdown,
-        h(EText, { style: { color: '#607067', fontSize: '13px', margin: '24px 0 0' } }, slot([
-          'Questions? Email ',
-          h(ELink, { href: 'mailto:proofs@example.invalid' }, slot('proofs@example.invalid')),
-          '.',
-        ])),
-      ]))
-
-      const body = h(EBody, {
-        style: { backgroundColor: '#f3f5f4', fontFamily: 'Arial,sans-serif', padding: '32px 16px' },
-      }, slot([
-        h(EPreview, null, slot(`${props.firstName}, your proof batch is ready to inspect.`)),
-        container,
-      ]))
-
-      return h(ETailwind, null, slot(
-        h(EHtml, { lang: 'en' }, slot([
-          h(EHead, null, slot(font)),
-          body,
-        ])),
-      ))
-    }
-  },
-})
-
 interface ProofSpec {
+  /** Template name in `scripts/proofs/emails/`. */
   name: string
-  component: Component
   props: Record<string, unknown>
-  /** Used when the template does not declare a subject via defineEmail. */
-  fallbackSubject: string
 }
 
-function proofSpecs(): ProofSpec[] {
-  return [
-    {
-      name: 'proof-kit',
-      component: ProofKitEmail,
-      props: { firstName: 'Ada', dashboardUrl: 'https://example.invalid/workspaces/northstar' },
-      fallbackSubject: 'Nuxt Email proof kit',
-    },
-  ]
-}
+const proofSpecs: ProofSpec[] = [
+  { name: 'proof-kit', props: { firstName: 'Ada', dashboardUrl: 'https://example.invalid/workspaces/northstar' } },
+]
 
-async function renderProof(spec: ProofSpec): Promise<ProofResult> {
-  const rendered = await renderEmailComponent(spec.component, spec.props)
-  const subject = rendered.subject ?? spec.fallbackSubject
+async function renderProof(renderEmail: (name: string, props: Record<string, unknown>) => Promise<{ html: string, text: string, subject: string }>, spec: ProofSpec): Promise<ProofResult> {
+  const rendered = await renderEmail(spec.name, spec.props)
   const eml = buildEml({
-    subject,
+    subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
     messageId: `${spec.name}.${PROOF_DATE.getTime()}`,
   })
   return {
     name: spec.name,
-    subject,
+    subject: rendered.subject,
     html: rendered.html,
     txt: rendered.text,
     eml,
@@ -382,10 +241,10 @@ export async function generateProofs(options: GenerateProofsOptions = {}): Promi
   const outDir = options.outDir ?? join(repoRoot, 'release-artifacts/proofs')
   await mkdir(outDir, { recursive: true })
 
-  const specs = proofSpecs()
+  const { renderEmail } = await createTestRenderer({ rootDir: proofToolingDir, templatesDir: 'emails' })
   const results: ProofResult[] = []
-  for (const spec of specs) {
-    const result = await renderProof(spec)
+  for (const spec of proofSpecs) {
+    const result = await renderProof(renderEmail, spec)
     await writeFile(join(outDir, `${result.name}.html`), result.html, 'utf8')
     await writeFile(join(outDir, `${result.name}.txt`), result.txt, 'utf8')
     // `latin1` writes the CRLF/quoted-printable bytes verbatim (the string is ASCII

@@ -2,13 +2,14 @@ import { defineEventHandler, setHeaders } from 'h3'
 import { PREVIEW_PAGE_CSS } from './page.css'
 import { PREVIEW_PAGE_CLIENT } from './page-script'
 
-export const PREVIEW_PAGE_CSP: string = [
+const PREVIEW_PAGE_CSP: string = [
   'default-src \'none\'',
   'script-src \'unsafe-inline\'',
   'style-src \'unsafe-inline\'',
   'connect-src \'self\'',
   'frame-src \'self\'',
-  'frame-ancestors \'none\'',
+  // The Nuxt DevTools tab frames this page from the same origin.
+  'frame-ancestors \'self\'',
   'img-src data:',
   'base-uri \'none\'',
   'object-src \'none\'',
@@ -89,6 +90,13 @@ ${PREVIEW_PAGE_CSS}
           <p id="size-badge" class="size-badge" data-level="ok" role="status" aria-live="polite" title="Rendered HTML size. Gmail clips messages larger than 102 KB.">
             <span id="size-value" class="size-value">—</span>
           </p>
+          <div id="unknown-classes" class="unknown-classes" hidden>
+            <p class="subject">
+              <span class="subject-label">Classes kept as written</span>
+              <code id="unknown-classes-value" class="unknown-classes-value"></code>
+            </p>
+            <p class="unknown-classes-hint">Not Tailwind utilities, not found in source at build time, or utilities that only change another class (for example ring-blue-500).</p>
+          </div>
         </div>
 
         <section class="viewer" aria-label="Selected email output">

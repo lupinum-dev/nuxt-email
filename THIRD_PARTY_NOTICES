@@ -33,8 +33,8 @@ SOFTWARE.
 Runtime libraries
 =================
 
-The following third-party libraries are used by the runtime of the Markdown,
-Tailwind, and opt-in syntax-highlighting components. Each is distributed under the MIT License,
+The following third-party libraries are used by the Markdown component, the
+build-time Tailwind compiler, and the opt-in syntax-highlighting component. Each is distributed under the MIT License,
 whose text is reproduced once below.
 
 - marked 15.0.12 — Markdown-to-HTML rendering in EMarkdown.
@@ -44,8 +44,7 @@ whose text is reproduced once below.
 - css-tree 3.2.1 — CSS parsing and generation in the Tailwind inlining engine.
   Copyright (C) 2016-2026 by Roman Dvornov
 
-- tailwindcss 4.3.3 — utility compilation used by ETailwind; its stylesheet CSS
-  is also vendored byte-for-byte into the engine.
+- tailwindcss 4.3.3 — utility compilation when the email directory is built.
   Copyright (c) Tailwind Labs, Inc.
 
 - @shikijs/core, @shikijs/engine-javascript, @shikijs/langs, and
@@ -73,3 +72,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Mozilla Public License libraries
+================================
+
+- lightningcss 1.33.0 — removes CSS nesting and writes colours in legacy syntax
+  when the email directory is built. Distributed under the Mozilla Public
+  License 2.0 (https://mozilla.org/MPL/2.0/). Nuxt Email installs it as an
+  unmodified dependency and does not include its source.

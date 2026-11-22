@@ -17,8 +17,13 @@ void codeBlockOptions
 const rendered: RenderedEmail = {
   html: '<html><body>Hello</body></html>',
   text: 'Hello',
+  subject: 'Hello',
 }
 void rendered
+
+// @ts-expect-error every rendered email has a subject
+const withoutSubject: RenderedEmail = { html: '<html><body>Hello</body></html>', text: 'Hello' }
+void withoutSubject
 
 // @ts-expect-error unsupported module options are rejected
 const arbitraryOptions: NuxtEmailOptions = { arbitrary: true }

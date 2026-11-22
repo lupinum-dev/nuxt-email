@@ -1,8 +1,9 @@
 import type { MarkdownStyle } from './parse-css-in-js-to-inline-css'
 
-// Direct port of react-email's markdown/styles.ts default style map. Values and shapes
-// (including the leading space in `background: ' #f8f8f8'`) are reproduced verbatim so the
-// serialized inline CSS matches the React oracle byte-for-byte.
+// Adapted from react-email's markdown/styles.ts default style map. Values and shapes
+// (including the leading space in `background: ' #f8f8f8'`) follow the upstream map.
+// The heading sizes are the upstream `rem` values in `px` (16 px per `rem`), because
+// Outlook on Windows does not support `rem`.
 
 const emptyStyle: MarkdownStyle = {}
 
@@ -13,32 +14,32 @@ const baseHeaderStyles = {
 
 const h1: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '2.5rem',
+  fontSize: '40px',
 }
 
 const h2: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '2rem',
+  fontSize: '32px',
 }
 
 const h3: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '1.75rem',
+  fontSize: '28px',
 }
 
 const h4: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '1.5rem',
+  fontSize: '24px',
 }
 
 const h5: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '1.25rem',
+  fontSize: '20px',
 }
 
 const h6: MarkdownStyle = {
   ...baseHeaderStyles,
-  fontSize: '1rem',
+  fontSize: '16px',
 }
 
 const bold: MarkdownStyle = {

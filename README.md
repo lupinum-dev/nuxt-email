@@ -29,9 +29,9 @@
 
 ## Why use Nuxt Email?
 
-Nuxt Email turns `app/emails/` into one typed template registry. You author normal Vue single-file components. Nitro renders deterministic HTML, plain text, and an optional subject line.
+Nuxt Email turns `app/emails/` into one typed template registry. You author normal Vue single-file components. Nitro renders deterministic HTML, plain text, and a subject line.
 
-The module uses the same rendering core for production, development preview, and tests. Your application keeps control of delivery, recipients, and provider credentials.
+The module uses the same compiler and rendering core for production, development preview, and tests. Your application keeps control of delivery, recipients, and provider credentials.
 
 ## When to use it
 
@@ -67,51 +67,34 @@ Create `app/emails/welcome.vue`:
 
 ```vue
 <script setup lang="ts">
-import { defineEmail } from '@lupinum/nuxt-email/define-email'
-
-const props = defineProps<{
-  firstName: string
-  activationUrl: string
-}>()
-
-defineEmail({
-  subject: () => `Welcome aboard, ${props.firstName}`,
-})
+defineProps<{ name: string, actionUrl: string }>()
 </script>
 
 <template>
-  <ETailwind>
-    <EHtml lang="en">
-      <EHead>
-        <title>Activate your account</title>
-      </EHead>
-      <EBody class="m-0 bg-slate-100 p-6">
-        <EPreview>Your account is ready.</EPreview>
-        <EContainer class="rounded-lg bg-white p-6">
-          <EHeading class="m-0 text-2xl text-slate-900">Welcome, {{ firstName }}</EHeading>
-          <EText class="text-slate-600">Finish setting up your account.</EText>
-          <EButton class="rounded-md bg-blue-600 px-5 py-3 text-white" :href="activationUrl">
-            Activate account
-          </EButton>
-        </EContainer>
-      </EBody>
-    </EHtml>
-  </ETailwind>
+  <EEmail :subject="`Welcome, ${name}`" lang="en" preview="Your account is ready." class="bg-slate-100 p-6">
+    <EContainer class="rounded-lg bg-white p-8">
+      <EHeading class="text-2xl font-semibold text-slate-900">Welcome, {{ name }}</EHeading>
+      <EText class="text-slate-600">Your account is ready.</EText>
+      <EButton :href="actionUrl" class="rounded-md bg-emerald-600 px-5 py-3 text-white">Open dashboard</EButton>
+    </EContainer>
+  </EEmail>
 </template>
 ```
+
+`EEmail` is the root of every template. It sets the subject, the language, and the preview text. Its `class` and `style` apply to the email body.
 
 Render the template from Nitro:
 
 ```ts
 export default defineEventHandler(async () => {
   return await renderEmail('welcome', {
-    firstName: 'Ada',
-    activationUrl: 'https://example.com/activate',
+    name: 'Ada',
+    actionUrl: 'https://example.com/dashboard',
   })
 })
 ```
 
-The template name and props are generated from the Vue file. Invalid names and props fail during type checking. Use a sibling fixture to inspect it in `/__email`, then [pass the rendered result to your provider](https://nuxt-email.lupinum.com/docs/guides/sending-email).
+The result has `html`, `text`, and `subject`. The template name and props are generated from the Vue file. Invalid names and props fail during type checking. Use a sibling fixture to inspect the template in `/__email`, then [pass the rendered result to your provider](https://nuxt-email.lupinum.com/docs/guides/sending-email).
 
 Questions? Ask in the [Lupinum OSS Discord](https://discord.lupinum.com).
 
@@ -162,9 +145,7 @@ documentation. Read the package README and its TypeScript types instead.
 
 ## Email components
 
-Nuxt Email registers 18 server components for document structure, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, fonts, previews, and Tailwind.
-
-`ETailwind` converts compatible Tailwind v4 utilities to inline styles. It keeps media-query and pseudo-class rules in the document head. Configure `ECodeBlock` only when you need syntax highlighting:
+Nuxt Email registers 14 server components for the email root, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, and fonts. Configure `ECodeBlock` only when you need syntax highlighting:
 
 ```ts
 export default defineNuxtConfig({
@@ -178,9 +159,15 @@ export default defineNuxtConfig({
 })
 ```
 
+## Tailwind CSS
+
+Put Tailwind v4 classes on any element or component in a template. The build reads the classes from every file a template imports, outside `node_modules`, and converts them to inline styles with sizes in `px`. Media-query and pseudo-class rules go into the `<style>` element of the email. A production render loads neither Tailwind nor a CSS parser.
+
+Add `app/emails/tailwind.css` for `@theme` and `@utility` blocks. Write every class completely in the template source: the build cannot resolve a class name that is built at run time. For such names, list the possible classes in that file with `@source inline("…")`.
+
 ## Development preview
 
-Run the Nuxt application and open `/__email`. The development-only page shows the rendered message, HTML, plain text, subject, viewport sizes, and exact byte count.
+Run the Nuxt application and open `/__email`. The development-only page shows the rendered message, HTML, plain text, subject, viewport sizes, and exact byte count. It also lists classes that the build kept as written because Tailwind does not know them.
 
 Add one sibling fixture file for deterministic sample props. Preview routes and fixtures are excluded from production builds.
 
@@ -189,36 +176,36 @@ import type { EmailComponentProps } from '@lupinum/nuxt-email'
 import type WelcomeEmail from './welcome.vue'
 
 export default {
-  firstName: 'Ada',
-  activationUrl: 'https://example.com/activate',
+  name: 'Ada',
+  actionUrl: 'https://example.com/dashboard',
 } satisfies EmailComponentProps<typeof WelcomeEmail>
 ```
 
 ## Testing
 
-Render a Vue email without starting Nuxt:
+Render your templates in a test without starting Nuxt:
 
 ```ts
-import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
-import Welcome from './app/emails/welcome.vue'
+import { createTestRenderer } from '@lupinum/nuxt-email/testing'
 
-const result = await renderEmailComponent(Welcome, {
-  firstName: 'Ada',
-  activationUrl: 'https://example.com/activate',
+const { renderEmail } = await createTestRenderer({ rootDir: process.cwd() })
+const email = await renderEmail('welcome', {
+  name: 'Ada',
+  actionUrl: 'https://example.com/dashboard',
 })
 ```
 
-Use `#nuxt-email/testing` after `nuxt prepare` when the template uses configured components such as `ECodeBlock`.
+`createTestRenderer` compiles the email directory with the same compiler as the module. Its `renderEmail` fails when a render keeps a class that has no effect, such as a wrong class name. Pass the module's `codeBlock` option when a template uses `ECodeBlock`.
 
 ## Compatibility evidence
 
-Nuxt Email does not claim universal email-client or React Email compatibility. The generated [conformance report](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/conformance/report.md) records each compared behavior and each intentional difference.
+Nuxt Email does not claim universal email-client compatibility. The Tailwind-to-inline-style conversion is adapted from React Email, and golden files in the repository pin the rendered output.
 
 Complete the [manual client QA checklist](https://github.com/lupinum-dev/nuxt-email/blob/main/docs/release/client-qa-checklist.md) before a rendering release. Unit tests cannot prove how every email client displays a message.
 
 ## Package exports
 
-The package has a module entry point plus focused build, production rendering, metadata, testing, and error subpaths. Use `@lupinum/nuxt-email/build` to compile a server registry and `@lupinum/nuxt-email/render` for compiled components outside Nitro. The [standalone guide](https://nuxt-email.lupinum.com/docs/guides/standalone-rendering) explains the build and runtime boundaries. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
+The package has a module entry point plus build, production rendering, testing, error, and agent documentation subpaths. Use `@lupinum/nuxt-email/build` to compile a server registry for a Node backend outside Nuxt. The generated registry imports `@lupinum/nuxt-email/render` at run time. The [standalone guide](https://nuxt-email.lupinum.com/docs/guides/standalone-rendering) explains the build and runtime boundaries. The [canonical entry-point table](https://nuxt-email.lupinum.com/docs/reference/module#package-entry-points) lists every runtime and type-only export.
 
 ## Documentation
 

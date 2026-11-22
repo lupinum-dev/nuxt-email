@@ -1,10 +1,24 @@
 import { parseDocument } from 'htmlparser2'
-import { marked, Renderer } from 'marked'
+import { Marked, Renderer } from 'marked'
+import { urlScheme } from '../url'
 import { parseCssInJsToInlineCss } from './parse-css-in-js-to-inline-css'
 import type { StylesType } from './styles'
 import { styles } from './styles'
 
 const SAFE_MARKDOWN_URL_SCHEMES = new Set(['cid', 'http', 'https', 'mailto', 'tel'])
+
+// Its own instance, so `marked.use()` or `marked.setOptions()` elsewhere in the
+// application does not change the email output.
+const markdown = new Marked()
+
+/** marked appends "Please report this to…" to the message of an error a renderer throws. */
+class MarkdownError extends TypeError {
+  readonly reason: string
+  constructor(message: string) {
+    super(message)
+    this.reason = message
+  }
+}
 
 function escapeText(value: string): string {
   return value
@@ -26,27 +40,19 @@ function decodeAttributeEntities(value: string): string {
 }
 
 function assertSafeUrl(kind: 'image' | 'link', value: string): void {
-  // Decode character references exactly as an HTML client will, then remove
-  // control/space characters that URL parsers ignore inside a scheme. This
-  // catches forms such as `javascript&#58;` and `java&#10;script:` as well as the
-  // obvious spelling.
-  const decoded = decodeAttributeEntities(value)
-  const canonical = [...decoded.trim()]
-    .filter((character) => {
-      const codePoint = character.codePointAt(0)!
-      return codePoint > 0x20 && codePoint !== 0x7F
-    })
-    .join('')
-  const scheme = /^([a-z][a-z\d+.-]*):/i.exec(canonical)?.[1]?.toLowerCase()
+  // Decode character references exactly as an HTML client will before reading the
+  // scheme. This catches forms such as `javascript&#58;` and `java&#10;script:` as well
+  // as the obvious spelling.
+  const scheme = urlScheme(decodeAttributeEntities(value))
   if (scheme !== undefined && !SAFE_MARKDOWN_URL_SCHEMES.has(scheme)) {
-    throw new TypeError(`EMarkdown ${kind} URL uses an unsupported scheme: ${scheme}`)
+    throw new MarkdownError(`EMarkdown ${kind} URL uses an unsupported scheme: ${scheme}`)
   }
 }
 
 // Direct port of react-email's markdown/markdown.tsx renderer. The custom marked Renderer
 // emits the same inline-styled HTML string that React feeds into dangerouslySetInnerHTML.
 // Keeping this as a plain string builder (rather than VNodes) preserves marked's exact
-// whitespace/newline output, which the conformance oracle compares against.
+// whitespace/newline output, which the markdown goldens pin.
 export function renderMarkdown(
   source: string,
   markdownCustomStyles?: StylesType,
@@ -121,7 +127,7 @@ export function renderMarkdown(
   }
 
   renderer.html = () => {
-    throw new TypeError('EMarkdown does not support raw HTML')
+    throw new MarkdownError('EMarkdown does not support raw HTML')
   }
 
   renderer.list = ({ items, ordered, start }) => {
@@ -178,8 +184,10 @@ export function renderMarkdown(
     return `<tr${styleAttribute(finalStyles.tr)}>\n${text}</tr>\n`
   }
 
-  return marked.parse(source, {
-    renderer,
-    async: false,
-  })
+  try {
+    return markdown.parse(source, { renderer, async: false })
+  }
+  catch (error) {
+    throw error instanceof MarkdownError ? new TypeError(error.reason) : error
+  }
 }

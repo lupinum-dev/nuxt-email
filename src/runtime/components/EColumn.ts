@@ -3,7 +3,7 @@ import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 
-export type EColumnProps = SafeEmailAttributes<TdHTMLAttributes>
+type EColumnProps = SafeEmailAttributes<TdHTMLAttributes>
 
 export const EColumn = defineComponent({
   name: 'EColumn',

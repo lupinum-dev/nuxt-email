@@ -1,6 +1,6 @@
 # Manual email-client QA
 
-This checklist is the external v1 release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/transactional.vue`. Automated conformance tests must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email; the tester sends the rendered `html`, `text`, and optional `subject` with an account they control.
+This checklist is the external v1 release gate for the fixed transactional fixture in `test/fixtures/basic/app/emails/transactional.vue`. Automated tests, including the golden files, must pass before a manual run. A provider SDK or framework sending abstraction is deliberately outside Nuxt Email; the tester sends the rendered `html`, `text`, and `subject` with an account they control.
 
 ## Fixed fixture coverage
 

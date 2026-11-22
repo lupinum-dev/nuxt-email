@@ -1,10 +1,7 @@
 import type { DefineComponent, TableHTMLAttributes } from 'vue'
-import { defineComponent, h, inject } from 'vue'
-import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
+import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
-import { assertSafeEmailAttributes } from './attributes'
-import { assertFixedPresentationTable } from './presentation-table'
-import { splitTablePadding } from './table-padding'
+import { layoutTable, useCellClasses } from './layout-table'
 
 export type ESectionProps = Omit<
   SafeEmailAttributes<TableHTMLAttributes>,
@@ -15,13 +12,9 @@ export const ESection = defineComponent({
   name: 'ESection',
   inheritAttrs: false,
   setup(_props, { attrs, slots }) {
-    const holder = inject(TAILWIND_NESTED_KEY, null)
+    const cellClasses = useCellClasses()
     return () => {
-      assertSafeEmailAttributes('ESection', attrs)
-      assertFixedPresentationTable('ESection', attrs)
-      const { style, ...attributes } = attrs
-      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
-      const { tableStyle, cellStyle } = splitTablePadding(effectiveStyle)
+      const { attributes, tableStyle, cell: cellAttributes } = layoutTable('ESection', attrs, cellClasses)
 
       return h('table', {
         align: 'center',
@@ -35,7 +28,7 @@ export const ESection = defineComponent({
       }, [
         h('tbody', [
           h('tr', [
-            h('td', Object.keys(cellStyle).length > 0 ? { style: cellStyle } : {}, slots.default?.()),
+            h('td', cellAttributes, slots.default?.()),
           ]),
         ]),
       ])
