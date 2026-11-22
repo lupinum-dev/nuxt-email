@@ -111,6 +111,15 @@ To check this version, generate the `proof-kit` from a checkout of the tag `v1.0
 (`pnpm proofs:generate` renders the checked-out tree), run this checklist, and record the result
 here. Do this before the next release that changes the rendered output.
 
+Results for the `proof-kit` generated from the code of `v1.0.0-beta.6`:
+
+| Client | Mode | Verifier | Date | Result | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Apple Mail — macOS | Light | Matthias | 2026-11-22 | Pass with one defect | Screenshot reviewed: P1, P3, P4, P7, P10, P12 and P13 pass. Defect: a space inside each link whose text is on its own lines in the template (the underline runs past the text, and a space comes before the full stop); fixed after this version. P2, P5, P8 and P11 were not reported. |
+| Apple Mail — macOS | Dark | | | Not done | |
+| Gmail — web | Light + Dark | | | Not done | |
+| Outlook — Windows classic desktop | Light + Dark | | | Not done | |
+
 ### Stable `1.0.0` sign-off
 
 Fill one row per client. Verify **both** light and dark for every proof before marking

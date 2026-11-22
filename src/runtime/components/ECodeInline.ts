@@ -2,6 +2,7 @@ import type { DefineComponent, HTMLAttributes } from 'vue'
 import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
+import { trimSlotEdges } from './slot-text'
 
 type ECodeInlineProps = SafeEmailAttributes<HTMLAttributes>
 
@@ -43,7 +44,7 @@ export const ECodeInline = defineComponent({
       return [
         h('style', ORANGE_FR_STYLE),
         // Does not render on Orange.fr
-        h('code', codeProps, slots.default?.()),
+        h('code', codeProps, trimSlotEdges(slots.default?.())),
         // Renders only on Orange.fr
         h('span', {
           ...attributes,
@@ -51,7 +52,7 @@ export const ECodeInline = defineComponent({
           // The author style may set `display`; this copy must stay hidden outside Orange.fr.
           'style': [style, { display: 'none' }],
           'data-skip-in-text': 'true',
-        }, slots.default?.()),
+        }, trimSlotEdges(slots.default?.())),
       ]
     }
   },
