@@ -18,6 +18,9 @@ function trimText(node: VNode | undefined, pattern: RegExp): VNode | undefined {
  * A formatter puts the content of `<ELink>` on its own lines, and Vue keeps each of those line
  * breaks as one space. In an email that space is inside the link: the underline runs past the
  * last word, and a space comes before the character after the link. A non-breaking space stays.
+ *
+ * Only a text node at the edge changes. The template compiler joins adjacent text into one node and
+ * drops a whitespace-only node at the edge, so one node per edge is enough for a template.
  */
 export function trimSlotEdges(nodes: VNode[] | undefined): VNode[] | undefined {
   if (nodes === undefined || nodes.length === 0) {
