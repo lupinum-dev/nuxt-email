@@ -44,8 +44,9 @@ it('compiles every complete email template in the README and the docs', async ()
       await writeFile(join(directory, `${name}.vue`), code.includes('<template>') ? code : `<template>\n${code}\n</template>\n`)
     }
   }
-  // The README quick start and the first-email page are always there.
+  // An example that loses its `EEmail` root is skipped above, so the two entry examples are named.
   expect(names.length).toBeGreaterThan(5)
+  expect(names.filter(name => /^(?:README-md|docs-content-docs-1-getting-started-4-first-email-md)-/.test(name))).toHaveLength(2)
   const { code } = await compileEmailDirectory({ directory })
   for (const name of names) expect(code).toContain(JSON.stringify(name))
 }, 30_000)
