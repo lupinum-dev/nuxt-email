@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { $fetch, createTest, fetch as testFetch, setupMaps } from '@nuxt/test-utils/e2e'
@@ -7,10 +7,20 @@ import { describe, expect, it } from 'vitest'
 const sourceFixtureRoot = fileURLToPath(new URL('./fixtures/preview', import.meta.url))
 const temporaryFixtureRoot = fileURLToPath(new URL('../.tmp/', import.meta.url))
 await mkdir(temporaryFixtureRoot, { recursive: true })
+// The development server can still write type files into its build directory after it
+// closed. Removing the directories at teardown then fails the run with an unhandled
+// ENOENT (seen on macOS). So a run keeps its directories, and a later run removes them
+// here; one hour keeps the directories of a run that is still in progress.
+for (const entry of await readdir(temporaryFixtureRoot, { withFileTypes: true })) {
+  if (!entry.isDirectory() || !entry.name.startsWith('preview-test-')) continue
+  const directory = join(temporaryFixtureRoot, entry.name)
+  if (Date.now() - (await stat(directory)).mtimeMs < 60 * 60 * 1000) continue
+  await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {})
+}
 const fixtureRoot = await mkdtemp(join(temporaryFixtureRoot, 'preview-test-'))
 const buildRoot = join(temporaryFixtureRoot, `${basename(fixtureRoot)}-build`)
-// Nuxt Test Utils removes a build directory concurrently with server teardown.
-// Precreating it lets our retrying cleanup own that race on macOS.
+// Nuxt Test Utils removes a build directory that it creates itself. Precreating it
+// keeps the directory until a later run.
 await mkdir(buildRoot, { recursive: true })
 await cp(sourceFixtureRoot, fixtureRoot, {
   recursive: true,
@@ -62,31 +72,12 @@ describe('development email preview', async () => {
     // 120-second default when hosted runners are under load. Keep a finite
     // budget below the 240-second Windows setup timeout.
     serverStartTimeout: 180_000,
-    // Nuxt Test Utils removes the build directory during teardown. Keep it
-    // outside the copied fixture so that cleanup never removes nested paths
-    // concurrently on macOS.
+    // Outside the copied fixture, and precreated above so that nothing removes it
+    // while the server can still write to it.
     nuxtConfig: {
       buildDir: buildRoot,
     },
   })
-  test.ctx.teardown = [async () => {
-    try {
-      for (const directory of [fixtureRoot, buildRoot]) {
-        await rm(directory, {
-          recursive: true,
-          force: true,
-          maxRetries: 10,
-          retryDelay: 100,
-        })
-      }
-    }
-    catch (error) {
-      if (process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EBUSY') {
-        return
-      }
-      throw error
-    }
-  }]
   await setupMaps.vitest(test)
 
   it('serves the preview page with its security headers under the app base URL', async () => {
