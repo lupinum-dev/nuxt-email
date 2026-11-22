@@ -86,3 +86,9 @@ when a decision changes; git keeps the history.
   are missing, also when only one of the four is (`src/code-block/shiki-packages.ts`). Nothing outside `src/code-block/options.ts` and the
   generated component may import a Shiki package at run time; the packed default consumer proves it by
   installing without Shiki.
+- **D21 (2026-11-22): `ELink` and `ECodeInline` remove the whitespace at the edges of their content.** —
+  The Nuxt ESLint style rules put the content of a component with attributes on its own lines, and Vue keeps
+  each line break as a space. In the first Apple Mail check of `1.0.0-beta.6` the underline ran past the
+  link text, and a space came before the full stop. JSX drops this whitespace, so React Email does not have
+  the defect. Only these two inline components trim (`src/runtime/components/slot-text.ts`); block
+  components do not need it, and a non-breaking space stays.
