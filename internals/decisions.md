@@ -75,3 +75,8 @@ when a decision changes; git keeps the history.
   in `node_modules` as email source, and attributes on `<html>`.** — Each needs a new mechanism (a second set of
   declarations chosen by `dir`, an option that names packages to read and compile, pass-through props on
   `EEmail`). The Tailwind guide lists the first two as limits.
+- **D19 (2026-11-22): The Node floor is the floor of the Nuxt version that CI tests as "current"
+  (`^22.22.3 || ^24.15.0 || ^26.0.0` for Nuxt 4.6).** — The pinned development Nuxt is also the current Nuxt
+  of the packed-consumer test, so it must follow Nuxt, or the package is never tested on the Nuxt that users
+  install. Nuxt 4.6 no longer supports Node 22.18 and 24.11, and CI must not prove a floor on a Nuxt that does
+  not support it. The peer range `>=4.5.1 <5` stays; the minimum consumer still installs Nuxt 4.5.1.

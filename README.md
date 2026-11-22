@@ -41,7 +41,7 @@ Do not use it for marketing campaigns or a workflow shared by non-Nuxt applicati
 
 ## Requirements
 
-- Node.js `^22.18.0 || ^24.11.0 || ^26.0.0`.
+- Node.js `^22.22.3 || ^24.15.0 || ^26.0.0`.
 - Nuxt `>=4.5.1 <5`.
 - Vue `^3.5.40`.
 
