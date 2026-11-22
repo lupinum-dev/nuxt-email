@@ -34,7 +34,7 @@ Migration: move the `ETailwind` `config`, `theme` and `utility` props into `app/
 
 Migration: remove `<style>` blocks, custom blocks and `src=` blocks from templates and from the components they import, in Nuxt too. Use Tailwind classes or inline styles, and import local components instead of `src=`.
 
-Migration: write every class completely in the template source. Class names built at run time, such as `` `bg-${color}-500` ``, are no longer resolved and stay in `class` unchanged.
+Migration: write every class completely in the template source, or list the possible names with `@source inline()` in `app/emails/tailwind.css`. Other class names built at run time, such as `` `bg-${color}-500` ``, are no longer resolved and stay in `class` unchanged.
 
 Migration: replace `renderEmailComponent()` and `#nuxt-email/testing` with `createTestRenderer({ rootDir })` from `@lupinum/nuxt-email/testing`. It returns `renderEmail(name, props)`. Pass the `codeBlock` option when templates use `ECodeBlock`, and pass the generated `EmailTemplateProps` type for typed names and props.
 
