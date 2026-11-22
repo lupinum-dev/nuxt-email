@@ -77,12 +77,28 @@
     "changeset": "changeset"
   },
   "peerDependencies": {
+    "@shikijs/core": "^4.4.3",
+    "@shikijs/engine-javascript": "^4.4.3",
+    "@shikijs/langs": "^4.4.3",
+    "@shikijs/themes": "^4.4.3",
     "nuxt": ">=4.5.1 <5",
     "typescript": "~5.9.3",
     "vue": "^3.5.40",
     "vue-tsc": "^3.3.3"
   },
   "peerDependenciesMeta": {
+    "@shikijs/core": {
+      "optional": true
+    },
+    "@shikijs/engine-javascript": {
+      "optional": true
+    },
+    "@shikijs/langs": {
+      "optional": true
+    },
+    "@shikijs/themes": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     },
@@ -92,10 +108,6 @@
   },
   "dependencies": {
     "@nuxt/kit": ">=4.5.1 <5",
-    "@shikijs/core": "^4.3.1",
-    "@shikijs/engine-javascript": "^4.3.1",
-    "@shikijs/langs": "^4.3.1",
-    "@shikijs/themes": "^4.3.1",
     "css-tree": "^3.2.1",
     "esbuild": "^0.28.1",
     "h3": "^1.15.11",
@@ -112,6 +124,10 @@
     "@nuxt/module-builder": "^1.0.2",
     "@nuxt/schema": "4.6.4",
     "@nuxt/test-utils": "^4.0.3",
+    "@shikijs/core": "4.4.3",
+    "@shikijs/engine-javascript": "4.4.3",
+    "@shikijs/langs": "4.4.3",
+    "@shikijs/themes": "4.4.3",
     "@types/css-tree": "2.3.11",
     "@types/html-to-text": "9.0.4",
     "@types/node": "26.6.3",
