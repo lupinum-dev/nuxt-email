@@ -43,10 +43,6 @@ export function normalizeCodeBlockOptions(value: unknown): NormalizedCodeBlockOp
     }
     return language
   })
-  const duplicateLanguage = languages.find((language, index) => languages.indexOf(language) !== index)
-  if (duplicateLanguage !== undefined) {
-    throw new TypeError(`nuxt-email codeBlock language ${JSON.stringify(duplicateLanguage)} is configured more than once`)
-  }
 
   if (typeof value.theme !== 'string' || value.theme.length === 0) {
     throw new TypeError('nuxt-email codeBlock.theme must be a non-empty string')
@@ -56,7 +52,8 @@ export function normalizeCodeBlockOptions(value: unknown): NormalizedCodeBlockOp
   }
 
   return Object.freeze({
-    languages: Object.freeze(languages),
+    // Nuxt layers join arrays, so a language can arrive twice.
+    languages: Object.freeze([...new Set(languages)]),
     theme: value.theme,
   })
 }

@@ -13,20 +13,17 @@ Use the Node and pnpm versions in `package.json`.
 pnpm install --frozen-lockfile
 pnpm dev            # run the module in playground/
 pnpm docs:dev       # run the documentation site
-pnpm build          # module, standalone compiler, docs site and dist/agent/
+pnpm build          # module and its entries (/build, /testing), docs site and dist/agent/
 pnpm typecheck      # module, fixtures and playground
-pnpm test           # unit, conformance and production isolation
+pnpm test           # unit, golden output and production isolation
 pnpm test:packed    # packs the `pnpm build` output and installs it in isolated consumers
 pnpm format         # apply lint fixes
 pnpm verify         # exactly what CI runs
 pnpm changeset      # describe a user-facing change for the next release
 ```
 
-`pnpm oracle:check` (part of `verify`) compares against a React Email checkout
-at the commit pinned in `.github/workflows/ci.yml`. Set
-`NUXT_EMAIL_REACT_EMAIL_CHECKOUT` to a checkout at exactly that commit; CI
-checks it out under `.oracle/react-email`. Regenerate the oracle and the
-conformance report only through `oracle:write` and `conformance:write`.
+Golden files in `test/render/golden/` pin the rendered output. Update a golden
+file only for an intended output change, and say why in the pull request.
 
 `pnpm build` also writes `dist/agent/`, a copy of the rendered docs that ships
 as `@lupinum/nuxt-email/agent-docs`, so agents in consuming projects read
@@ -56,7 +53,8 @@ the README tells those agents how to add a pointer to it. Keep the
 
 ## Boundaries
 
-- Keep one template registry and one rendering core; dev preview shares it.
+- Keep one template registry, one compile path (`compileEmailDirectory()`) and one
+  rendering core; the Nuxt module, `/build`, `createTestRenderer()` and dev preview share them.
 - Templates and rendering stay on the server. Exclude preview fixtures from production.
 - The active application owns its registry; Nuxt layers do not merge templates.
 - Do not add delivery adapters, send endpoints, recipient policy or a second renderer.
@@ -64,5 +62,5 @@ the README tells those agents how to add a pointer to it. Keep the
 
 Run focused tests for changed behavior and `pnpm verify` for handoff. Keep the
 docs source in `docs/` and follow `docs/WRITING.md`; update it in the same pull
-request as the behaviour it describes. Preserve legal text and generated
-conformance evidence. Do not hand-edit `.nuxt`, `.output`, `dist`, or generated docs.
+request as the behaviour it describes. Preserve legal text and the provenance
+comments on adapted code. Do not hand-edit `.nuxt`, `.output`, `dist`, or generated docs.

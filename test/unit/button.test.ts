@@ -58,14 +58,6 @@ describe('button padding conversion', () => {
     })
   })
 
-  it('normalizes Vue kebab-case, string, and array style forms', () => {
-    const expected = { paddingTop: 1, paddingRight: 2, paddingBottom: 3, paddingLeft: 4 }
-
-    expect(parseButtonPadding({ 'padding-top': '1px', 'padding-right': '2px', 'padding-bottom': '3px', 'padding-left': '4px' })).toEqual(expected)
-    expect(parseButtonPadding('padding:1px 2px 3px 4px')).toEqual(expected)
-    expect(parseButtonPadding([{ padding: '1px 2px' }, { paddingBottom: '3px', paddingLeft: '4px' }])).toEqual(expected)
-  })
-
   it.each([
     Number.POSITIVE_INFINITY,
     Number.NaN,
@@ -75,6 +67,7 @@ describe('button padding conversion', () => {
     'calc(10px + 1em)',
     'invalid',
     '',
+    `${'9'.repeat(400)}px`,
   ])('rejects padding that cannot produce safe Outlook spacing: %j', (padding) => {
     expect(() => parseButtonPadding({ padding }))
       .toThrow(/EButton padding/)
@@ -83,7 +76,7 @@ describe('button padding conversion', () => {
   it('converts pixels to points and explicit CSS pixel values', () => {
     expect(pixelsToPoints(10)).toBe(7.5)
     expect(pixelsToPoints(0)).toBe(0)
-    expect(pixelsToPoints(Number.NaN)).toBeUndefined()
+    expect(pixelsToPoints(undefined)).toBeUndefined()
     expect(pixelStyle(7.5)).toBe('7.5px')
     expect(pixelStyle(0)).toBe(0)
     expect(pixelStyle(undefined)).toBeUndefined()

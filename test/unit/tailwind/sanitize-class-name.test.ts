@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { sanitizeClassName } from '../../../src/runtime/tailwind/engine/compatibility/sanitize-class-name'
+import { sanitizeClassName } from '../../../src/compiler/tailwind/compatibility/sanitize-class-name'
 
 test('sanitizeClassName', () => {
   expect(sanitizeClassName('min-height-[calc(25px+100%-20%*2/4)]')).toBe(

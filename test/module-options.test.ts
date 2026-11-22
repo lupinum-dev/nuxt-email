@@ -107,10 +107,6 @@ describe('Nuxt email module options', () => {
       'nuxt-email codeBlock language "not-a-real-language" is not available in Shiki',
     ],
     [
-      { codeBlock: { languages: ['typescript', 'typescript'], theme: 'github-dark' } },
-      'nuxt-email codeBlock language "typescript" is configured more than once',
-    ],
-    [
       { codeBlock: { languages: ['typescript'], theme: 'not-a-real-theme' } },
       'nuxt-email codeBlock theme "not-a-real-theme" is not available in Shiki',
     ],

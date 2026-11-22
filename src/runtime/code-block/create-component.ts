@@ -6,7 +6,7 @@ import { assertSafeEmailAttributes } from '../components/attributes'
 import type { EmailStyle } from '../components/style'
 import { mergeEmailStyles } from '../components/style'
 
-export type ECodeBlockProps<Language extends string> = {
+type ECodeBlockProps<Language extends string> = {
   code: string
   language: Language
   lineNumbers?: boolean

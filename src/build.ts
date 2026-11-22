@@ -1,13 +1,14 @@
 import { execFile } from 'node:child_process'
 import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { promisify } from 'node:util'
-import { build } from 'esbuild'
-import ts from 'typescript'
+import type ts from 'typescript'
+import type { CompiledEmailDirectory } from './compiler/build-templates'
+import { compileEmailDirectory } from './compiler/build-templates'
+import { contains, resolveEmailDirectory } from './compiler/directory'
 import { discoverEmailTemplates } from './template-registry/discovery'
-import { generateEmailRegistry, generateEmailTypes } from './template-registry/generation'
-import { emailTemplatesPlugin } from './build/compile-template'
+import { generateEmailTypes } from './template-registry/generation'
 
 const execute = promisify(execFile)
 const require = createRequire(import.meta.url)
@@ -22,11 +23,6 @@ export interface BuildEmailRegistryOptions {
   templatesDir?: string
   /** Dedicated directory inside rootDir. Must be absent or previously created by this helper. */
   outDir: string
-}
-
-function contains(parent: string, child: string): boolean {
-  const path = relative(parent, child)
-  return path === '' || (!path.startsWith(`..`) && !isAbsolute(path))
 }
 
 async function replaceOutputDirectory(
@@ -64,7 +60,22 @@ async function replaceOutputDirectory(
   }
 }
 
-async function normalizeDeclarationImports(directory: string): Promise<void> {
+const PEER_HINT = '@lupinum/nuxt-email/build needs typescript and vue-tsc; install them as dev dependencies, for example `pnpm add -D typescript vue-tsc`.'
+
+type TypeScript = typeof ts
+
+// typescript and vue-tsc are optional peers: only this entry needs them.
+async function loadPeers(): Promise<{ ts: TypeScript, vueTsc: string }> {
+  try {
+    const { default: typescript } = await import('typescript')
+    return { ts: typescript, vueTsc: require.resolve('vue-tsc/bin/vue-tsc.js') }
+  }
+  catch (error) {
+    throw new Error(PEER_HINT, { cause: error })
+  }
+}
+
+async function normalizeDeclarationImports(ts: TypeScript, directory: string): Promise<void> {
   for (const file of await readdir(directory, { recursive: true })) {
     if (!/\.d\.[cm]?ts$/.test(file)) continue
     const path = join(directory, file)
@@ -95,16 +106,36 @@ async function normalizeDeclarationImports(directory: string): Promise<void> {
   }
 }
 
+/**
+ * The standalone build covers a self-contained email directory: templates import files inside it
+ * and packages. Checked before the declaration step, which would fail on such an import with a
+ * TypeScript error that does not say why.
+ */
+function assertSelfContained(compiled: CompiledEmailDirectory, directory: string, rootDir: string): void {
+  // With packages external, esbuild keeps `~/x` and `@/x` as if they were packages; no package name starts so.
+  for (const [importer, { imports }] of Object.entries(compiled.metafile.inputs)) {
+    const alias = imports.find(entry => entry.external && /^(?:~|@\/|@@\/)/.test(entry.path))
+    if (alias !== undefined) {
+      throw new Error(`${resolve(rootDir, importer)} imports "${alias.path}", a Nuxt alias. @lupinum/nuxt-email/build does not resolve aliases: import only files inside the email directory, with relative paths, and packages.`)
+    }
+  }
+  const outside = compiled.inputs.find(input => !contains(directory, input))
+  if (outside === undefined) return
+  for (const [importer, { imports }] of Object.entries(compiled.metafile.inputs)) {
+    const match = imports.find(entry => resolve(rootDir, entry.path) === outside)
+    if (match !== undefined) {
+      throw new Error(`${resolve(rootDir, importer)} imports "${match.original ?? match.path}" from outside the email directory. @lupinum/nuxt-email/build compiles a self-contained email directory: import only files inside it and packages.`)
+    }
+  }
+  throw new Error(`${outside} is outside the email directory. @lupinum/nuxt-email/build compiles a self-contained email directory: import only files inside it and packages.`)
+}
+
 /** Compile trusted application templates. Never call this from a request or action. */
 export async function buildEmailRegistry(options: BuildEmailRegistryOptions): Promise<void> {
   if (Object.keys(options).some(key => key !== 'rootDir' && key !== 'outDir' && key !== 'templatesDir')) {
     throw new TypeError('buildEmailRegistry accepts only rootDir, outDir and templatesDir.')
   }
-  const rootDir = resolve(options.rootDir)
-  const templatesDir = options.templatesDir ?? 'app/emails'
-  if (isAbsolute(templatesDir)) throw new TypeError('templatesDir must be relative to rootDir.')
-  const directory = resolve(rootDir, templatesDir)
-  if (!contains(rootDir, directory)) throw new TypeError('templatesDir must remain inside rootDir.')
+  const { rootDir, directory } = resolveEmailDirectory(options.rootDir, options.templatesDir)
   const outDir = resolve(rootDir, options.outDir)
   if (!contains(rootDir, outDir)) throw new TypeError('outDir must remain inside rootDir so the generated module can resolve project dependencies.')
   if (contains(directory, outDir) || contains(outDir, directory)) {
@@ -121,8 +152,18 @@ export async function buildEmailRegistry(options: BuildEmailRegistryOptions): Pr
   catch (error) {
     if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
   }
+  const { ts, vueTsc } = await loadPeers()
   const templates = await discoverEmailTemplates(directory)
   if (templates.length === 0) throw new TypeError('The email directory contains no templates.')
+
+  // The bundle is compiled first; it writes nothing, so a failure leaves the previous output unchanged.
+  const compiled = await compileEmailDirectory({
+    directory,
+    renderer: renderImport,
+    packages: 'external',
+    absWorkingDir: rootDir,
+  })
+  assertSelfContained(compiled, directory, rootDir)
 
   await mkdir(dirname(outDir), { recursive: true })
   const staging = await mkdtemp(join(dirname(outDir), '.nuxt-email-build-'))
@@ -142,7 +183,7 @@ export async function buildEmailRegistry(options: BuildEmailRegistryOptions): Pr
       files: [globals, ...templates.map(template => template.sourcePath)],
     }))
     try {
-      await execute(process.execPath, [require.resolve('vue-tsc/bin/vue-tsc.js'), '-p', config], {
+      await execute(process.execPath, [vueTsc, '-p', config], {
         cwd: directory, maxBuffer: 4 * 1024 * 1024,
       })
     }
@@ -152,21 +193,9 @@ export async function buildEmailRegistry(options: BuildEmailRegistryOptions): Pr
         : ''
       throw new Error(`Email declaration build failed${diagnostics ? `:\n${diagnostics}` : '.'}`, { cause: error })
     }
-    await normalizeDeclarationImports(declarations)
+    await normalizeDeclarationImports(ts, declarations)
 
-    const registry = generateEmailRegistry(templates, {
-      emailRenderError: renderImport,
-      renderEmailComponent: renderImport,
-      templateRegistryErrors: renderImport,
-    })
-    await build({
-      absWorkingDir: rootDir,
-      tsconfigRaw: { compilerOptions: { target: 'ES2022', module: 'ESNext' } },
-      stdin: { contents: registry, resolveDir: directory, sourcefile: 'email-registry.js' },
-      outfile: join(staging, 'index.mjs'),
-      bundle: true, format: 'esm', platform: 'node', target: 'node22',
-      packages: 'external', logLevel: 'silent', plugins: [emailTemplatesPlugin(directory)],
-    })
+    await writeFile(join(staging, 'index.mjs'), compiled.code)
     await writeFile(join(staging, 'index.d.mts'), generateEmailTypes(
       templates.map(template => ({
         name: template.name,

@@ -21,10 +21,10 @@ Use one copy of this record for each real transactional-email project. Beta evid
 ## Required exercise
 
 1. Install the exact candidate tarball in a fresh or isolated branch.
-2. Create one representative Vue SFC under `app/emails/` using ordinary `defineProps()`, slots, supported `E*` components, `defineEmail`, and `ETailwind`. If the project has shared colors, pass one concrete token through `ETailwind`'s `theme` or `config` rather than importing the Nuxt stylesheet.
+2. Create one representative Vue SFC under `app/emails/` using ordinary `defineProps()`, slots, an `EEmail` root with `subject`, supported `E*` components, and Tailwind classes. If the project has shared colors, put one concrete token in `app/emails/tailwind.css` with `@theme` rather than importing the Nuxt stylesheet.
 3. Add a typed sibling fixture and use `/__email` to inspect preview, exact HTML, and plain text.
 4. Render the template from a Nitro handler with typed `renderEmail(name, props)`.
-5. Send the returned `html`, `text`, and computed `subject` through the project's existing provider SDK.
+5. Send the returned `html`, `text`, and `subject` through the project's existing provider SDK.
 6. Build the production application and check that the canonical generated path keeps preview routes and fixture values out of production output and email modules out of client output.
 7. Record defects and workarounds without adding provider or application-specific abstractions to Nuxt Email.
 

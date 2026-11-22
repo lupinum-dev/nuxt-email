@@ -1,8 +1,8 @@
-import { normalizeEmailStyle } from './style'
+import type { EmailStyle } from './style'
 
 type PaddingValue = unknown
 
-export interface ParsedPadding {
+interface ParsedPadding {
   paddingTop: number | undefined
   paddingRight: number | undefined
   paddingBottom: number | undefined
@@ -41,6 +41,7 @@ export function convertToPixels(value: PaddingValue): number {
   }
 
   const amount = Number.parseFloat(matches[1]!)
+  // A number with hundreds of digits passes the pattern and parses to Infinity.
   if (!Number.isFinite(amount)) {
     throw new TypeError(`EButton padding must resolve to finite pixels; received ${value}`)
   }
@@ -107,13 +108,13 @@ function convertOptionalPadding(value: PaddingValue): number | undefined {
   return value === undefined ? undefined : convertToPixels(value)
 }
 
-export function parseButtonPadding(style: unknown): ParsedPadding {
+export function parseButtonPadding(style: EmailStyle): ParsedPadding {
   let paddingTop: PaddingValue
   let paddingRight: PaddingValue
   let paddingBottom: PaddingValue
   let paddingLeft: PaddingValue
 
-  for (const [property, value] of Object.entries(normalizeEmailStyle(style) ?? {})) {
+  for (const [property, value] of Object.entries(style)) {
     if (property === 'padding') {
       ({ paddingTop, paddingRight, paddingBottom, paddingLeft } = expandPadding(value))
     }
@@ -140,9 +141,7 @@ export function parseButtonPadding(style: unknown): ParsedPadding {
 }
 
 export function pixelsToPoints(pixels: number | undefined): number | undefined {
-  return typeof pixels === 'number' && !Number.isNaN(Number(pixels))
-    ? (pixels * 3) / 4
-    : undefined
+  return pixels === undefined ? undefined : (pixels * 3) / 4
 }
 
 export function pixelStyle(value: number | undefined): string | number | undefined {

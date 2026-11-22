@@ -1,6 +1,6 @@
 # Nuxt Email future roadmap
 
-This is the canonical backlog for features that may follow `1.0.0`. It is intentionally a decision record, not a promise or release schedule. The `1.0.0-beta.2` contract is feature-frozen; the current release contract remains defined by the README, component documentation, conformance report, and [`v1.0-readiness.md`](./release/v1.0-readiness.md).
+This is the canonical backlog for features that may follow `1.0.0`. It is intentionally a decision record, not a promise or release schedule. The `1.0.0-beta.2` contract is feature-frozen; the current release contract remains defined by the README, component documentation, golden files, and [`v1.0-readiness.md`](./release/v1.0-readiness.md).
 
 ## Product boundary
 
@@ -60,7 +60,7 @@ The gallery should show, for every public component:
 
 **Why:** Nuxt developers want application colors such as `primary` to stay synchronized with email colors. Automatically importing the browser stylesheet or emitting CSS variables is unreliable in email clients.
 
-Document one canonical TypeScript token module consumed by both the Nuxt application theme and the concrete `ETailwind` theme/config. The generated email must contain resolved values such as `#16794d`, not `var(--color-primary)`.
+Document one canonical token source consumed by both the Nuxt application theme and `app/emails/tailwind.css`. The generated email must contain resolved values such as `#16794d`, not `var(--color-primary)`.
 
 **Acceptance criteria:**
 
@@ -252,7 +252,7 @@ Package concise authoring instructions and references for coding agents:
 
 - component selection and contracts;
 - Tailwind v4 rules and limitations;
-- typed `defineEmail` subjects;
+- the `EEmail` subject and text props;
 - preview fixtures;
 - testing utilities;
 - migration from React Email; and
@@ -278,18 +278,17 @@ If future preview tabs or checks request the same template/fixture repeatedly, c
 
 These are recurring engineering responsibilities rather than user-facing features.
 
-### React Email oracle upgrades
+### React Email upstream changes
 
-- Keep the current version pinned until an intentional upgrade branch exists.
-- Review upstream behavior changes case by case.
-- Regenerate oracle fixtures from the pinned source commit.
-- Add, reclassify, or document every behavior before changing the published report.
-- Never advertise compatibility with a version that has not passed reproducibility and conformance checks.
+- Keep the pinned source commit in `provenance.md` until an intentional upgrade branch exists.
+- Review upstream changes to the adapted algorithms case by case.
+- Port a change only with a golden-file diff that a maintainer reviews.
+- Update `provenance.md` when adapted code or its source paths change.
 
 ### Tailwind upgrades
 
-- Pin the production compiler version.
-- Review generated CSS, parser behavior, native dependency changes, and Node engine floors.
+- Pin the build-time compiler version.
+- Review generated CSS, parser behavior, native dependency changes, and Node engine floors. Review `lightningcss` upgrades the same way: the owned `calc()`, `oklch()` and long-number steps exist because of its current output.
 - Re-run nested-component, author-precedence, responsive, pseudo, Outlook padding, escaping, performance, and deterministic-render tests.
 - Do not maintain parallel Tailwind v3/v4 engines.
 

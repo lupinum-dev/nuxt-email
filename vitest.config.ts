@@ -1,5 +1,4 @@
 import { configDefaults, defineConfig } from 'vitest/config'
-import oracle from './test/conformance/oracle/react-email-6.11.0.json' with { type: 'json' }
 
 export default defineConfig({
   test: {
@@ -7,14 +6,15 @@ export default defineConfig({
     // two fixtures concurrently can exhaust macOS file handles and random ports.
     exclude: [
       ...configDefaults.exclude,
-      '.oracle/**',
       'test/fixtures/fresh-install/**',
       'test/fixtures/fresh-install-default/**',
     ],
     fileParallelism: false,
-    tags: Object.keys(oracle.cases).map(caseId => ({
-      description: `React Email conformance case ${caseId}`,
-      name: `conformance:${caseId}`,
-    })),
+    server: {
+      deps: {
+        // createTestRenderer writes its registry here; from source it imports the .ts renderer.
+        inline: [/\/node_modules\/\.cache\/nuxt-email\//],
+      },
+    },
   },
 })

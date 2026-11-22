@@ -11,8 +11,9 @@ describe('Nuxt Email module integration', async () => {
   })
 
   it('renders a no-import Vue SFC through the typed canonical registry', async () => {
-    const result = await $fetch<{ html: string, text: string }>('/api/render-transactional')
+    const result = await $fetch<{ html: string, text: string, subject: string }>('/api/render-transactional')
 
+    expect(result.subject).toBe('Activate your account, Ada')
     expect(result.html).toContain('<title>Activate your Nuxt Email account</title>')
     expect(result.html).toContain('NUXT_EMAIL_SERVER_ONLY_TEMPLATE_7F4C')
     expect(result.html).toContain('Welcome, Ada')
@@ -23,9 +24,21 @@ describe('Nuxt Email module integration', async () => {
     expect(result.text).not.toContain('Your account is ready — activate it now.')
   })
 
-  it('recursively discovers and renders nested template names', async () => {
-    const result = await $fetch<{ html: string, text: string }>('/api/render-reset')
+  it('resolves Tailwind classes and the app/emails/tailwind.css theme at build time', async () => {
+    const result = await $fetch<{ html: string }>('/api/render-transactional')
 
+    // `bg-brand` comes from `@theme { --color-brand: #00dc82 }` in tailwind.css.
+    expect(result.html).toContain('background-color:#00dc82')
+    expect(result.html).toContain('class="sm_text-lg"')
+    expect(result.html).toContain(
+      '<style>@media (min-width:640px){.sm_text-lg{font-size:18px!important;line-height:1.5555555555555556!important}}</style>',
+    )
+  })
+
+  it('recursively discovers and renders nested template names', async () => {
+    const result = await $fetch<{ html: string, text: string, subject: string }>('/api/render-reset')
+
+    expect(result.subject).toBe('Reset your password')
     expect(result.html).toContain('<title>Reset your password</title>')
     expect(result.html).toContain('VUE-2048')
     expect(result.text).toContain('Use code VUE-2048 within 15 minutes.')
@@ -42,11 +55,26 @@ describe('Nuxt Email module integration', async () => {
     }>('/api/render-unknown')
 
     expect(result).toEqual({
-      knownNames: ['account/reset-password', 'transactional', 'unsupported-auto-import'],
-      message: 'Unknown email template "not-registered"; known templates: account/reset-password, transactional, unsupported-auto-import',
+      knownNames: ['account/reset-password', 'server-auto-import', 'shared-component', 'transactional', 'unsupported-auto-import'],
+      message: 'Unknown email template "not-registered"; known templates: account/reset-password, server-auto-import, shared-component, transactional, unsupported-auto-import',
       name: 'UnknownEmailTemplateError',
       requestedName: 'not-registered',
     })
+  })
+
+  // Pins what a Nuxt app supports in templates today, so a change of the build path cannot drop it.
+  it('renders a component imported from outside app/emails through the ~ alias and resolves its classes', async () => {
+    const result = await $fetch<{ html: string }>('/api/render-shared-component')
+
+    expect(result.html).toContain('OUTSIDE_COMPONENT_7D2A')
+    // The style table comes from every file the build read, so this class resolves.
+    expect(result.html).toContain('<p style="font-size:14px;line-height:24px;letter-spacing:.1em;margin-top:16px;margin-bottom:16px;">')
+  })
+
+  it('resolves a Nitro auto-import from server/utils in a template script', async () => {
+    const result = await $fetch<{ html: string }>('/api/render-server-auto-import')
+
+    expect(result.html).toContain('AUTO_IMPORT_3B9E for Ada')
   })
 
   it('rejects a missing required prop declared by a compiled Vue SFC', async () => {

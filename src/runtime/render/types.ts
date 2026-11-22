@@ -12,12 +12,7 @@ export type EmailComponentProps<ComponentType>
       ? EmailAuthoringProps<Props>
       : never
 
-export interface RenderedEmail {
-  html: string
-  text: string
-  /**
-   * Subject line declared by the template via `defineEmail`. Absent when the
-   * template does not call `defineEmail`.
-   */
-  subject?: string
-}
+type RequiredKeys<Props> = { [Key in keyof Props]-?: Record<never, never> extends Pick<Props, Key> ? never : Key }[keyof Props]
+
+/** The props argument of `renderEmail`: optional when the template has no required props. */
+export type EmailRenderArgs<Props> = [RequiredKeys<Props>] extends [never] ? [props?: Props] : [props: Props]

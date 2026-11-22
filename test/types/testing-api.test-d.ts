@@ -1,43 +1,38 @@
-import type { FunctionalComponent } from 'vue'
-import { defineComponent, h } from 'vue'
-import { renderEmailComponent } from '../../src/runtime/testing'
+import type { CodeBlockOptions as ModuleCodeBlockOptions } from '../../src/module'
+import type { CodeBlockOptions, RenderedEmail } from '../../src/testing'
+import { createTestRenderer } from '../../src/testing'
 
-const RequiredEmail = defineComponent({
-  props: {
-    count: { type: Number, required: true },
-    name: { type: String, required: true },
-    note: { type: String, required: false },
-  },
-})
+// Untyped: any name, optional props.
+const untyped = await createTestRenderer({ rootDir: '.', templatesDir: 'app/emails' })
+const rendered: Promise<RenderedEmail> = untyped.renderEmail('welcome', { name: 'Ada' })
+void rendered
+void untyped.renderEmail('welcome')
 
-void renderEmailComponent(RequiredEmail, { count: 1, name: 'Ada' })
-void renderEmailComponent(RequiredEmail, { count: 1, name: 'Ada', note: 'Hello' })
-// @ts-expect-error required props cannot be omitted
-void renderEmailComponent(RequiredEmail)
-// @ts-expect-error count is required
-void renderEmailComponent(RequiredEmail, { name: 'Ada' })
-// @ts-expect-error count must be numeric
-void renderEmailComponent(RequiredEmail, { count: '1', name: 'Ada' })
-// @ts-expect-error undeclared props are rejected
-void renderEmailComponent(RequiredEmail, { count: 1, name: 'Ada', extra: true })
+// Typed with the generated EmailTemplateProps shape.
+interface Templates {
+  welcome: { name: string, plan?: string }
+  digest: { limit?: number }
+  plain: Record<string, never>
+}
+const typed = await createTestRenderer<Templates>({ rootDir: '.' })
+void typed.renderEmail('welcome', { name: 'Ada' })
+void typed.renderEmail('digest')
+void typed.renderEmail('plain')
+// @ts-expect-error welcome has a required prop
+void typed.renderEmail('welcome')
+// @ts-expect-error unknown template name
+void typed.renderEmail('missing')
+// @ts-expect-error props must match the template
+void typed.renderEmail('welcome', { name: 1 })
 
-const OptionalEmail = defineComponent({
-  props: {
-    name: { type: String, required: false },
-  },
-})
-
-void renderEmailComponent(OptionalEmail)
-void renderEmailComponent(OptionalEmail, {})
-void renderEmailComponent(OptionalEmail, { name: 'Ada' })
-
-const PropFreeEmail = defineComponent({})
-void renderEmailComponent(PropFreeEmail)
-void renderEmailComponent(PropFreeEmail, {})
-// @ts-expect-error prop-free templates reject arbitrary props
-void renderEmailComponent(PropFreeEmail, { extra: true })
-
-const FunctionalEmail: FunctionalComponent<{ name: string }> = props => h('html', props.name)
-void renderEmailComponent(FunctionalEmail, { name: 'Ada' })
-// @ts-expect-error functional component props stay statically checked
-void renderEmailComponent(FunctionalEmail, {})
+const codeBlock: CodeBlockOptions = { languages: ['typescript'], theme: 'github-dark' }
+const moduleCodeBlock: ModuleCodeBlockOptions = codeBlock
+void createTestRenderer({ rootDir: '.', codeBlock: moduleCodeBlock })
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: ['footer-link'] })
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: true })
+// @ts-expect-error `false` is not an option; omit it for the strict default
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: false })
+// @ts-expect-error rootDir is required
+void createTestRenderer({ templatesDir: 'app/emails' })
+// @ts-expect-error codeBlock takes the module option shape
+void createTestRenderer({ rootDir: '.', codeBlock: { languages: 'typescript' } })

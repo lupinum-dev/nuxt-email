@@ -8,9 +8,9 @@
   "packageRules": [
     { "groupName": "Nuxt ecosystem", "matchPackageNames": ["nuxt", "@nuxt/**", "vue", "vue-router"] },
     {
-      "description": "Review the vendored email engine and upstream oracle together",
+      "description": "Review the build-time email engine with its Tailwind compiler",
       "groupName": "Email Tailwind compatibility",
-      "matchPackageNames": ["tailwindcss", "react-email", "@react-email/render"]
+      "matchPackageNames": ["tailwindcss"]
     }
   ]
 }

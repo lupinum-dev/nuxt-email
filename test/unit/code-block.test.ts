@@ -3,18 +3,27 @@ import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript'
 import typescript from '@shikijs/langs/typescript'
 import githubDark from '@shikijs/themes/github-dark'
 import { afterAll, describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import type { Component } from 'vue'
+import { createSSRApp, defineComponent, h } from 'vue'
+import { renderToString } from 'vue/server-renderer'
 import {
   generateCodeBlockComponent,
 } from '../../src/code-block/generate-component'
-import {
-  generateConfiguredRenderer,
-  generateConfiguredRendererTypes,
-} from '../../src/code-block/generate-configured-renderer'
 import { normalizeCodeBlockOptions } from '../../src/code-block/options'
 import { createCodeBlockComponent } from '../../src/runtime/code-block/create-component'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
-import { renderComponentToHtml } from '../../src/runtime/render/render-component'
+
+async function renderComponentToHtml(component: Component, props?: Record<string, unknown>): Promise<string> {
+  const app = createSSRApp({ render: () => h(component, props) })
+  // Vue SSR resolves to `<!---->` when an async setup throws; rethrow the real error.
+  let failure: { cause: unknown } | undefined
+  app.config.errorHandler = (error) => {
+    failure ??= { cause: error }
+  }
+  const html = await renderToString(app)
+  if (failure !== undefined) throw failure.cause
+  return html
+}
 
 const highlighterPromise = createHighlighterCore({
   langs: [typescript],
@@ -100,6 +109,12 @@ describe('configured code blocks', () => {
     )
   })
 
+  // Nuxt layers join arrays, so a layer and the app can both enable a language.
+  it('keeps a language configured twice once', () => {
+    expect(normalizeCodeBlockOptions({ languages: ['typescript', 'vue', 'typescript'], theme: 'github-dark' }).languages)
+      .toEqual(['typescript', 'vue'])
+  })
+
   it('generates imports for only the resolved language modules', () => {
     const options = normalizeCodeBlockOptions({
       languages: ['typescript', 'vue'],
@@ -120,24 +135,5 @@ describe('configured code blocks', () => {
     expect(generated).toContain('const highlighter = await getHighlighter()')
     expect(generated).not.toContain('@shikijs/langs')
     expect(generated).not.toContain('bundle/web')
-  })
-
-  it('generates one renderer with the configured code-block component', () => {
-    const runtimePaths = {
-      codeBlockComponent: '/build/nuxt-email/ECodeBlock.ts',
-      createRenderEmailComponent: '/package/runtime/render/render-email-component',
-      emailComponentRegistry: '/package/runtime/components/email-component-registry',
-      emailRenderError: '/package/runtime/render/errors',
-    }
-    const generated = generateConfiguredRenderer(runtimePaths)
-    const generatedTypes = generateConfiguredRendererTypes('/package/runtime/testing')
-
-    expect(generated).toContain('import { ECodeBlock } from "/build/nuxt-email/ECodeBlock"')
-    expect(generated).toContain('const configuredEmailComponents = Object.freeze({ ...emailComponentRegistry, ECodeBlock })')
-    expect(generated).toContain('export const renderEmailComponent = createRenderEmailComponent(configuredEmailComponents)')
-    expect(generated).toContain('export { EmailRenderError }')
-    expect(generated).not.toContain('export type')
-    expect(generatedTypes).toContain('export { EmailRenderError, renderEmailComponent } from "/package/runtime/testing"')
-    expect(generatedTypes).toContain('export type { RenderedEmail } from "/package/runtime/testing"')
   })
 })

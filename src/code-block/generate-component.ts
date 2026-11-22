@@ -1,6 +1,6 @@
 import type { NormalizedCodeBlockOptions } from './options'
 
-export interface CodeBlockRuntimePaths {
+interface CodeBlockRuntimePaths {
   core: string
   createCodeBlockComponent: string
   engineJavaScript: string

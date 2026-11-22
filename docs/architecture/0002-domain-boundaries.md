@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted.
+Accepted. Partly superseded by [ADR 0003](0003-build-time-tailwind.md):
+
+- The facades are now the package root, `@lupinum/nuxt-email/render`, `@lupinum/nuxt-email/testing`, `@lupinum/nuxt-email/build`, `@lupinum/nuxt-email/errors` and the auto-registered `E*` components. `define-email` and `src/runtime/testing` are removed.
+- The Tailwind engine is build-time code under `src/compiler/`. Code under `src/runtime/` does not import it. Components receive resolved styles and have no nested Tailwind integration, and `ETailwind` is removed.
 
 ## Context
 

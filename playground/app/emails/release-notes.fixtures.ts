@@ -6,8 +6,8 @@ export default {
   highlights: [
     '## Highlights',
     '',
-    '- **Tailwind boundaries** now inline utilities from nested components.',
-    '- `defineEmail` computes the subject from the same typed props.',
+    '- **Tailwind classes** are inlined at build time, including in nested components.',
+    '- The `subject` prop sets the subject from the same typed props.',
     '- Plain-text output is generated from the exact rendered HTML.',
     '',
     'See the notes below for the upgrade steps.',

@@ -6,9 +6,10 @@ const count = ref(1)
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EBody>
-      <EText>{{ count }}</EText>
-    </EBody>
-  </EHtml>
+  <EEmail
+    subject="Unsupported auto-import"
+    lang="en"
+  >
+    <EText>{{ count }}</EText>
+  </EEmail>
 </template>
