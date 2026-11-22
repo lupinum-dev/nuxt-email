@@ -56,7 +56,10 @@ interface ExtractedRules {
   stylesheetOrder: string[]
 }
 
-/** Without `classes`, every class that owns a rule is requested. */
+/**
+ * Without `classes`, every class that owns a rule is requested, except in an at-rule
+ * that cannot be written to an email: such a rule fails only for a class that is asked for.
+ */
 export function extractRulesPerClass(
   root: CssNode,
   classes?: string[],
@@ -125,8 +128,11 @@ export function extractRulesPerClass(
     }
     if (enclosingAtRules.length > 0) {
       const unsupported = enclosingAtRules.find(atRule => !NON_INLINABLE_ATRULES.has(atRule.name.toLowerCase()))
-      if (unsupported && selectorClasses.some(isRequested)) {
-        throw new TypeError(`Unable to render Tailwind CSS: @${unsupported.name} rules are not supported.`)
+      if (unsupported) {
+        if (classSet === undefined) return
+        if (selectorClasses.some(isRequested)) {
+          throw new TypeError(`Unable to render Tailwind CSS: @${unsupported.name} rules are not supported.`)
+        }
       }
     }
     const inlinable = enclosingAtRules.length === 0 && isRuleInlinable(rule)

@@ -27,8 +27,8 @@ export interface CreateTestRendererOptions {
   /** The `codeBlock` option of the Nuxt module, when templates use `ECodeBlock`. */
   codeBlock?: CodeBlockOptions
   /**
-   * Classes that may stay in `class` as written, such as a class for your own CSS in the
-   * `head` slot. A render that keeps any other class fails. `true` allows every class.
+   * Classes that may stay in `class` as written, such as a class that only another tool
+   * reads. A render that keeps any other class fails. `true` allows every class.
    */
   allowUnknownClasses?: true | readonly string[]
 }
@@ -67,7 +67,7 @@ function unknownClassesError(classes: readonly string[]): TypeError {
     `The email kept these classes as written: ${classes.join(', ')}. `
     + 'Tailwind does not know them, they have no effect alone, or the build did not find them in the source. '
     + 'Correct them, add names built at run time to @source inline("...") in tailwind.css, '
-    + 'or pass your own classes in allowUnknownClasses.',
+    + 'or pass the classes that must stay in allowUnknownClasses.',
   )
 }
 

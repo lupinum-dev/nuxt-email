@@ -96,6 +96,17 @@ describe('classes kept as written', () => {
     expect((await renderEmail('note')).html).toContain('<p class="text-slte-600 ring-blue-500 footer-link" style="padding:16px;">A</p>')
   })
 
+  // `group` and `peer` produce no CSS, but the rule of `group-hover:` selects them.
+  it('do not include the group and peer markers, which keep the name their rules select', async () => {
+    const target = await writeTemplates('markers', {
+      'note.vue': '<template><EEmail subject="Note" lang="en"><a class="group/item" href="https://example.com"><span class="group-hover/item:underline">A</span></a><p class="peer">B</p></EEmail></template>\n',
+    })
+    const { renderEmail } = await buildEmails(target)
+    const { html } = await renderEmail('note')
+    expect(html).toContain('<a class="group_item" href="https://example.com"><span class="group-hover_item_underline">A</span></a><p class="peer">B</p>')
+    expect(html).toContain('.group-hover_item_underline:is(:where(.group_item):hover *)')
+  })
+
   it('fail for the classes that the list does not name', async () => {
     const { renderEmail } = await buildEmails(await writeTemplates('unknown-partial', files), { allowUnknownClasses: ['footer-link'] })
     await expect(renderEmail('note')).rejects.toMatchObject({
