@@ -1,7 +1,7 @@
 import type { DefineComponent, PropType } from 'vue'
 import { defineComponent, h } from 'vue'
 
-export type FontFallback
+type FontFallback
   = | 'Arial'
     | 'Helvetica'
     | 'Verdana'
@@ -13,7 +13,7 @@ export type FontFallback
     | 'cursive'
     | 'fantasy'
 
-export type FontFormat
+type FontFormat
   = | 'woff'
     | 'woff2'
     | 'truetype'
@@ -21,14 +21,14 @@ export type FontFormat
     | 'embedded-opentype'
     | 'svg'
 
-export interface FontWebFont {
+interface FontWebFont {
   url: string
   format: FontFormat
 }
 
-export type FontStyle = 'normal' | 'italic' | 'oblique'
-export type FontWeight = number | 'normal' | 'bold' | 'bolder' | 'lighter'
-export type FontFallbackList = readonly [FontFallback, ...FontFallback[]]
+type FontStyle = 'normal' | 'italic' | 'oblique'
+type FontWeight = number | 'normal' | 'bold' | 'bolder' | 'lighter'
+type FontFallbackList = readonly [FontFallback, ...FontFallback[]]
 
 export interface EFontProps {
   /** The font you want to use. Do not insert multiple fonts here, use fallbackFontFamily for that. */

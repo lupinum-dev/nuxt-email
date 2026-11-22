@@ -7,21 +7,22 @@ defineProps<{
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EHead>
+  <EEmail
+    subject="Reset your password"
+    :preview="`Your password reset code is ${code}.`"
+    lang="en"
+  >
+    <template #head>
       <title>Reset your password</title>
-    </EHead>
-    <EBody>
-      <EPreview>Your password reset code is {{ code }}.</EPreview>
-      <EContainer>
-        <EHeading>Reset your password</EHeading>
-        <EText>
-          Use code {{ code }} within {{ expiresInMinutes }} minutes.
-        </EText>
-        <EText v-if="optionalNote">
-          {{ optionalNote }}
-        </EText>
-      </EContainer>
-    </EBody>
-  </EHtml>
+    </template>
+    <EContainer>
+      <EHeading>Reset your password</EHeading>
+      <EText>
+        Use code {{ code }} within {{ expiresInMinutes }} minutes.
+      </EText>
+      <EText v-if="optionalNote">
+        {{ optionalNote }}
+      </EText>
+    </EContainer>
+  </EEmail>
 </template>

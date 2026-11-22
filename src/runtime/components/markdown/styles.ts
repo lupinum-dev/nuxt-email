@@ -2,7 +2,7 @@ import type { MarkdownStyle } from './parse-css-in-js-to-inline-css'
 
 // Direct port of react-email's markdown/styles.ts default style map. Values and shapes
 // (including the leading space in `background: ' #f8f8f8'`) are reproduced verbatim so the
-// serialized inline CSS matches the React oracle byte-for-byte.
+// serialized inline CSS stays byte-identical to the upstream renderer.
 
 const emptyStyle: MarkdownStyle = {}
 

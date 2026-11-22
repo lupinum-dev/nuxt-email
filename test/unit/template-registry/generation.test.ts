@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  generateEmailRegistry,
-  generateEmailTypes,
+  generateEmailRendererRegistry,
 } from '../../../src/template-registry/generation'
+
+const registryPaths = {
+  createEmailRenderer: '/package/runtime/render-email',
+  styleTable: 'virtual:nuxt-email-style-table',
+}
 
 const templates = [
   {
@@ -22,41 +26,22 @@ const templates = [
 
 describe('email template generation', () => {
   it('generates one deterministic lazy server registry', () => {
-    const runtimePaths = {
-      emailRenderError: '/package/runtime/render/errors',
-      renderEmailComponent: '/package/runtime/render/render-email-component',
-      templateRegistryErrors: '/package/runtime/template-registry/errors',
-    }
-    const first = generateEmailRegistry(templates, runtimePaths)
-    const second = generateEmailRegistry(templates, runtimePaths)
+    const first = generateEmailRendererRegistry(templates, registryPaths)
+    const second = generateEmailRendererRegistry(templates, registryPaths)
 
     expect(first).toBe(second)
     expect(first).toContain('["__proto__"]: {\n    component: () => import("/project/app/emails/__proto__.vue")')
     expect(first).toContain('component: () => import("/project/app/emails/account/reset-password.vue")')
     expect(first).toContain('fixture: () => import("/project/app/emails/account/reset-password.fixtures.ts")')
-    expect(first).toContain('Object.hasOwn(emailTemplates, name)')
-    expect(first).toContain('new UnknownEmailTemplateError(String(name), Object.keys(emailTemplates))')
-    expect(first).toContain('const templateModule = await loader.component()')
-    expect(first.indexOf('try {')).toBeLessThan(first.indexOf('const templateModule = await loader.component()'))
     expect(first.match(/export const emailTemplates/g)).toHaveLength(1)
+    expect(first).not.toContain('inspectEmail')
   })
 
-  it('generates names and inferred Vue props from the same ordered templates', () => {
-    const generated = generateEmailTypes(templates, {
-      renderedEmail: '/package/runtime/render/types',
-    })
+  it('exports inspectEmail only from the development registry', () => {
+    const generated = generateEmailRendererRegistry(templates, { ...registryPaths, inspect: true })
 
-    expect(generated).toContain('export const emailTemplates')
-    expect(generated).toContain('"__proto__": {\n    component: () => Promise<typeof import("/project/app/emails/__proto__.vue")>')
-    expect(generated).toContain('component: () => Promise<typeof import("/project/app/emails/account/reset-password.vue")>')
-    expect(generated).toContain('fixture: () => Promise<typeof import("/project/app/emails/account/reset-password.fixtures.ts")>')
-    expect(generated).toContain('export type EmailTemplateName = keyof typeof emailTemplates')
-    expect(generated).toContain('import("/package/runtime/render/types").EmailComponentProps<Component>')
-    expect(generated).toContain('_EmailProps<Awaited<ReturnType<(typeof emailTemplates)[Name][\'component\']>>[\'default\']>')
-    expect(generated).toContain('name: Name,\n  props: NoInfer<EmailTemplateProps[Name]>')
-    expect(generated).toContain('Promise<import("/package/runtime/render/types").RenderedEmail>')
-    expect(generated).not.toContain('declare module')
-    expect(generated).not.toContain('declare global')
+    expect(generated).toContain('import { createEmailInspector, createEmailRenderer } from "/package/runtime/render-email"')
+    expect(generated).toContain('export const inspectEmail = createEmailInspector(options)')
   })
 
   it('omits every fixture import when production discovery did not attach fixtures', () => {
@@ -64,11 +49,7 @@ describe('email template generation', () => {
       name: template.name,
       sourcePath: template.sourcePath,
     }))
-    const generated = generateEmailRegistry(productionTemplates, {
-      emailRenderError: '/package/runtime/render/errors',
-      renderEmailComponent: '/package/runtime/render/render-email-component',
-      templateRegistryErrors: '/package/runtime/template-registry/errors',
-    })
+    const generated = generateEmailRendererRegistry(productionTemplates, registryPaths)
 
     expect(generated).not.toContain('.fixtures.ts')
     expect(generated).not.toContain('fixture:')

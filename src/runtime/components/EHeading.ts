@@ -3,7 +3,7 @@ import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
 
-export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
+type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 
 const HEADING_TAGS = new Set<HeadingTag>(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 

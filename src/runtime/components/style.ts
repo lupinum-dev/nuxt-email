@@ -3,7 +3,7 @@ import { camelize, normalizeStyle } from 'vue'
 
 export type EmailStyle = Record<string, string | number | undefined>
 
-export function isEmailStyle(style: unknown): style is EmailStyle {
+function isEmailStyle(style: unknown): style is EmailStyle {
   return typeof style === 'object' && style !== null && !Array.isArray(style)
 }
 

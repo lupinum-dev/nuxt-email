@@ -1,4 +1,4 @@
-import { emailTemplates, renderEmail } from '#nuxt-email/registry'
+import { emailTemplates, inspectEmail } from '#nuxt-email/registry'
 import {
   defineEventHandler,
   getQuery,
@@ -6,7 +6,7 @@ import {
   setResponseStatus,
 } from 'h3'
 
-export const PREVIEW_RENDER_CSP = [
+const PREVIEW_RENDER_CSP = [
   'default-src \'none\'',
   'script-src \'none\'',
   'style-src \'unsafe-inline\'',
@@ -123,7 +123,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const fixtureModule = await template.fixture()
-    const output = await renderEmail(name, fixtureProps(fixtureModule.default, name))
+    const output = await inspectEmail(name, fixtureProps(fixtureModule.default, name))
     if (format === 'json') {
       setHeaders(event, { 'content-type': 'application/json; charset=utf-8' })
       // `bytes` is the exact UTF-8 length of the canonical rendered html.

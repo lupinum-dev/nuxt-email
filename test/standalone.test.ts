@@ -6,7 +6,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildEmailRegistry } from '../src/build'
-import type { RenderedEmail } from '../src/runtime/render/types'
+import type { RenderedEmail } from '../src/runtime/render-email'
+import { createTestRenderer } from '../src/testing'
 
 const execute = promisify(execFile)
 const require = createRequire(import.meta.url)
@@ -51,6 +52,27 @@ describe('standalone production registry', () => {
     expect((await renderEmail('plain-email', {})).text).toContain('A template without a script.')
   })
 
+  it('applies tailwind.css theme colours and keeps responsive rules in the head', async () => {
+    const { html } = await renderEmail('welcome', { name: 'Ada', destination: 'https://example.test', items: [] })
+    expect(html).toContain('color:#00dc82')
+    expect(html).toContain('class="sm_text-2xl"')
+    expect(html).toContain('<style>@media (min-width:640px){.sm_text-2xl{font-size:24px!important;line-height:1.3333333333333333!important}}</style>')
+  })
+
+  it('renders the same bytes as createTestRenderer for the same directory', async () => {
+    const tested = await createTestRenderer({ rootDir: temporary })
+    const props = { name: '<Ada & Grace>', destination: 'https://example.test/account?a=1&b=2', items: ['First'], brand: 'blue' }
+    expect(await tested.renderEmail('welcome', props)).toEqual(await renderEmail('welcome', props))
+    expect(await tested.renderEmail('plain-email', {})).toEqual(await renderEmail('plain-email', {}))
+  })
+
+  it('rejects a missing required prop', async () => {
+    await expect(renderEmail('welcome', { name: 'Ada', items: [] })).rejects.toMatchObject({
+      name: 'EmailRenderError',
+      cause: { message: 'Missing required email component prop: destination' },
+    })
+  })
+
   it('isolates concurrent async metadata and rejects unknown names/props', async () => {
     const emails = await Promise.all(Array.from({ length: 8 }, (_, index) => renderEmail('welcome', {
       name: `Person ${index}`, destination: 'https://example.test', items: [`Item ${index}`],
@@ -62,14 +84,11 @@ describe('standalone production registry', () => {
     })
   })
 
-  it('retains child utilities and rejects unsupported container conditions after compilation', async () => {
-    await expect(renderEmail('css-variants', { variant: '@sm:bg-red-500' })).rejects.toMatchObject({
-      cause: { message: expect.stringContaining('@container rules are not supported') },
-    })
+  it('retains child utilities through a class prop listed in source', async () => {
     for (const { variant, owner, rule } of [
-      { variant: '*:bg-red-500', owner: '__bg-red-500', rule: ':is(.__bg-red-500>*){background-color:rgb(251,44,54)!important}' },
-      { variant: '**:text-blue-500', owner: '___text-blue-500', rule: ':is(.___text-blue-500 *){color:rgb(43,127,255)!important}' },
-      { variant: 'sm:bg-red-500', owner: 'sm_bg-red-500', rule: '@media (min-width:40rem){.sm_bg-red-500{background-color:rgb(251,44,54)!important}}' },
+      { variant: '*:bg-red-500', owner: '__bg-red-500', rule: '.__bg-red-500>*{background-color:#fb2c36!important}' },
+      { variant: '**:text-blue-500', owner: '___text-blue-500', rule: '.___text-blue-500 *{color:#2b7fff!important}' },
+      { variant: 'sm:bg-red-500', owner: 'sm_bg-red-500', rule: '@media (min-width:640px){.sm_bg-red-500{background-color:#fb2c36!important}}' },
     ]) {
       const { html } = await renderEmail('css-variants', { variant })
       const style = html.match(/<style>(.*?)<\/style>/s)?.[1]
@@ -109,7 +128,9 @@ renderEmail('missing', {})
 
   it('excludes preview fixtures/compiler imports and rebuilds deterministically', async () => {
     const before = await readFile(outFile, 'utf8')
-    expect(before).not.toMatch(/NUXT_EMAIL_STANDALONE_FIXTURE_SECRET|vue-tsc|compiler-sfc|unplugin-vue|\/testing/)
+    expect(before).not.toMatch(/NUXT_EMAIL_STANDALONE_FIXTURE_SECRET|vue-tsc|compiler-sfc|\/testing/)
+    const imports = new Set([...before.matchAll(/^import .* from "([^"]+)";?$/gm)].map(match => match[1]))
+    expect([...imports].sort()).toEqual(['@lupinum/nuxt-email/render', 'vue'])
     await buildEmailRegistry({ rootDir: temporary, templatesDir: 'app/emails', outDir })
     expect(await readFile(outFile, 'utf8')).toBe(before)
   }, 30_000)
@@ -137,7 +158,41 @@ renderEmail('missing', {})
     }
   }, 30_000)
 
+  // Without this check, vue-tsc rejects the import with TS6059 or TS2307, which does not say that
+  // the standalone build supports only a self-contained email directory.
+  it('rejects an import from outside the email directory with the importing file and path', async () => {
+    const shared = join(temporary, 'app/shared')
+    await mkdir(shared, { recursive: true })
+    await writeFile(join(shared, 'Badge.vue'), '<template><span class="font-bold">Badge</span></template>')
+    const invalid = join(directory, 'outside-import.vue')
+    await writeFile(invalid, '<script setup lang="ts">import Badge from "../shared/Badge.vue"</script><template><EEmail subject="x" lang="en"><Badge /></EEmail></template>')
+    try {
+      await expect(buildEmailRegistry({ rootDir: temporary, outDir })).rejects.toThrow(
+        `${invalid} imports "../shared/Badge.vue" from outside the email directory.`,
+      )
+    }
+    finally {
+      await rm(invalid)
+      await rm(shared, { recursive: true })
+    }
+  }, 30_000)
+
+  // esbuild keeps `~/…` external like a package, so without the check vue-tsc fails later with TS2307.
+  it('rejects a Nuxt alias import with the importing file and path', async () => {
+    const invalid = join(directory, 'alias-import.vue')
+    await writeFile(invalid, '<script setup lang="ts">import Badge from "~/components/Badge.vue"</script><template><EEmail subject="x" lang="en"><Badge /></EEmail></template>')
+    try {
+      await expect(buildEmailRegistry({ rootDir: temporary, outDir })).rejects.toThrow(
+        `${invalid} imports "~/components/Badge.vue", a Nuxt alias.`,
+      )
+    }
+    finally {
+      await rm(invalid)
+    }
+  }, 30_000)
+
   it.each([
+    ['<template><EEmail subject="x" lang="en" class="@sm:bg-red-500" /></template>', '@container rules are not supported'],
     ['<template><p>Styled</p></template><style>p { color: red }</style>', 'style or custom blocks'],
     ['<script setup lang="ts">import { useRuntimeConfig } from "#imports"; useRuntimeConfig()</script><template><p>Nuxt</p></template>', '#imports'],
   ])('rejects unsupported authoring instead of emitting a fallback', async (source, message) => {

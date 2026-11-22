@@ -1,9 +1,6 @@
 import { isAbsolute, relative, sep } from 'node:path'
 import { resolveFiles } from '@nuxt/kit'
-import {
-  DuplicateEmailTemplateError,
-  EmailTemplateDiscoveryError,
-} from './discovery-errors'
+import { EmailTemplateDiscoveryError } from './discovery-errors'
 
 export interface DiscoveredEmailTemplate {
   name: string
@@ -23,7 +20,8 @@ export function templatesFromSourcePaths(
   emailDirectory: string,
   sourcePaths: readonly string[],
 ): DiscoveredEmailTemplate[] {
-  const templates = sourcePaths.map((sourcePath) => {
+  // A name is the path relative to the email directory, so two files cannot share one.
+  return sourcePaths.map((sourcePath) => {
     const relativePath = normalizeSeparators(relative(emailDirectory, sourcePath))
     if (relativePath.startsWith('../') || relativePath === '..' || isAbsolute(relativePath)) {
       throw new EmailTemplateDiscoveryError(sourcePath, new TypeError('Template path is outside app/emails'))
@@ -33,25 +31,7 @@ export function templatesFromSourcePaths(
       name: relativePath.slice(0, -'.vue'.length),
       sourcePath: normalizeSeparators(sourcePath),
     }
-  }).sort((left, right) => {
-    return compareCodePoints(left.name, right.name) || compareCodePoints(left.sourcePath, right.sourcePath)
-  })
-
-  const pathsByName = new Map<string, string[]>()
-  for (const template of templates) {
-    const paths = pathsByName.get(template.name) ?? []
-    paths.push(template.sourcePath)
-    pathsByName.set(template.name, paths)
-  }
-
-  const duplicate = [...pathsByName.entries()]
-    .filter(([, paths]) => paths.length > 1)
-    .sort(([left], [right]) => compareCodePoints(left, right))[0]
-  if (duplicate) {
-    throw new DuplicateEmailTemplateError(duplicate[0], duplicate[1])
-  }
-
-  return templates
+  }).sort((left, right) => compareCodePoints(left.name, right.name))
 }
 
 export async function discoverEmailTemplates(emailDirectory: string): Promise<DiscoveredEmailTemplate[]> {

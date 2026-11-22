@@ -3,14 +3,13 @@ defineProps<{ variant: string }>()
 </script>
 
 <template>
-  <EHtml lang="en">
-    <ETailwind>
-      <EHead />
-      <EBody>
-        <EText :class="variant">
-          <span>Child content</span>
-        </EText>
-      </EBody>
-    </ETailwind>
-  </EHtml>
+  <EEmail
+    subject="CSS variants"
+    lang="en"
+  >
+    <!-- Classes must appear complete in source: *:bg-red-500 **:text-blue-500 sm:bg-red-500 -->
+    <EText :class="variant">
+      <span>Child content</span>
+    </EText>
+  </EEmail>
 </template>

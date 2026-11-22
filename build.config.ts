@@ -6,6 +6,7 @@ const agentDocsOnly = /^Potential missing package\.json files: dist\/agent\/AGEN
 export default {
   entries: [
     'src/build',
+    'src/testing',
   ],
   hooks: {
     'build:done'(ctx: { warnings: Set<string> }) {

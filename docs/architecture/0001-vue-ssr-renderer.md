@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted and retained for v1.
+Accepted and retained for v1. Partly superseded by [ADR 0003](0003-build-time-tailwind.md):
+
+- Nitro compiles templates with `unplugin-vue` and the Tailwind template transform.
+- React Email is no longer a test oracle. Owned golden files pin the output, and the conformance normalization is removed.
 
 ## Context
 

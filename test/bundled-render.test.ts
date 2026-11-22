@@ -5,9 +5,10 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { build, type Plugin } from 'esbuild'
+import { build } from 'esbuild'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildEmailRegistry } from '../src/build'
+import { bundledPackages } from '../src/compiler/build-templates'
 
 const execute = promisify(execFile)
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -33,7 +34,7 @@ describe('bundled Node production rendering without package files', () => {
     if (isolated) await rm(isolated, { recursive: true, force: true })
   })
 
-  async function bundle(filename: string, plugins: Plugin[] = []) {
+  async function bundle(filename: string) {
     const outfile = join(isolated, filename)
     const result = await build({
       absWorkingDir: root,
@@ -68,37 +69,25 @@ process.stdout.write('bundled rendering passed')
       banner: { js: `import { createRequire as createBundleRequire } from 'node:module'; const require = createBundleRequire(import.meta.url);` },
       alias: {
         '@lupinum/nuxt-email/render': resolve(root, 'src/runtime/render/index.ts'),
-        '@lupinum/nuxt-email/define-email': resolve(root, 'src/runtime/define-email.ts'),
       },
       metafile: true,
-      plugins,
       logLevel: 'silent',
     })
     expect(Object.values(result.metafile.outputs).flatMap(output => output.imports)
       .filter(dependency => dependency.external && !isBuiltin(dependency.path))).toEqual([])
-    return outfile
+    return { outfile, packages: bundledPackages(result.metafile) }
   }
 
   const runIsolated = (outfile: string) => execute(process.execPath, [
     '--permission', `--allow-fs-read=${outfile}`, outfile,
   ], { cwd: isolated, env: { ...process.env, NODE_PATH: '' } })
 
-  it('reproduces the root-import failure and renders with the granular public entries', async () => {
-    const baseline = await bundle('baseline.mjs', [{
-      name: 'restore-before-fix-root-import',
-      setup(builder) {
-        builder.onLoad({ filter: /runtime[\\/]tailwind[\\/]css-tree\.ts$/ }, () => ({
-          contents: `export { parse, generate, walk, find, clone, List, string } from 'css-tree'`,
-          loader: 'js',
-        }))
-      },
-    }])
-    await expect(runIsolated(baseline)).rejects.toMatchObject({
-      stderr: expect.stringMatching(/patch\.json/),
-    })
-
-    const fixed = await bundle('fixed.mjs')
-    const result = await runIsolated(fixed)
+  it('renders from one self-contained bundle without Tailwind or the CSS parser', async () => {
+    const { outfile, packages } = await bundle('bundled.mjs')
+    expect(packages).not.toContain('tailwindcss')
+    expect(packages).not.toContain('css-tree')
+    expect(packages).toContain('vue')
+    const result = await runIsolated(outfile)
     expect(result.stdout).toBe('bundled rendering passed')
   }, 60_000)
 })

@@ -9,9 +9,10 @@ throw new Error(`Preview fixture failed: ${props.reason}`)
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EBody>
-      <EText>This output is unreachable.</EText>
-    </EBody>
-  </EHtml>
+  <EEmail
+    subject="Broken"
+    lang="en"
+  >
+    <EText>This output is unreachable.</EText>
+  </EEmail>
 </template>

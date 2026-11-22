@@ -1,32 +1,23 @@
-import WelcomeEmail from '../../app/emails/welcome.vue'
 import type { EmailComponentProps, RenderedEmail } from '@lupinum/nuxt-email'
-import { defineEmail } from '@lupinum/nuxt-email/define-email'
-import {
-  DefineEmailOutsideRenderError,
-  DuplicateEmailDefinitionError,
-  EmailRenderError,
-  TailwindMissingHeadError,
-  UnknownEmailTemplateError,
-} from '@lupinum/nuxt-email/errors'
-import { renderEmailComponent } from '@lupinum/nuxt-email/testing'
+import { EmailRenderError, UnknownEmailTemplateError } from '@lupinum/nuxt-email/errors'
+// Type-only: the test renderer compiles templates and never runs inside the server bundle.
+import type { createTestRenderer } from '@lupinum/nuxt-email/testing'
+import type { EmailTemplateProps } from '#nuxt-email/registry'
+import type WelcomeEmail from '../../app/emails/welcome.vue'
 
-export function provePublicSubpathTypes(): void {
-  void defineEmail
-  void DefineEmailOutsideRenderError
-  void DuplicateEmailDefinitionError
+type TestRenderer = Awaited<ReturnType<typeof createTestRenderer<EmailTemplateProps>>>
+
+export function provePublicSubpathTypes(testRenderer: TestRenderer): void {
   void EmailRenderError
-  void TailwindMissingHeadError
   void UnknownEmailTemplateError
   const fixture: EmailComponentProps<typeof WelcomeEmail> = {
     orderNumber: 7319,
     recipientName: 'Ada',
   }
-  const rendered: Promise<RenderedEmail> = renderEmailComponent(WelcomeEmail, {
-    orderNumber: 7319,
-    recipientName: 'Ada',
-  })
-  void fixture
+  const rendered: Promise<RenderedEmail> = testRenderer.renderEmail('welcome', fixture)
   void rendered
-  // @ts-expect-error the direct testing helper infers required SFC props
-  void renderEmailComponent(WelcomeEmail, { recipientName: 'Ada' })
+  // @ts-expect-error the test renderer reads required props from the generated types
+  void testRenderer.renderEmail('welcome', { recipientName: 'Ada' })
+  // @ts-expect-error only discovered template names are accepted
+  void testRenderer.renderEmail('missing-template', fixture)
 }

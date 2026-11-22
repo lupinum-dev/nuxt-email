@@ -1,8 +1,8 @@
 import type { AnchorHTMLAttributes, DefineComponent } from 'vue'
-import { createCommentVNode, defineComponent, h, inject } from 'vue'
-import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
+import { createCommentVNode, defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
+import { assertSafeUrl } from './url'
 import { parseButtonPadding, pixelsToPoints, pixelStyle } from './EButton.padding'
 import { normalizeEmailStyle } from './style'
 
@@ -47,15 +47,14 @@ export const EButton = defineComponent({
     },
   },
   setup(props, { attrs, slots }) {
-    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('EButton', attrs)
       if (typeof props.href !== 'string' || props.href.length === 0) {
         throw new TypeError('EButton href must be a non-empty string')
       }
+      assertSafeUrl('EButton', 'href', props.href)
       const { style, target: requestedTarget, ...attributes } = attrs
-      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
-      const normalizedStyle = normalizeEmailStyle(effectiveStyle) ?? {}
+      const normalizedStyle = normalizeEmailStyle(style) ?? {}
       const { paddingTop, paddingRight, paddingBottom, paddingLeft } = parseButtonPadding(normalizedStyle)
       const textRaise = pixelsToPoints((paddingTop ?? 0) + (paddingBottom ?? 0))
       const [leftFontWidth, leftSpaceCount] = computeMsoFontWidthAndSpaceCount(paddingLeft ?? 0)

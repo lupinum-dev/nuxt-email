@@ -1,8 +1,8 @@
 import type { AnchorHTMLAttributes, DefineComponent } from 'vue'
-import { defineComponent, h, inject } from 'vue'
-import { resolveNestedTailwindStyle, TAILWIND_NESTED_KEY } from '../tailwind/nested'
+import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
+import { assertSafeUrl } from './url'
 
 export type ELinkProps = Omit<SafeEmailAttributes<AnchorHTMLAttributes>, 'href'> & {
   href: string
@@ -18,20 +18,19 @@ export const ELink = defineComponent({
     },
   },
   setup(props, { attrs, slots }) {
-    const holder = inject(TAILWIND_NESTED_KEY, null)
     return () => {
       assertSafeEmailAttributes('ELink', attrs)
       if (typeof props.href !== 'string' || props.href.length === 0) {
         throw new TypeError('ELink href must be a non-empty string')
       }
+      assertSafeUrl('ELink', 'href', props.href)
       const { style, ...attributes } = attrs
-      const effectiveStyle = resolveNestedTailwindStyle(holder, attributes, style).style
       return h('a', {
         ...attributes,
         href: props.href,
-        ...(effectiveStyle === undefined || effectiveStyle === null
+        ...(style === undefined || style === null
           ? {}
-          : { style: effectiveStyle }),
+          : { style: style }),
         target: attrs.target ?? '_blank',
       }, slots.default?.())
     }

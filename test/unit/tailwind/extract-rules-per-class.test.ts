@@ -1,7 +1,8 @@
-import { generate, parse, type Rule, type StyleSheet } from 'css-tree'
+import { type CssNode, generate, parse, type StyleSheet } from 'css-tree'
 import { describe, expect, it } from 'vitest'
-import { setupTailwind } from '../../../src/runtime/tailwind/engine/setup-tailwind'
-import { extractRulesPerClass } from '../../../src/runtime/tailwind/engine/css/extract-rules-per-class'
+import { sanitizeStyleSheet } from '../../../src/compiler/tailwind/sanitize-stylesheet'
+import { setupTailwind } from '../../../src/compiler/tailwind/setup-tailwind'
+import { extractRulesPerClass } from '../../../src/compiler/tailwind/css/extract-rules-per-class'
 
 describe('extractRulesPerClass()', () => {
   it('does not discard unsupported wrappers around a requested utility', () => {
@@ -23,9 +24,8 @@ describe('extractRulesPerClass()', () => {
 
   it.each(['where', 'not', 'has'])('keys a [:%s(&)] arbitrary variant by its own utility', async (pseudo) => {
     const utility = `[:${pseudo}(&)]:bg-red-500`
-    const tailwind = await setupTailwind()
-    tailwind.addUtilities([utility])
-    const rules = extractRulesPerClass(tailwind.getStyleSheet(), [utility])
+    const build = await setupTailwind()
+    const rules = extractRulesPerClass(sanitizeStyleSheet(build([utility])), [utility])
     expect([...rules.nonInlinable.keys()]).toEqual([utility])
     expect(rules.inlinable.size).toBe(0)
   })
@@ -47,12 +47,12 @@ describe('extractRulesPerClass()', () => {
     expect([...rules.inlinable.keys()]).toEqual(['base', 'after'])
     expect([...rules.nonInlinable.keys()]).toEqual(['conditional'])
     expect(rules.orderedNonInlinable.map(rule => generate(rule))).toEqual([
-      '.conditional{@MEDIA (prefers-color-scheme:dark){@supports (color:red){color:white}}}',
+      '@MEDIA (prefers-color-scheme:dark){@supports (color:red){.conditional{color:white}}}',
     ])
   })
 
   function convertToComparable(
-    map: Map<string, Rule[]>,
+    map: Map<string, CssNode[]>,
   ): Record<string, string[]> {
     return Object.fromEntries(
       Array.from(map.entries()).map(([k, rules]) => [
@@ -63,11 +63,9 @@ describe('extractRulesPerClass()', () => {
   }
 
   it('works with just inlinable utilities', async () => {
-    const tailwind = await setupTailwind({})
+    const build = await setupTailwind()
     const classes = ['text-center', 'bg-red-500']
-    tailwind.addUtilities(classes)
-
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
 
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
@@ -77,7 +75,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(inlinable)).toMatchInlineSnapshot(`
       {
         "bg-red-500": [
-          ".bg-red-500{background-color:var(--color-red-500)}",
+          ".bg-red-500{background-color:#fb2c36}",
         ],
         "text-center": [
           ".text-center{text-align:center}",
@@ -87,44 +85,28 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot('{}')
   })
 
-  it('keeps every rule when a class is defined more than once', async () => {
-    const tailwind = await setupTailwind({
-      config: {
-        plugins: [
-          {
-            handler: (api) => {
-              api.addComponents({
-                '.box': { '@apply rounded-lg bg-white p-4': {} },
-              })
-              api.addComponents({
-                '.box': { '@apply bg-red-500': {} },
-              })
-            },
-          },
-        ],
-      },
-    })
+  it('keeps the values of every rule when a class is defined more than once', async () => {
+    const build = await setupTailwind(
+      '.box { @apply rounded-lg bg-white p-4; } .box { @apply bg-red-500; }',
+    )
     const classes = ['box']
-    tailwind.addUtilities(classes)
 
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
     const { inlinable } = extractRulesPerClass(stylesheet, classes)
 
     expect(convertToComparable(inlinable)).toMatchInlineSnapshot(`
       {
         "box": [
-          ".box{border-radius:var(--radius-lg);background-color:var(--color-white);padding:calc(var(--spacing)*4);background-color:var(--color-red-500)}",
+          ".box{background-color:#fb2c36;border-radius:8px;padding:16px}",
         ],
       }
     `)
   })
 
   it('handles non-inlinable utilities', async () => {
-    const tailwind = await setupTailwind({})
+    const build = await setupTailwind()
     const classes = ['lg:w-1/2']
-    tailwind.addUtilities(classes)
-
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
 
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
@@ -135,14 +117,14 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "lg:w-1/2": [
-          ".lg\\:w-1\\/2{@media (width>=64rem){width:calc(1/2*100%)}}",
+          "@media (min-width:1024px){.lg\\:w-1\\/2{width:50%}}",
         ],
       }
     `)
   })
 
   it('handles a mix of inlinable and non-inlinable utilities', async () => {
-    const tailwind = await setupTailwind({})
+    const build = await setupTailwind()
     const classes = [
       'text-center',
       'bg-red-500',
@@ -150,9 +132,8 @@ describe('extractRulesPerClass()', () => {
       'w-full',
       'lg:w-1/2',
     ]
-    tailwind.addUtilities(classes)
 
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
       classes,
@@ -160,7 +141,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(inlinable)).toMatchInlineSnapshot(`
       {
         "bg-red-500": [
-          ".bg-red-500{background-color:var(--color-red-500)}",
+          ".bg-red-500{background-color:#fb2c36}",
         ],
         "text-center": [
           ".text-center{text-align:center}",
@@ -173,32 +154,19 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "lg:w-1/2": [
-          ".lg\\:w-1\\/2{@media (width>=64rem){width:calc(1/2*100%)}}",
+          "@media (min-width:1024px){.lg\\:w-1\\/2{width:50%}}",
         ],
       }
     `)
   })
 
-  it('splits mixed rules (base + media) into inlinable base and non-inlinable media', async () => {
-    const tailwind = await setupTailwind({
-      config: {
-        plugins: [
-          {
-            handler: (api) => {
-              api.addUtilities({
-                '.text-body': {
-                  '@apply text-[green] sm:text-[darkgreen]': {},
-                },
-              })
-            },
-          },
-        ],
-      },
-    })
+  it('splits a nested utility into its inlinable base and its media rule', async () => {
+    const build = await setupTailwind(
+      '@utility text-body { @apply text-[green] sm:text-[darkgreen]; }',
+    )
     const classes = ['text-body']
-    tailwind.addUtilities(classes)
 
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
       classes,
@@ -214,32 +182,17 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "text-body": [
-          ".text-body{@media (width>=40rem){color:darkgreen}}",
+          "@media (min-width:640px){.text-body{color:#006400}}",
         ],
       }
     `)
   })
 
   it('treats rules with pseudo-selectors as fully non-inlinable', async () => {
-    const tailwind = await setupTailwind({
-      config: {
-        plugins: [
-          {
-            handler: (api) => {
-              api.addUtilities({
-                '.btn:hover': {
-                  color: 'red',
-                },
-              })
-            },
-          },
-        ],
-      },
-    })
+    const build = await setupTailwind('.btn:hover { color: red }')
     const classes = ['btn']
-    tailwind.addUtilities(classes)
 
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
       classes,
@@ -256,11 +209,9 @@ describe('extractRulesPerClass()', () => {
   })
 
   it('does not emit a bare nested rule for group/peer marker classes', async () => {
-    const tailwind = await setupTailwind({})
+    const build = await setupTailwind()
     const classes = ['group', 'group-hover:underline']
-    tailwind.addUtilities(classes)
-
-    const stylesheet = tailwind.getStyleSheet()
+    const stylesheet = sanitizeStyleSheet(build(classes))
     const { inlinable, nonInlinable } = extractRulesPerClass(
       stylesheet,
       classes,
@@ -272,7 +223,7 @@ describe('extractRulesPerClass()', () => {
     expect(convertToComparable(nonInlinable)).toMatchInlineSnapshot(`
       {
         "group-hover:underline": [
-          ".group-hover\\:underline:is(:where(.group):hover *){@media (hover:hover){text-decoration-line:underline}}",
+          "@media (hover:hover){.group-hover\\:underline:is(:where(.group):hover *){text-decoration-line:underline}}",
         ],
       }
     `)

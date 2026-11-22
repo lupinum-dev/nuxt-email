@@ -5,17 +5,18 @@ defineProps<{
 </script>
 
 <template>
-  <EHtml lang="en">
-    <EHead>
+  <EEmail
+    subject="Highlighted source"
+    lang="en"
+  >
+    <template #head>
       <title>Highlighted source</title>
-    </EHead>
-    <EBody>
-      <ECodeBlock
-        :code="source"
-        language="typescript"
-        line-numbers
-        style="padding:16px"
-      />
-    </EBody>
-  </EHtml>
+    </template>
+    <ECodeBlock
+      :code="source"
+      language="typescript"
+      line-numbers
+      style="padding:16px"
+    />
+  </EEmail>
 </template>

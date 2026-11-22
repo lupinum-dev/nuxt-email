@@ -2,19 +2,18 @@ import type { DefineComponent, HTMLAttributes } from 'vue'
 import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from './attributes'
 import { assertSafeEmailAttributes } from './attributes'
-import { mergeEmailStyles } from './style'
 
-export type ECodeInlineProps = SafeEmailAttributes<HTMLAttributes>
+type ECodeInlineProps = SafeEmailAttributes<HTMLAttributes>
 
 /**
  * Byte-identical to React Email's Orange.fr fix-up `<style>` (see
- * code-inline.tsx). Exported so conformance can assert the exact bytes.
+ * code-inline.tsx).
  *
  * On the Orange.fr email client the head/html elements are removed, turning
  * the meta tag into a sibling; the `meta ~` selectors then swap which copy of
  * the children is visible.
  */
-export const ORANGE_FR_STYLE = `
+const ORANGE_FR_STYLE = `
         meta ~ .cino {
           display: none !important;
           opacity: 0 !important;
@@ -32,10 +31,10 @@ export const ECodeInline = defineComponent({
     return () => {
       assertSafeEmailAttributes('ECodeInline', attrs)
       const { class: className, style, ...attributes } = attrs
-      const userClass = typeof className === 'string' && className ? className : ''
+      const userClass = typeof className === 'string' && className ? `${className} ` : ''
       const codeProps: Record<string, unknown> = {
         ...attributes,
-        class: `${userClass} cino`,
+        class: `${userClass}cino`,
       }
       if (style !== undefined) {
         codeProps.style = style
@@ -48,8 +47,9 @@ export const ECodeInline = defineComponent({
         // Renders only on Orange.fr
         h('span', {
           ...attributes,
-          'class': `${userClass} cio`,
-          'style': mergeEmailStyles({ display: 'none' }, style),
+          'class': `${userClass}cio`,
+          // The author style may set `display`; this copy must stay hidden outside Orange.fr.
+          'style': [style, { display: 'none' }],
           'data-skip-in-text': 'true',
         }, slots.default?.()),
       ]

@@ -7,7 +7,6 @@ import {
   templatesFromSourcePaths,
 } from '../../../src/template-registry/discovery'
 import {
-  DuplicateEmailTemplateError,
   EmailTemplateDiscoveryError,
 } from '../../../src/template-registry/discovery-errors'
 
@@ -68,13 +67,5 @@ describe('email template discovery', () => {
 
     expect(() => templatesFromSourcePaths(emailDirectory, [sourcePath]))
       .toThrowError(EmailTemplateDiscoveryError)
-  })
-
-  it('rejects duplicate normalized names with deterministic source details', () => {
-    const emailDirectory = resolve('/project/app/emails')
-    const sourcePath = join(emailDirectory, 'welcome.vue')
-
-    expect(() => templatesFromSourcePaths(emailDirectory, [sourcePath, sourcePath]))
-      .toThrowError(new DuplicateEmailTemplateError('welcome', [normalizedPath(sourcePath), normalizedPath(sourcePath)]))
   })
 })

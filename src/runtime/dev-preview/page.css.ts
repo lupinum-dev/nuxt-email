@@ -311,8 +311,27 @@ export const PREVIEW_PAGE_CSS = `
     .meta-bar {
       display: flex;
       min-width: 0;
+      flex-wrap: wrap;
       align-items: center;
       gap: 12px;
+    }
+
+    .unknown-classes {
+      flex-basis: 100%;
+      min-width: 0;
+    }
+
+    .unknown-classes-value {
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .unknown-classes-hint {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .subject {

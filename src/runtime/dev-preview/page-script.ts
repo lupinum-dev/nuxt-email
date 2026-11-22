@@ -33,6 +33,8 @@ export const PREVIEW_PAGE_CLIENT = `
         tabs: Array.from(document.querySelectorAll('[role="tab"]')),
         text: document.getElementById('panel-text'),
         title: document.getElementById('viewer-title'),
+        unknownClasses: document.getElementById('unknown-classes'),
+        unknownClassesValue: document.getElementById('unknown-classes-value'),
         viewportButtons: Array.from(document.querySelectorAll('.viewport-toggle .segment'))
       }
       var previewRoot = window.location.pathname
@@ -85,6 +87,12 @@ export const PREVIEW_PAGE_CLIENT = `
         elements.subject.dataset.state = hasSubject ? 'set' : 'none'
         elements.subjectValue.textContent = hasSubject ? subject : 'No subject defined'
         elements.subjectValue.title = hasSubject ? subject : ''
+      }
+
+      function updateUnknownClasses(classes) {
+        var list = Array.isArray(classes) ? classes : []
+        elements.unknownClasses.hidden = list.length === 0
+        elements.unknownClassesValue.textContent = list.join(' ')
       }
 
       function formatKilobytes(bytes) {
@@ -222,6 +230,7 @@ export const PREVIEW_PAGE_CLIENT = `
         elements.html.textContent = ''
         elements.text.hidden = true
         elements.text.textContent = ''
+        updateUnknownClasses(undefined)
         updateActions()
         setStatus('Render failed', 'error')
       }
@@ -259,6 +268,7 @@ export const PREVIEW_PAGE_CLIENT = `
             elements.title.textContent = 'No fixture-backed templates'
             elements.empty.hidden = false
             updateSubject(undefined)
+            updateUnknownClasses(undefined)
             elements.subjectValue.textContent = 'No template selected'
             updateSize(undefined)
             clearError()
@@ -284,6 +294,7 @@ export const PREVIEW_PAGE_CLIENT = `
             elements.iframe.title = 'Email preview: ' + output.name
           }
           updateSubject(output.subject)
+          updateUnknownClasses(output.unknownClasses)
           updateSize(output.bytes)
 
           elements.title.textContent = output.name
