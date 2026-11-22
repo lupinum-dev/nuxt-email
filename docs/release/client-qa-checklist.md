@@ -120,6 +120,18 @@ Results for the `proof-kit` generated from the code of `v1.0.0-beta.6`:
 | Gmail — web | Light + Dark | | | Not done | |
 | Outlook — Windows classic desktop | Light + Dark | | | Not done | |
 
+### `1.0.0-beta.7`: released with a partial check
+
+On 2026-11-22 the maintainer started the release of `1.0.0-beta.7` without the complete
+three-client smoke test, which is a second waiver, for this version only. This version has one
+change in the rendered output: `ELink` and `ECodeInline` remove the whitespace at the edges of
+their content, the defect that the Apple Mail check of `1.0.0-beta.6` found. No email client
+displayed the output of this version before the release; the generated HTML was read, and a test
+pins it.
+
+The three-client smoke test is still open for the renderer of `1.0.0-beta.6` and later. Run it
+with the `proof-kit` of the newest version, and record the result here.
+
 ### Stable `1.0.0` sign-off
 
 Fill one row per client. Verify **both** light and dark for every proof before marking
