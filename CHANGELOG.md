@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0-beta.7
+
+### Patch Changes
+
+- [#91](https://github.com/lupinum-dev/nuxt-email/pull/91) [`4bc5b41`](https://github.com/lupinum-dev/nuxt-email/commit/4bc5b416ccfda2c8b6cb497e034d51cadab91287) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Fix the space inside `ELink` and `ECodeInline` when their content is on its own lines in the template.
+  
+  A formatter such as the Nuxt ESLint style rules puts the content of these components on its own lines, and Vue keeps each line break as a space. The space was inside the link, so the underline ran past the last word and a space came before the next character. Both components now remove the whitespace at the start and the end of the text that is directly inside them. Whitespace inside a nested element and a non-breaking space stay.
+
 ## 1.0.0-beta.6
 
 ### Major Changes
