@@ -94,6 +94,23 @@ generated `proof-kit.html` SHA-256 was
 This is sufficient for the `next`-tag beta publication. It does not complete the
 stable-release checklist below.
 
+### `1.0.0-beta.6`: released without the smoke test
+
+On 2026-11-22 the maintainer waived the three-client smoke test for `1.0.0-beta.6`, and for this
+version only. The gate stays in force for each later release, and the test is still not done for
+this version. This version replaces the renderer (see
+[ADR 0003](../architecture/0003-build-time-tailwind.md)), and no email client displayed its
+output before the release. The evidence for it is indirect:
+
+- owned golden files of the rendered output;
+- a Chrome comparison of computed styles with the previous output of the same emails;
+- a static check of 68 rendered emails against the [Can I email](https://www.caniemail.com)
+  data, which found the two Outlook defects that this version fixes (checks P7 and P13).
+
+To check this version, generate the `proof-kit` from a checkout of the tag `v1.0.0-beta.6`
+(`pnpm proofs:generate` renders the checked-out tree), run this checklist, and record the result
+here. Do this before the next release that changes the rendered output.
+
 ### Stable `1.0.0` sign-off
 
 Fill one row per client. Verify **both** light and dark for every proof before marking
