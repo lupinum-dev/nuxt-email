@@ -789,17 +789,17 @@
     },
     "line-through": {
       "style": {
-        "text-decoration": "line-through"
+        "text-decoration-line": "line-through"
       }
     },
     "no-underline": {
       "style": {
-        "text-decoration": "none"
+        "text-decoration-line": "none"
       }
     },
     "underline": {
       "style": {
-        "text-decoration": "underline"
+        "text-decoration-line": "underline"
       }
     },
     "decoration-red-500": {

@@ -119,6 +119,26 @@ function camelizeKey(key: string): string {
   return camelized
 }
 
+interface DecorationKeys { shorthand: string, line: string }
+const KEBAB_DECORATION: DecorationKeys = { shorthand: 'text-decoration', line: 'text-decoration-line' }
+const CAMEL_DECORATION: DecorationKeys = { shorthand: 'textDecoration', line: 'textDecorationLine' }
+const IMPORTANT = /\s*!important$/
+
+/**
+ * Outlook on Windows reads `text-decoration` but not `text-decoration-line`, which Tailwind's
+ * `underline` and `no-underline` set. Write the line as the shorthand at the start of the
+ * style: every other declaration comes after it and still applies, so a browser computes the
+ * same style. An `!important` line also stays as it is, because an important shorthand
+ * would beat the color, style and thickness after it.
+ */
+function withDecorationShorthand(style: Record<string, unknown>, keys: DecorationKeys): Record<string, unknown> {
+  const { [keys.line]: line, ...rest } = style
+  if (typeof line !== 'string' || keys.shorthand in style) return style
+  return IMPORTANT.test(line)
+    ? { [keys.shorthand]: line.replace(IMPORTANT, ''), ...style }
+    : { [keys.shorthand]: line, ...rest }
+}
+
 /**
  * The function the template transform calls on every element and component that
  * has a class. Tailwind declarations merge in stylesheet order, as a browser applies
@@ -169,7 +189,7 @@ export function createTw(lookup: StyleLookup, state: EmailRenderState): Tw {
     }
     const resolved: ResolvedClassAndStyle = {}
     if (residual !== '') resolved.class = residual
-    if (merged !== undefined) resolved.style = merged
+    if (merged !== undefined) resolved.style = withDecorationShorthand(merged, forEmailComponent ? CAMEL_DECORATION : KEBAB_DECORATION)
     return resolved
   }
 }

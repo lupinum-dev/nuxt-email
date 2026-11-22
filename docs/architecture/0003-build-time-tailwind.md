@@ -29,7 +29,6 @@ Some conversion steps stay owned code, because Lightning CSS does not do them or
 - `calc()` evaluation: Lightning CSS stores numbers as 32-bit floats and rounds long decimals, which changed line boxes in Chrome.
 - `oklch()` to `rgb()` by channel clipping: Lightning CSS gamut mapping changes colors such as `blue-500`.
 - Logical properties to left-to-right physical ones, after Lightning CSS: its logical-property feature writes `:dir()` and `:lang()` rules that cannot be inlined, so it stays off, and it merges physical sides back into logical shorthands.
-- `text-decoration-line` to `text-decoration` in inline styles: Outlook on Windows reads only the shorthand.
 - `calc(infinity*1px)` to `9999px`, and `width < X` to `max-width:X-0.02px`, because the Lightning CSS output for both needs syntax that email clients do not support. The 0.02px keeps the exclusive upper bound of `max-*:` variants from overlapping the next breakpoint.
 - Stacked media variants join into one `@media` condition with `and`, and a head selector that is one `:where(X)` or `:is(X)` becomes `X`, because some email clients drop nested at-rules and these selector functions.
 - Removal of the `lab()` fallback lines and `@supports (color: lab(...))` blocks that Lightning CSS adds.
@@ -45,6 +44,7 @@ Some conversion steps stay owned code, because Lightning CSS does not do them or
 - `unplugin-vue` and the Rollup-based Nitro compile path are gone. `lightningcss` is a new build-time dependency.
 - Generated sizes are `px` and colors are hex or `rgba()`. A forbidden-syntax test on a fixed utility matrix and the golden files guard this; three known utilities still produce `var()`, `:where()`/`:is()` inside a selector, or `calc()`.
 - Inline declarations merge in stylesheet order, with author `style` last, so a class list gives the same result as the browser applies to the head rules.
+- A render writes the value of `text-decoration-line` as `text-decoration` at the start of the inline style, because Outlook on Windows reads only the shorthand. Every other declaration follows it, so a browser computes the same style.
 - A class that only sets custom properties, such as `ring-blue-500`, gets no style-table entry: per-class resolution cannot combine it with the utility that reads it.
 - The Tailwind engine is build-time code under `src/compiler/`. Code under `src/runtime/` does not import it.
 

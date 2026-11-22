@@ -6,10 +6,6 @@ import { type CssNode, generate, walk } from '../../css-tree'
  * Variables are already resolved for the whole stylesheet (`resolveVariables`), so
  * this only collects the declarations of a class's rules, as lowercase kebab-case
  * properties in stylesheet order. Custom properties are left out.
- *
- * `text-decoration-line` is written as `text-decoration`: Outlook on Windows reads only
- * the shorthand. The line comes before the color, style and thickness, in one rule (Lightning
- * CSS orders them) and between Tailwind's utilities, so those still apply after the shorthand.
  */
 export function makeInlineStylesFor(inlinableRules: CssNode[]): Map<string, string> {
   const styles = new Map<string, string>()
@@ -18,9 +14,8 @@ export function makeInlineStylesFor(inlinableRules: CssNode[]): Map<string, stri
       visit: 'Declaration',
       enter(declaration) {
         if (declaration.property.startsWith('--')) return
-        const property = declaration.property.toLowerCase()
         styles.set(
-          property === 'text-decoration-line' ? 'text-decoration' : property,
+          declaration.property.toLowerCase(),
           generate(declaration.value).trim() + (declaration.important ? '!important' : ''),
         )
       },

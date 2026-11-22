@@ -43,6 +43,22 @@ describe('compiler', () => {
   })
 })
 
+// A plain rule in tailwind.css comes after the utilities in the stylesheet. Its line must
+// not reset the color and thickness of the utilities before it.
+describe('text-decoration-line', () => {
+  it('becomes the shorthand before the decoration utilities, also from a later rule', async () => {
+    const target = await writeTemplates('decoration-line', {
+      'tailwind.css': '.brand-link { text-decoration-line: underline; }\n',
+      'note.vue': '<template><EEmail subject="Note" lang="en"><a class="brand-link decoration-red-500 decoration-2" href="https://example.com">A</a><EButton class="underline decoration-red-500" href="https://example.com">B</EButton></EEmail></template>\n',
+    })
+    const { renderEmail } = await buildEmails(target)
+    const { html } = await renderEmail('note')
+    expect(html).toContain('<a style="text-decoration:underline;text-decoration-color:#fb2c36;text-decoration-thickness:2px;" href="https://example.com">A</a>')
+    expect(html).toMatch(/<a href="https:\/\/example.com" style="[^"]*text-decoration:underline;[^"]*text-decoration-color:#fb2c36;[^"]*" target="_blank">/)
+    expect(html).not.toContain('text-decoration-line')
+  })
+})
+
 // A browser applies rules in stylesheet order, whatever the order in `class`, and the
 // inline `style` attribute after every rule.
 describe('declaration order', () => {
@@ -51,8 +67,11 @@ describe('declaration order', () => {
     ['p-4 pl-2', '', 'padding:16px;padding-left:8px;'],
     ['border-dashed border', '', 'border-width:1px;border-style:dashed;'],
     ['p-4 pl-2', ' style="padding:0"', 'padding-left:8px;padding:0;'],
-    // Outlook on Windows reads only the `text-decoration` shorthand; the color still applies after it.
-    ['decoration-red-500 underline', '', 'text-decoration:underline;text-decoration-color:#fb2c36;'],
+    // Outlook on Windows reads only `text-decoration`. The line comes first as the shorthand, so
+    // the color after it still applies; an important line stays too, or it would beat the color.
+    ['text-sm decoration-red-500 underline', '', 'text-decoration:underline;font-size:14px;line-height:1.4285714285714286;text-decoration-color:#fb2c36;'],
+    ['decoration-red-500 underline!', '', 'text-decoration:underline;text-decoration-line:underline!important;text-decoration-color:#fb2c36;'],
+    ['no-underline', ' style="text-decoration-thickness:2px"', 'text-decoration:none;text-decoration-thickness:2px;'],
   ])('class="%s"%s', async (classes, style, expected) => {
     const target = await writeTemplates(`order-${classes.replaceAll(' ', '_')}${style ? '-style' : ''}`, {
       'order.vue': `<template><EEmail subject="Order" lang="en"><div class="${classes}"${style}>A</div></EEmail></template>\n`,
