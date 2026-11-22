@@ -3,7 +3,8 @@
  * Proof template exercising every client-risk area in one email: a non-ASCII
  * subject (the em dash exercises the RFC 2047 encoded-word path), a preview text, an EFont webfont, Tailwind with a responsive (`sm:`)
  * and a dark-mode (`dark:`) variant, an MSO-padded EButton, a
- * Section/Row/Column table layout and EMarkdown.
+ * Section/Row/Column table layout, EMarkdown with a heading, and two links whose
+ * underline comes from the `underline` and `no-underline` classes.
  */
 defineProps<{
   firstName: string
@@ -71,6 +72,21 @@ const markdown = [
       </ESection>
       <EHr :style="{ borderTopColor: '#d9dfdc', margin: '0 0 24px' }" />
       <EMarkdown :source="markdown" />
+      <EText :style="{ color: '#415148', fontSize: '14px', margin: '24px 0 0' }">
+        Link styles: <ELink
+          class="underline"
+          href="https://example.invalid/underlined"
+          :style="{ color: '#16794d' }"
+        >
+          underlined link
+        </ELink> and <ELink
+          class="no-underline"
+          href="https://example.invalid/plain"
+          :style="{ color: '#16794d' }"
+        >
+          link without underline
+        </ELink>.
+      </EText>
       <EText :style="{ color: '#607067', fontSize: '13px', margin: '24px 0 0' }">
         Questions? Email <ELink href="mailto:proofs@example.invalid">
           proofs@example.invalid
