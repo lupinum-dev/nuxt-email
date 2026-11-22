@@ -83,6 +83,6 @@ when a decision changes; git keeps the history.
 - **D20 (2026-11-22): The four Shiki packages are optional peer dependencies.** — Only `ECodeBlock` needs
   them, and it is opt-in, so every other user installed about 40 packages for nothing. An application that
   sets `codeBlock` installs them; setup and `createTestRenderer()` fail with the install instruction when they
-  are missing (`src/code-block/shiki-install-error.ts`). Nothing outside `src/code-block/options.ts` and the
+  are missing, also when only one of the four is (`src/code-block/shiki-packages.ts`). Nothing outside `src/code-block/options.ts` and the
   generated component may import a Shiki package at run time; the packed default consumer proves it by
   installing without Shiki.

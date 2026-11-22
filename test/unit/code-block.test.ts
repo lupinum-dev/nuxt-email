@@ -10,7 +10,7 @@ import {
   generateCodeBlockComponent,
 } from '../../src/code-block/generate-component'
 import { normalizeCodeBlockOptions } from '../../src/code-block/options'
-import { shikiInstallError } from '../../src/code-block/shiki-install-error'
+import { assertShikiInstalled } from '../../src/code-block/shiki-packages'
 import { createCodeBlockComponent } from '../../src/runtime/code-block/create-component'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
 
@@ -139,24 +139,19 @@ describe('configured code blocks', () => {
   })
 })
 
-// Shiki is an optional peer dependency. With `codeBlock` set and Shiki not installed, Node
-// reports a missing module; the user needs the install instruction, not a module path.
-describe('a missing Shiki package', () => {
-  const missing = (specifier: string, code: string) => Object.assign(new Error(`Cannot find package '${specifier}' imported from /app/node_modules/@lupinum/nuxt-email/dist/module.mjs`), { code })
-
-  it.each(['ERR_MODULE_NOT_FOUND', 'MODULE_NOT_FOUND'])('becomes an install instruction (%s)', (code) => {
-    const cause = missing('@shikijs/langs', code)
-    const error = shikiInstallError(cause)
-    expect(error).toMatchObject({
-      message: 'nuxt-email codeBlock needs the Shiki packages, which this package does not install. Add them to your project: @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes',
-      cause,
-    })
+// Shiki is an optional peer dependency. With `codeBlock` set and one package missing, the
+// user needs the install instruction before the build, also when only one package is missing.
+describe('the Shiki package check', () => {
+  it('passes when the four packages resolve', () => {
+    expect(() => assertShikiInstalled()).not.toThrow()
   })
 
-  it('leaves every other error as it is', () => {
-    const otherPackage = missing('vue', 'ERR_MODULE_NOT_FOUND')
-    const invalidOption = new TypeError('nuxt-email codeBlock.theme must be a non-empty string')
-    expect(shikiInstallError(otherPackage)).toBe(otherPackage)
-    expect(shikiInstallError(invalidOption)).toBe(invalidOption)
+  it('names the missing packages and the four to install', () => {
+    const resolve = (name: string) => {
+      if (name === '@shikijs/core' || name === '@shikijs/engine-javascript') throw new Error(`Cannot find module '${name}'`)
+    }
+    expect(() => assertShikiInstalled(resolve)).toThrow(
+      'nuxt-email codeBlock needs the Shiki packages, which this package does not install. Missing: @shikijs/core, @shikijs/engine-javascript. Add all four to your project: @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes',
+    )
   })
 })

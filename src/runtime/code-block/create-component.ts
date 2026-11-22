@@ -1,4 +1,3 @@
-import type { ThemedToken, TokensResult } from '@shikijs/core'
 import type { DefineComponent, HTMLAttributes, PropType, VNodeChild } from 'vue'
 import { defineComponent, h } from 'vue'
 import type { SafeEmailAttributes } from '../components/attributes'
@@ -12,6 +11,24 @@ type ECodeBlockProps<Language extends string> = {
   lineNumbers?: boolean
   fontFamily?: string
 } & SafeEmailAttributes<HTMLAttributes>
+
+/**
+ * The parts of Shiki's `ThemedToken` and `TokensResult` that the component reads. They are
+ * declared here so that the published types need no Shiki package, which is an optional peer.
+ */
+interface ThemedToken {
+  content: string
+  color?: string
+  bgColor?: string
+  fontStyle?: number
+  htmlStyle?: Record<string, string>
+}
+
+interface TokensResult {
+  tokens: ThemedToken[][]
+  fg?: string
+  bg?: string
+}
 
 interface CodeBlockComponentOptions<Language extends string> {
   enabledLanguages: readonly Language[]

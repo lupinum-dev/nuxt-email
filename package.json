@@ -77,10 +77,10 @@
     "changeset": "changeset"
   },
   "peerDependencies": {
-    "@shikijs/core": "^4.3.1",
-    "@shikijs/engine-javascript": "^4.3.1",
-    "@shikijs/langs": "^4.3.1",
-    "@shikijs/themes": "^4.3.1",
+    "@shikijs/core": "^4.4.3",
+    "@shikijs/engine-javascript": "^4.4.3",
+    "@shikijs/langs": "^4.4.3",
+    "@shikijs/themes": "^4.4.3",
     "nuxt": ">=4.5.1 <5",
     "typescript": "~5.9.3",
     "vue": "^3.5.40",
