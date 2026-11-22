@@ -124,8 +124,9 @@ Results for the `proof-kit` generated from the code of `v1.0.0-beta.6`:
 
 On 2026-11-22 the maintainer started the release of `1.0.0-beta.7` without the complete
 three-client smoke test, which is a second waiver, for this version only. This version has one
-change in the rendered output: `ELink` and `ECodeInline` remove the whitespace at the edges of
-their content, the defect that the Apple Mail check of `1.0.0-beta.6` found. No email client
+change in the rendered output: `ELink` and `ECodeInline` remove the whitespace at the start and
+the end of the text that is directly inside them, the defect that the Apple Mail check of
+`1.0.0-beta.6` found. Whitespace inside a nested element stays. No email client
 displayed the output of this version before the release; the generated HTML was read, and a test
 pins it.
 
