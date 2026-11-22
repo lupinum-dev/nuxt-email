@@ -29,6 +29,7 @@ Some conversion steps stay owned code, because Lightning CSS does not do them or
 - `calc()` evaluation: Lightning CSS stores numbers as 32-bit floats and rounds long decimals, which changed line boxes in Chrome.
 - `oklch()` to `rgb()` by channel clipping: Lightning CSS gamut mapping changes colors such as `blue-500`.
 - Logical properties to left-to-right physical ones, after Lightning CSS: its logical-property feature writes `:dir()` and `:lang()` rules that cannot be inlined, so it stays off, and it merges physical sides back into logical shorthands.
+- `text-decoration-line` to `text-decoration` in inline styles: Outlook on Windows reads only the shorthand.
 - `calc(infinity*1px)` to `9999px`, and `width < X` to `max-width:X-0.02px`, because the Lightning CSS output for both needs syntax that email clients do not support. The 0.02px keeps the exclusive upper bound of `max-*:` variants from overlapping the next breakpoint.
 - Stacked media variants join into one `@media` condition with `and`, and a head selector that is one `:where(X)` or `:is(X)` becomes `X`, because some email clients drop nested at-rules and these selector functions.
 - Removal of the `lab()` fallback lines and `@supports (color: lab(...))` blocks that Lightning CSS adds.

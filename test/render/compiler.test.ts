@@ -51,6 +51,8 @@ describe('declaration order', () => {
     ['p-4 pl-2', '', 'padding:16px;padding-left:8px;'],
     ['border-dashed border', '', 'border-width:1px;border-style:dashed;'],
     ['p-4 pl-2', ' style="padding:0"', 'padding-left:8px;padding:0;'],
+    // Outlook on Windows reads only the `text-decoration` shorthand; the color still applies after it.
+    ['decoration-red-500 underline', '', 'text-decoration:underline;text-decoration-color:#fb2c36;'],
   ])('class="%s"%s', async (classes, style, expected) => {
     const target = await writeTemplates(`order-${classes.replaceAll(' ', '_')}${style ? '-style' : ''}`, {
       'order.vue': `<template><EEmail subject="Order" lang="en"><div class="${classes}"${style}>A</div></EEmail></template>\n`,

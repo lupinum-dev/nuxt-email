@@ -24,6 +24,8 @@ export function sanitizeNonInlinableRules(node: CssNode): void {
           if (inner?.type === 'Selector') child.children = inner.children
         }
       }
+      // The condition of `@supports (display:grid)` is a declaration too; it must stay as written.
+      if (child.type === 'AtrulePrelude') return walk.skip
       if (child.type === 'ClassSelector') child.name = sanitizeClassName(string.decode(child.name))
       if (child.type !== 'Declaration') return
       if (child.property.startsWith('--tw-')) list.remove(item)
