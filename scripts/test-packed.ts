@@ -275,7 +275,7 @@ function assertPackedMetadata(source: PackageManifest, packed: PackageManifest):
   invariant(typeof packed.dependencies?.h3 === 'string', 'Packed preview handlers import h3, so h3 must be a direct runtime dependency')
   invariant(packed.peerDependencies?.nuxt === source.peerDependencies?.nuxt, 'Packed Nuxt peer range differs from package.json')
   invariant(packed.peerDependencies?.vue === source.peerDependencies?.vue, 'Packed Vue peer range differs from package.json')
-  for (const name of ['typescript', 'vue-tsc']) {
+  for (const name of ['typescript', 'vue-tsc', '@shikijs/core', '@shikijs/engine-javascript', '@shikijs/langs', '@shikijs/themes']) {
     invariant(packed.peerDependenciesMeta?.[name]?.optional === true, `Packed ${name} must be an optional peer dependency`)
     invariant(packed.dependencies?.[name] === undefined, `Packed ${name} must not be a runtime dependency`)
   }
@@ -421,6 +421,9 @@ async function verifyFreshConsumer(
   const installedPackageRoot = await realpath(join(consumerDirectory, 'node_modules/@lupinum/nuxt-email'))
   invariant(isInside(temporaryRoot, installedPackageRoot), `Fresh install resolved @lupinum/nuxt-email outside its temporary app: ${installedPackageRoot}`)
   invariant(!isInside(packageRoot, installedPackageRoot), 'Fresh install resolved @lupinum/nuxt-email from the source checkout')
+  // Shiki is an optional peer dependency: only the consumer that sets `codeBlock` installs it.
+  const shikiInstalled = await stat(join(consumerDirectory, 'node_modules/@shikijs/core')).then(() => true, () => false)
+  invariant(shikiInstalled === (variant === 'code-block'), `The ${variant} consumer ${shikiInstalled ? 'installed' : 'did not install'} the Shiki packages`)
   invariant(!(await collectFiles(installedPackageRoot)).some(path => relative(installedPackageRoot, path).startsWith('src/')), 'Installed package contains source files')
 
   const installedManifest = await readJson<PackageManifest>(join(installedPackageRoot, 'package.json'))

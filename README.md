@@ -145,7 +145,7 @@ documentation. Read the package README and its TypeScript types instead.
 
 ## Email components
 
-Nuxt Email registers 14 server components for the email root, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, and fonts. Configure `ECodeBlock` only when you need syntax highlighting:
+Nuxt Email has 14 components for the email root, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, and fonts. `ECodeBlock` adds syntax highlighting. It is opt-in: install the Shiki packages (`pnpm add @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes`) and configure it:
 
 ```ts
 export default defineNuxtConfig({

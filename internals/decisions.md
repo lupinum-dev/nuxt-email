@@ -80,3 +80,9 @@ when a decision changes; git keeps the history.
   of the packed-consumer test, so it must follow Nuxt, or the package is never tested on the Nuxt that users
   install. Nuxt 4.6 no longer supports Node 22.18 and 24.11, and CI must not prove a floor on a Nuxt that does
   not support it. The peer range `>=4.5.1 <5` stays; the minimum consumer still installs Nuxt 4.5.1.
+- **D20 (2026-11-22): The four Shiki packages are optional peer dependencies.** — Only `ECodeBlock` needs
+  them, and it is opt-in, so every other user installed about 40 packages for nothing. An application that
+  sets `codeBlock` installs them; setup and `createTestRenderer()` fail with the install instruction when they
+  are missing (`src/code-block/shiki-install-error.ts`). Nothing outside `src/code-block/options.ts` and the
+  generated component may import a Shiki package at run time; the packed default consumer proves it by
+  installing without Shiki.

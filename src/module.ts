@@ -10,6 +10,7 @@ import {
   useNitro,
 } from '@nuxt/kit'
 import type { CodeBlockOptions } from './code-block/options'
+import { shikiInstallError } from './code-block/shiki-install-error'
 import { compileEmailDirectory } from './compiler/build-templates'
 import { attachPreviewFixtures } from './dev-preview/fixtures'
 import { EMAIL_TAGS } from './runtime/components/email-tags'
@@ -107,7 +108,10 @@ export default defineNuxtModule<ModuleOptions>({
     const errorsPublicPath = await resolver.resolvePath('./runtime/errors')
     let codeBlockPath: string | undefined
     if (options.codeBlock !== undefined) {
-      const { setupCodeBlock } = await import('./code-block/setup')
+      // The setup imports the optional Shiki packages.
+      const { setupCodeBlock } = await import('./code-block/setup').catch((error: unknown) => {
+        throw shikiInstallError(error)
+      })
       const codeBlock = setupCodeBlock(options.codeBlock, resolver)
       codeBlockPath = codeBlock.componentPath
     }

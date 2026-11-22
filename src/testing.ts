@@ -8,7 +8,7 @@ import { compileEmailDirectory } from './compiler/build-templates'
 import { defaultNuxtAlias, resolveEmailDirectory } from './compiler/directory'
 import { generateCodeBlockComponent } from './code-block/generate-component'
 import type { CodeBlockOptions } from './code-block/options'
-import { normalizeCodeBlockOptions } from './code-block/options'
+import { shikiInstallError } from './code-block/shiki-install-error'
 import type { InspectedEmail } from './runtime/render-email'
 import type { EmailRenderArgs, RenderedEmail } from './runtime/render/index'
 import { EmailRenderError } from './runtime/render/index'
@@ -45,19 +45,26 @@ const here = dirname(fileURLToPath(import.meta.url))
 const extension = import.meta.url.endsWith('.ts') ? 'ts' : 'js'
 const runtimeUrl = (path: string) => pathToFileURL(join(here, 'runtime', `${path}.${extension}`)).href
 
-function codeBlockModule(options: CodeBlockOptions): CodeBlockModule {
-  const normalized = normalizeCodeBlockOptions(options)
-  const require = createRequire(import.meta.url)
-  const resolved = (specifier: string) => pathToFileURL(require.resolve(specifier)).href
-  return {
-    resolveDir: here,
-    source: generateCodeBlockComponent(normalized, {
-      core: resolved('@shikijs/core'),
-      createCodeBlockComponent: runtimeUrl('code-block/create-component'),
-      engineJavaScript: resolved('@shikijs/engine-javascript'),
-      languages: normalized.languages.map(language => resolved(`@shikijs/langs/${language}`)),
-      theme: resolved(`@shikijs/themes/${normalized.theme}`),
-    }),
+/** The options check imports the optional Shiki packages, so it loads only for `codeBlock`. */
+async function codeBlockModule(options: CodeBlockOptions): Promise<CodeBlockModule> {
+  try {
+    const { normalizeCodeBlockOptions } = await import('./code-block/options')
+    const normalized = normalizeCodeBlockOptions(options)
+    const require = createRequire(import.meta.url)
+    const resolved = (specifier: string) => pathToFileURL(require.resolve(specifier)).href
+    return {
+      resolveDir: here,
+      source: generateCodeBlockComponent(normalized, {
+        core: resolved('@shikijs/core'),
+        createCodeBlockComponent: runtimeUrl('code-block/create-component'),
+        engineJavaScript: resolved('@shikijs/engine-javascript'),
+        languages: normalized.languages.map(language => resolved(`@shikijs/langs/${language}`)),
+        theme: resolved(`@shikijs/themes/${normalized.theme}`),
+      }),
+    }
+  }
+  catch (error) {
+    throw shikiInstallError(error)
   }
 }
 
@@ -96,7 +103,7 @@ export async function createTestRenderer<Templates extends EmailTemplatePropsMap
       packages: 'external',
       absWorkingDir: rootDir,
       alias: defaultNuxtAlias(rootDir, directory),
-      codeBlock: options.codeBlock === undefined ? undefined : codeBlockModule(options.codeBlock),
+      codeBlock: options.codeBlock === undefined ? undefined : await codeBlockModule(options.codeBlock),
     })
     // The compiled registry is untyped; `Templates` describes the templates it was compiled from.
     const registry: {
