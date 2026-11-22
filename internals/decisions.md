@@ -48,3 +48,30 @@ when a decision changes; git keeps the history.
   or media range syntax. Owned steps stay only where Lightning CSS does not do the job or changes the result
   (`var()`, `calc()`, `oklch()` clipping, logical shorthands; see ADR 0003). The forbidden-syntax test in
   `test/render/css-output.test.ts` fails when a utility gains or loses such syntax.
+- **D12 (2026-11-22): The SFC compile step is the package's own esbuild plugin (`src/compiler/compile-sfc.ts`),
+  not `unplugin-vue/esbuild`.** — That plugin compiles `lang="ts"` through Vite, which loads the nearest
+  `tsconfig.json`. A Nuxt project's `tsconfig.json` extends `.nuxt/tsconfig.json`, which does not exist before
+  `nuxt prepare`, so `/build` and `createTestRenderer()` failed with "Tsconfig not found". It was tried twice.
+- **D13 (2026-11-22): Templates compile to normal render functions, not to SSR render functions.** — SSR mode
+  gave the same golden files but only 3.8% faster renders of the 48-row email (3.36 ms against 3.50 ms). That
+  does not pay for a second compile mode.
+- **D14 (2026-11-22): A template reaches the class lookup as `_ctx._tw`, a global property of the Vue app of
+  one render.** — A compiled template reads an unknown identifier from `_ctx`, which falls through to
+  `app.config.globalProperties`, so no `inject()` runs for each element. This needs `inlineTemplate: false` in
+  `compile-sfc.ts`; an inlined template does not see global properties. `EEmail` reads the render state with `inject`.
+- **D15 (2026-11-22): Tailwind's `theme.css` is imported with `theme(inline)`.** — Theme values then arrive as
+  values in the utilities, and the owned `var()` resolver handles only what remains (`--tw-*` variables and
+  tokens from `app/emails/tailwind.css`).
+- **D16 (2026-11-22): The value of `text-decoration-line` becomes `text-decoration` at render, not in the style
+  table.** — Outlook on Windows reads only the shorthand. Replacing the property in the table reset a decoration
+  color or thickness in two cases: a plain rule in `tailwind.css` comes after the utilities, and an `!important`
+  shorthand beats the longhands after it. At render the shorthand is always the first declaration
+  (`withDecorationShorthand` in `src/runtime/tw.ts`).
+- **D17 (2026-11-22): `createTestRenderer()` fails a render that keeps a class as written; production does
+  not.** — A wrong or run-time class name gives an unstyled element without an error, and an opt-in check does
+  not find it. The list of kept classes comes from `inspectEmail`, which only the development and test
+  registries export, so diagnostics never change `RenderedEmail` or reach production.
+- **D18 (2026-11-22): Not built until a project needs it: right-to-left output for logical utilities, packages
+  in `node_modules` as email source, and attributes on `<html>`.** — Each needs a new mechanism (a second set of
+  declarations chosen by `dir`, an option that names packages to read and compile, pass-through props on
+  `EEmail`). The Tailwind guide lists the first two as limits.
