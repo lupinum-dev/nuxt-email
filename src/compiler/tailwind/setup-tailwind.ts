@@ -52,6 +52,13 @@ ${css ? '@import "custom.css";' : ''}
     },
   })
 
+  // Tailwind only reports path sources; reading them is the caller's job, and this build reads imports.
+  if (compiler.sources.length > 0) {
+    throw new Error(
+      'Tailwind @source with a path is not supported in email Tailwind CSS; the build reads the files a template imports. Use @source inline("...") to add class names.',
+    )
+  }
+
   /** The CSS for these candidates; the compiler keeps every candidate it was given before. */
   return (candidates: string[]): string => compiler.build(candidates)
 }

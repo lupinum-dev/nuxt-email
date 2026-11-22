@@ -56,7 +56,8 @@ beforeAll(async () => {
   for (const entry of cases) {
     await writeFile(`${directory}/templates/${entry.name}.vue`, caseTemplate(entry))
   }
-  const next = await buildEmails(`${directory}/templates`)
+  // The cases keep custom class names on purpose, to pin how they pass through.
+  const next = await buildEmails(`${directory}/templates`, { allowUnknownClasses: true })
   bundle = bundledPackages((await bundleEmails(`${directory}/templates`, 'cases')).metafile)
   rendered = new Map()
   for (const entry of cases) {

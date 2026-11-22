@@ -36,7 +36,7 @@ Some conversion steps stay owned code, because Lightning CSS does not do them or
 ## Consequences
 
 - A production render loads Vue and the plain-text converter. It does not load Tailwind or a CSS parser. The 48-row email renders in about 3 ms.
-- A class must appear complete in the source. A class built at run time stays in `class` unchanged. The development preview lists those classes.
+- A class must appear complete in the source, or in `@source inline()` in `tailwind.css`. Any other class built at run time stays in `class` unchanged. The development preview lists those classes, and `createTestRenderer()` fails a render that keeps one.
 - Components receive their final `style` and need no Tailwind code.
 - Unsupported Tailwind conditions, such as `@container` variants, fail the build instead of the render.
 - In development, a change in the email directory or in any file the last build read rebuilds the registry and the style table. Nuxt's watcher reports only files in the project, so a change in `node_modules` does not.

@@ -163,7 +163,7 @@ export default defineNuxtConfig({
 
 Put Tailwind v4 classes on any element or component in a template. The build reads the classes from every file a template imports, outside `node_modules`, and converts them to inline styles with sizes in `px`. Media-query and pseudo-class rules go into the `<style>` element of the email. A production render loads neither Tailwind nor a CSS parser.
 
-Add `app/emails/tailwind.css` for `@theme` and `@utility` blocks. Write every class completely in the template source: the build cannot resolve a class name that is built at run time.
+Add `app/emails/tailwind.css` for `@theme` and `@utility` blocks. Write every class completely in the template source: the build cannot resolve a class name that is built at run time. For such names, list the possible classes in that file with `@source inline("…")`.
 
 ## Development preview
 
@@ -195,7 +195,7 @@ const email = await renderEmail('welcome', {
 })
 ```
 
-`createTestRenderer` compiles the email directory with the same compiler as the module. Pass the module's `codeBlock` option when a template uses `ECodeBlock`.
+`createTestRenderer` compiles the email directory with the same compiler as the module. Its `renderEmail` fails when a render keeps a class that has no effect, such as a wrong class name. Pass the module's `codeBlock` option when a template uses `ECodeBlock`.
 
 ## Compatibility evidence
 

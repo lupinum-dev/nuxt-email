@@ -979,6 +979,9 @@
     "print:hidden": {
       "residual": "print_hidden",
       "head": true
+    },
+    "group": {
+      "residual": "group"
     }
   },
   "head": [

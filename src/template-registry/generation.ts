@@ -14,8 +14,8 @@ interface RendererRegistryPaths {
   /** Generated `ECodeBlock` module when the `codeBlock` option is set. */
   codeBlock?: string
   /**
-   * Development only: also export `inspectEmail`, imported as `createEmailInspector` from the
-   * `createEmailRenderer` module. The production registry never exports it.
+   * Development and tests only: also export `inspectEmail`, imported as `createEmailInspector`
+   * from the `createEmailRenderer` module. The production registry never exports it.
    */
   inspect?: boolean
 }

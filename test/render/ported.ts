@@ -44,7 +44,8 @@ async function compile(area: string, cases: (PortedCase | PortedErrorCase)[], fi
   await mkdir(`${directory}/components`, { recursive: true })
   for (const entry of cases) await writeFile(`${directory}/${entry.name}.vue`, emailSource(entry))
   for (const [path, source] of Object.entries(files)) await writeFile(`${directory}/${path}`, source)
-  return await buildEmails(directory)
+  // The cases pin how custom class names pass through; `compiler.test.ts` covers the strict default.
+  return await buildEmails(directory, { allowUnknownClasses: true })
 }
 
 /**

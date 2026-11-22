@@ -9,7 +9,9 @@ import { defaultNuxtAlias, resolveEmailDirectory } from './compiler/directory'
 import { generateCodeBlockComponent } from './code-block/generate-component'
 import type { CodeBlockOptions } from './code-block/options'
 import { normalizeCodeBlockOptions } from './code-block/options'
+import type { InspectedEmail } from './runtime/render-email'
 import type { EmailRenderArgs, RenderedEmail } from './runtime/render/index'
+import { EmailRenderError } from './runtime/render/index'
 
 // The module builder keeps src/runtime external, so the errors exported here are the
 // classes the published renderer throws.
@@ -24,6 +26,11 @@ export interface CreateTestRendererOptions {
   templatesDir?: string
   /** The `codeBlock` option of the Nuxt module, when templates use `ECodeBlock`. */
   codeBlock?: CodeBlockOptions
+  /**
+   * Classes that may stay in `class` as written, such as a class that only another tool
+   * reads. A render that keeps any other class fails. `true` allows every class.
+   */
+  allowUnknownClasses?: true | readonly string[]
 }
 
 /** Template props by name. A Nuxt project passes the generated `EmailTemplateProps`. */
@@ -54,9 +61,22 @@ function codeBlockModule(options: CodeBlockOptions): CodeBlockModule {
   }
 }
 
+/** The cause of the render error for classes that the test renderer does not allow. */
+function unknownClassesError(classes: readonly string[]): TypeError {
+  return new TypeError(
+    `The email kept these classes as written: ${classes.join(', ')}. `
+    + 'Tailwind does not know them, they have no effect alone, or the build did not find them in the source. '
+    + 'Correct them, add names built at run time to @source inline("...") in tailwind.css, '
+    + 'or pass the classes that must stay in allowUnknownClasses.',
+  )
+}
+
 /**
  * Compile the email directory with the same compiler as the Nuxt module and the standalone
  * build, and return its `renderEmail`. Each call compiles again; there is no cache.
+ *
+ * Unlike production, a render fails when it keeps a class as written: a test is the place
+ * to find a class that has no effect.
  */
 export async function createTestRenderer<Templates extends EmailTemplatePropsMap<Templates> = Record<string, Record<string, unknown>>>(
   options: CreateTestRendererOptions,
@@ -71,15 +91,28 @@ export async function createTestRenderer<Templates extends EmailTemplatePropsMap
     await compileEmailDirectory({
       directory,
       outfile,
-      renderer: runtimeUrl('render/index'),
+      renderer: runtimeUrl('render-email'),
+      inspect: true,
       packages: 'external',
       absWorkingDir: rootDir,
       alias: defaultNuxtAlias(rootDir, directory),
       codeBlock: options.codeBlock === undefined ? undefined : codeBlockModule(options.codeBlock),
     })
     // The compiled registry is untyped; `Templates` describes the templates it was compiled from.
-    const registry: TestRenderer<Templates> = await import(/* @vite-ignore */ pathToFileURL(outfile).href)
-    return { renderEmail: registry.renderEmail }
+    const registry: {
+      inspectEmail: (name: string, props?: object) => Promise<InspectedEmail>
+    } = await import(/* @vite-ignore */ pathToFileURL(outfile).href)
+    const allowed = options.allowUnknownClasses
+    return {
+      async renderEmail(name, ...[props]) {
+        const { unknownClasses, ...email } = await registry.inspectEmail(name, props)
+        if (allowed !== true) {
+          const unknown = unknownClasses.filter(className => !allowed?.includes(className))
+          if (unknown.length > 0) throw new EmailRenderError(name, unknownClassesError(unknown))
+        }
+        return email
+      },
+    }
   }
   finally {
     await rm(outfile, { force: true })
