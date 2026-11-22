@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { TailwindEngineOptions } from './tailwind/index'
 import type { StyleTable, StyleTableEntry } from '../runtime/tw'
+import { sanitizeClassName } from './tailwind/compatibility/sanitize-class-name'
 import { createTailwindEngine } from './tailwind/index'
 import { classCandidates } from './candidates'
 import { type CssNode, parse, walk } from './css-tree'
@@ -53,8 +54,15 @@ export async function createStyleTable(
     if (head && properties !== undefined && [...properties].every(property => PADDING.test(property))) entry.cell = true
     classes[className] = entry
   }
+  // Tailwind writes no CSS for its marker classes, but `group-*` and `peer-*` rules select
+  // them: they stay on the element, under the name those rules use (`group/item` is `.group_item`).
+  for (const className of candidates) {
+    if (MARKER.test(className)) classes[className] = { residual: sanitizeClassName(className) }
+  }
   return { classes, head: computed.headRules }
 }
+
+const MARKER = /^(?:group|peer)(?:\/[\w-]+)?$/
 
 const PADDING = /^padding(?:-(?:top|right|bottom|left|inline|block)(?:-(?:start|end))?)?$/
 

@@ -64,7 +64,8 @@ interface HeadRule {
 interface TailwindEngine {
   /**
    * Compute inline styles, head rules and residual classes for every candidate
-   * class of an email directory.
+   * class of an email directory, and for the classes that the email CSS adds
+   * with `@source inline()`.
    *
    * Call it once per engine with the full class list. The underlying compiler
    * only accumulates candidates, and each call re-parses a fresh stylesheet AST,
@@ -179,8 +180,14 @@ export async function createTailwindEngine(
   options: TailwindEngineOptions = {},
 ): Promise<TailwindEngine> {
   const build = await setupTailwind(options.css)
+  // Classes that Tailwind builds without a candidate: `@source inline()` in the email CSS
+  // (Tailwind expands its braces) and plain rules written there.
+  const sourceClasses = options.css === undefined
+    ? []
+    : extractRulesPerClass(sanitizeStyleSheet(build([]))).stylesheetOrder
 
-  const computeStyles = (classNames: string[]): ComputedStyles => {
+  const computeStyles = (candidates: string[]): ComputedStyles => {
+    const classNames = [...new Set([...candidates, ...sourceClasses])]
     const styleSheet = sanitizeStyleSheet(build(classNames))
 
     const {

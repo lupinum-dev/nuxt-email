@@ -18,7 +18,7 @@ export interface RenderedEmail {
 
 export type { EmailComponentProps, EmailRenderArgs } from './render/types'
 
-/** A rendered email plus the dev-only diagnostics of the same render. */
+/** A rendered email plus the diagnostics of the same render, for the dev preview and the test renderer. */
 export interface InspectedEmail extends RenderedEmail {
   /** Classes kept as written because the style table has no entry for them, sorted. */
   unknownClasses: string[]
@@ -129,7 +129,7 @@ export function createEmailRenderer(options: EmailRendererOptions) {
   }
 }
 
-/** Development only: the same render as `renderEmail`, plus the classes kept as written. */
+/** Development and tests only: the same render as `renderEmail`, plus the classes kept as written. */
 export function createEmailInspector(options: EmailRendererOptions) {
   const renderTemplate = createTemplateRenderer(options)
   return async function inspectEmail(name: string, props: Record<string, unknown> = {}): Promise<InspectedEmail> {
