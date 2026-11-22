@@ -27,8 +27,7 @@ appearance setting. Where a client has no dark mode, mark the dark rows **N/A**.
 
 | Proof | What it is | Primary risk areas |
 | --- | --- | --- |
-| `welcome` | Canonical playground template, real fixture props | Container layout, single MSO button, preheader, link, `EHr` |
-| `proof-kit` | Every risk area in one email | MSO button, `Row`/`Column` table layout, preheader, Tailwind media query + dark variant, markdown, webfont, non-ASCII subject |
+| `proof-kit` | Every risk area in one email | MSO button, `Row`/`Column` table layout, preheader, Tailwind media query + dark variant, markdown with a heading, webfont, non-ASCII subject, links with `underline` and `no-underline` classes |
 
 ## Clients to cover
 
@@ -43,18 +42,6 @@ appearance setting. Where a client has no dark mode, mark the dark rows **N/A**.
 
 ## What to check, per proof
 
-### `welcome`
-
-| # | Check | Pass criterion | Watch especially in |
-| --- | --- | --- | --- |
-| W1 | Subject line | Reads `Welcome to Northstar`, no `=?utf-8?…?=` artifacts | All |
-| W2 | Preheader | Inbox preview shows "Ada, your Northstar workspace is ready."; the text does **not** appear as a visible line at the top of the opened email | Gmail, Apple Mail |
-| W3 | Container | White rounded card centered, max ~600px, not full-bleed | Outlook classic |
-| W4 | Button padding | "Open your workspace" is a solid pill; padding intact, label not clipped or hugging the edges | **Outlook classic** (MSO padding) |
-| W5 | Button link | Click/tap opens the dashboard URL | All |
-| W6 | Divider + footer | `EHr` renders as a thin rule; footer text and support mailto link legible | Outlook classic |
-| W7 | Dark mode | Text stays legible against the (possibly re-colored) background; button remains readable | Gmail apps, Apple Mail, Outlook |
-
 ### `proof-kit`
 
 | # | Check | Pass criterion | Watch especially in |
@@ -65,9 +52,13 @@ appearance setting. Where a client has no dark mode, mark the dark rows **N/A**.
 | P4 | Table layout | `Row`/`Column` renders "Table layout: left column" and "right column" side by side on one row; right column right-aligned | Outlook classic, Gmail |
 | P5 | Media query (`sm:`) | Heading scales up at wider widths where supported; **degrades gracefully** (base size, no broken layout) where media queries are ignored (Gmail, Outlook classic) | Gmail (ignored), Apple Mail (honored) |
 | P6 | Dark variant (`dark:`) | In dark mode, `dark:` styles apply where supported (Apple Mail); elsewhere the light styling remains readable — no unreadable dark-on-dark | Apple Mail vs Gmail/Outlook |
-| P7 | Markdown spacing | Heading, paragraph, and bulleted list have correct vertical spacing; **bold**, inline `code`, and the link all render; no raw `#`/`*`/backticks visible | All |
+| P7 | Markdown | Heading, paragraph, and bulleted list have correct vertical spacing; the "Markdown block" heading is clearly larger than the paragraph below it (32px); **bold**, inline `code`, and the link all render; no raw `#`/`*`/backticks visible | All (heading size: **Outlook classic**) |
 | P8 | Webfont (`EFont`) | Inter where the client loads webfonts; **clean fallback** to Helvetica/sans-serif where it does not (Gmail, Outlook) — never a serif or broken glyphs | Apple Mail (loads) vs Gmail/Outlook (fallback) |
 | P9 | Dark mode overall | Whole email legible in dark mode; card and button remain readable; no invisible text | Gmail apps, Apple Mail, Outlook |
+| P10 | Container | White rounded card centered, max ~600px, not full-bleed | Outlook classic |
+| P11 | Button link | Click/tap on "Open your workspace" opens the dashboard URL | All |
+| P12 | Divider + footer | `EHr` renders as a thin rule; footer text and the mailto link are legible | Outlook classic |
+| P13 | Link underline classes | In the "Link styles" line, "underlined link" has an underline and "link without underline" has none | **Outlook classic** (reads only `text-decoration`) |
 
 Graceful-degradation note: media queries and `dark:` variants are expected to be
 honored only in some clients (notably Apple Mail) and ignored in others (Gmail,
@@ -110,15 +101,15 @@ a client passed. Use the notes column for any per-check failures (reference the 
 IDs above, e.g. "P3 fail: button padding collapsed").
 
 | Client | Mode | `proof-kit` (L / D) | Verifier | Date | Pass/Fail | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Gmail — web | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Gmail — iOS app | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Gmail — Android app | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Outlook — Windows classic desktop | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Outlook — new Outlook (Windows) | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Outlook — web | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Apple Mail — macOS | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
-| Apple Mail — iOS | Light + Dark | ☐ / ☐ | ☐ / ☐ | | | | |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gmail — web | Light + Dark | ☐ / ☐ | | | | |
+| Gmail — iOS app | Light + Dark | ☐ / ☐ | | | | |
+| Gmail — Android app | Light + Dark | ☐ / ☐ | | | | |
+| Outlook — Windows classic desktop | Light + Dark | ☐ / ☐ | | | | |
+| Outlook — new Outlook (Windows) | Light + Dark | ☐ / ☐ | | | | |
+| Outlook — web | Light + Dark | ☐ / ☐ | | | | |
+| Apple Mail — macOS | Light + Dark | ☐ / ☐ | | | | |
+| Apple Mail — iOS | Light + Dark | ☐ / ☐ | | | | |
 
 **Stable-release gate:** `1.0.0` is **blocked** until every row above is signed Pass
 (or a failure is triaged, fixed, the batch regenerated, and re-verified). Record the
