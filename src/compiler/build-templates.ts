@@ -33,7 +33,7 @@ interface CompileEmailDirectoryOptions {
    * written. Defaults to the renderer source, bundled into the output.
    */
   renderer?: string
-  /** Development only: also export `inspectEmail` from the renderer module. */
+  /** Development and tests only: also export `inspectEmail` from the renderer module. */
   inspect?: boolean
   /** `external` keeps every package import external, resolved from where the output is loaded. */
   packages?: BuildOptions['packages']

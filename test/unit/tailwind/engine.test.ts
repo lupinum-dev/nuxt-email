@@ -20,8 +20,8 @@ describe('createTailwindEngine()', () => {
   })
 
   it.each(['scope (.card)', 'container (min-width: 10px)'])('rejects custom CSS that wraps a class in @%s', async (atRule) => {
-    const engine = await createTailwindEngine({ css: `@${atRule} { .brand { color: red; } }` })
-    expect(() => engine.computeStyles(['brand'])).toThrow(`@${atRule.split(' ')[0]} rules are not supported`)
+    await expect(createTailwindEngine({ css: `@${atRule} { .brand { color: red; } }` }))
+      .rejects.toThrow(`@${atRule.split(' ')[0]} rules are not supported`)
   })
 
   it.each([

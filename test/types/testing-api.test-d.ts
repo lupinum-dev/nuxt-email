@@ -28,6 +28,10 @@ void typed.renderEmail('welcome', { name: 1 })
 const codeBlock: CodeBlockOptions = { languages: ['typescript'], theme: 'github-dark' }
 const moduleCodeBlock: ModuleCodeBlockOptions = codeBlock
 void createTestRenderer({ rootDir: '.', codeBlock: moduleCodeBlock })
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: ['footer-link'] })
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: true })
+// @ts-expect-error `false` is not an option; omit it for the strict default
+void createTestRenderer({ rootDir: '.', allowUnknownClasses: false })
 // @ts-expect-error rootDir is required
 void createTestRenderer({ templatesDir: 'app/emails' })
 // @ts-expect-error codeBlock takes the module option shape

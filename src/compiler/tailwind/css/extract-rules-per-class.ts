@@ -56,11 +56,13 @@ interface ExtractedRules {
   stylesheetOrder: string[]
 }
 
+/** Without `classes`, every class that owns a rule is requested. */
 export function extractRulesPerClass(
   root: CssNode,
-  classes: string[],
+  classes?: string[],
 ): ExtractedRules {
-  const classSet = new Set(classes)
+  const classSet = classes === undefined ? undefined : new Set(classes)
+  const isRequested = (className: string) => classSet === undefined || classSet.has(className)
 
   // A class can be defined by multiple rules (e.g. a preset and a child config
   // override), so keep them all to merge instead of the last one clobbering.
@@ -123,7 +125,7 @@ export function extractRulesPerClass(
     }
     if (enclosingAtRules.length > 0) {
       const unsupported = enclosingAtRules.find(atRule => !NON_INLINABLE_ATRULES.has(atRule.name.toLowerCase()))
-      if (unsupported && selectorClasses.some(className => classSet.has(className))) {
+      if (unsupported && selectorClasses.some(isRequested)) {
         throw new TypeError(`Unable to render Tailwind CSS: @${unsupported.name} rules are not supported.`)
       }
     }
@@ -143,7 +145,7 @@ export function extractRulesPerClass(
     }
     let includesRequestedClass = false
     for (const className of selectorClasses) {
-      if (!classSet.has(className)) continue
+      if (!isRequested(className)) continue
       includesRequestedClass = true
       stylesheetOrder.add(className)
       if (inlinable) appendRule(inlinableRules, className, rule)
