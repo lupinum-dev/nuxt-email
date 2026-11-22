@@ -24,6 +24,12 @@ describe('createTailwindEngine()', () => {
     expect(() => engine.computeStyles(['brand'])).toThrow(`@${atRule.split(' ')[0]} rules are not supported`)
   })
 
+  it('keeps the condition of @supports as written', async () => {
+    const engine = await createTailwindEngine({})
+    expect(headCss(engine.computeStyles(['supports-[display:grid]:grid'])))
+      .toBe('@supports (display:grid){.supports-display_grid_grid{display:grid!important}}')
+  })
+
   it.each([
     { utility: '*:bg-red-500', declaration: 'background-color:#fb2c36!important' },
     { utility: '**:text-blue-500', declaration: 'color:#2b7fff!important' },

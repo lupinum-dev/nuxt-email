@@ -44,6 +44,7 @@ Some conversion steps stay owned code, because Lightning CSS does not do them or
 - `unplugin-vue` and the Rollup-based Nitro compile path are gone. `lightningcss` is a new build-time dependency.
 - Generated sizes are `px` and colors are hex or `rgba()`. A forbidden-syntax test on a fixed utility matrix and the golden files guard this; three known utilities still produce `var()`, `:where()`/`:is()` inside a selector, or `calc()`.
 - Inline declarations merge in stylesheet order, with author `style` last, so a class list gives the same result as the browser applies to the head rules.
+- A render writes the value of `text-decoration-line` as `text-decoration` at the start of the inline style, because Outlook on Windows reads only the shorthand. Every other declaration follows it, so a browser computes the same style.
 - A class that only sets custom properties, such as `ring-blue-500`, gets no style-table entry: per-class resolution cannot combine it with the utility that reads it.
 - The Tailwind engine is build-time code under `src/compiler/`. Code under `src/runtime/` does not import it.
 
