@@ -102,9 +102,9 @@ function body(attrs: Record<string, unknown>, cellClasses: ReadonlySet<string>, 
 /**
  * The root of every email: `<html>`, `<head>` with the two standard meta tags,
  * the `#head` slot with the Tailwind head rules, the hidden preview text and
- * `<body>` with its presentation table. `class`, `style` and other attributes
- * apply to the inner cell; `<body>` repeats the background and every class except
- * padding-only ones such as `sm:p-8`.
+ * `<body>` with its presentation table. `class` and `style` apply to the inner
+ * cell. Other attributes apply to `<body>`, which also repeats the background
+ * and every class except padding-only ones such as `sm:p-8`.
  */
 export const EEmail = defineComponent({
   name: 'EEmail',

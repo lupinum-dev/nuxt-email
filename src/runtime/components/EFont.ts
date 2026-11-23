@@ -98,9 +98,10 @@ function assertValidFontProps(props: EFontProps): void {
   if (fallbacks.length === 0) {
     throw new TypeError('EFont fallbackFontFamily must contain at least one fallback')
   }
-  const invalidFallback = fallbacks.find(fallback => !FONT_FALLBACKS.has(fallback))
-  if (invalidFallback !== undefined) {
-    throw new TypeError(`EFont fallbackFontFamily contains unsupported fallback ${JSON.stringify(invalidFallback)}`)
+  // An index, not the value: a missing prop gives the fallback `undefined`, which `find` cannot report.
+  const invalidIndex = fallbacks.findIndex(fallback => !FONT_FALLBACKS.has(fallback))
+  if (invalidIndex !== -1) {
+    throw new TypeError(`EFont fallbackFontFamily contains unsupported fallback ${JSON.stringify(fallbacks[invalidIndex])}`)
   }
 
   if (!FONT_STYLES.has(props.fontStyle ?? 'normal')) {

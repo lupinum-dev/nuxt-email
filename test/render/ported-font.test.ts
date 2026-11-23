@@ -53,6 +53,7 @@ const invalid = (name: string, props: string, cause: string): PortedErrorCase =>
 const errors: PortedErrorCase[] = [
   invalid('empty-family', 'font-family="" fallback-font-family="Verdana"', 'EFont fontFamily must be a non-empty string'),
   invalid('no-fallback', 'font-family="Roboto" :fallback-font-family="[]"', 'EFont fallbackFontFamily must contain at least one fallback'),
+  invalid('missing-fallback', 'font-family="Roboto"', 'EFont fallbackFontFamily contains unsupported fallback undefined'),
   invalid('bad-style', 'font-family="Roboto" fallback-font-family="Verdana" font-style="</style>"', 'EFont fontStyle must be normal, italic, or oblique; received "</style>"'),
   invalid('bad-weight', 'font-family="Roboto" fallback-font-family="Verdana" font-weight="400;}</style>"', 'EFont fontWeight must be between 1 and 1000 or a supported keyword; received "400;}</style>"'),
   invalid('empty-url', 'font-family="Roboto" fallback-font-family="Verdana" :web-font="{ format: \'woff2\', url: \'\' }"', 'EFont webFont.url must be a non-empty string'),

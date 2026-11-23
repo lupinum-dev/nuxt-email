@@ -508,6 +508,9 @@ async function verifyFreshConsumer(
   if (variant === 'code-block') {
     const tests = await run('pnpm', ['exec', 'vitest', 'run'], consumerDirectory)
     timingsMilliseconds.tests = tests.durationMilliseconds
+    // The testing guide tells users to check typed tests with this configuration.
+    const testTypes = await run('pnpm', ['exec', 'vue-tsc', '--noEmit', '-p', 'test/tsconfig.json'], consumerDirectory)
+    timingsMilliseconds.testTypes = testTypes.durationMilliseconds
   }
   const serverTypes = await run('pnpm', [
     'exec',
