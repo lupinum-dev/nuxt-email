@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-beta.8
+
+### Patch Changes
+
+- [#96](https://github.com/lupinum-dev/nuxt-email/pull/96) [`a33dd3c`](https://github.com/lupinum-dev/nuxt-email/commit/a33dd3c9d050b402bdf05e64de2a59473f83d5cc) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Fix `EFont` without `fallbackFontFamily`: the render now fails with an `EmailRenderError`.
+  
+  Before, the render passed and wrote invalid CSS (`mso-font-alt: 'undefined'` and an empty entry in the font stack).
+
+- [#96](https://github.com/lupinum-dev/nuxt-email/pull/96) [`a33dd3c`](https://github.com/lupinum-dev/nuxt-email/commit/a33dd3c9d050b402bdf05e64de2a59473f83d5cc) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Fix the install command for `typescript` and `vue-tsc` in the error of `@lupinum/nuxt-email/build` and in the guides.
+  
+  A command without a version installs TypeScript 7, and the build then fails. The command is now `pnpm add -D typescript@~5.9.3 vue-tsc`. The packaged documentation also has corrections: the getting-started guide now includes this install step, and the pages on `EMarkdown` style overrides, `EButton` padding, container queries and the client checks now match the behavior.
+
+- [#96](https://github.com/lupinum-dev/nuxt-email/pull/96) [`a33dd3c`](https://github.com/lupinum-dev/nuxt-email/commit/a33dd3c9d050b402bdf05e64de2a59473f83d5cc) Thanks [@Mat4m0](https://github.com/Mat4m0)! - Fix the type declarations of `@lupinum/nuxt-email/render` for TypeScript projects that use Node module resolution and check library types.
+  
+  One declaration had a relative import without the `.js` extension, which gave the error TS2835.
+
 ## 1.0.0-beta.7
 
 ### Patch Changes
