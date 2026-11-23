@@ -1,6 +1,6 @@
 {
   "name": "@lupinum/nuxt-email",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.7",
   "description": "Typed transactional email for Nuxt with email-safe Tailwind v4",
   "keywords": [
     "email",
@@ -25,7 +25,7 @@
   "type": "module",
   "packageManager": "pnpm@11.13.1",
   "engines": {
-    "node": "^22.18.0 || ^24.11.0 || ^26.0.0"
+    "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
   },
   "exports": {
     "./build": {
@@ -77,12 +77,28 @@
     "changeset": "changeset"
   },
   "peerDependencies": {
+    "@shikijs/core": "^4.4.3",
+    "@shikijs/engine-javascript": "^4.4.3",
+    "@shikijs/langs": "^4.4.3",
+    "@shikijs/themes": "^4.4.3",
     "nuxt": ">=4.5.1 <5",
     "typescript": "~5.9.3",
     "vue": "^3.5.40",
     "vue-tsc": "^3.3.3"
   },
   "peerDependenciesMeta": {
+    "@shikijs/core": {
+      "optional": true
+    },
+    "@shikijs/engine-javascript": {
+      "optional": true
+    },
+    "@shikijs/langs": {
+      "optional": true
+    },
+    "@shikijs/themes": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     },
@@ -92,10 +108,6 @@
   },
   "dependencies": {
     "@nuxt/kit": ">=4.5.1 <5",
-    "@shikijs/core": "^4.3.1",
-    "@shikijs/engine-javascript": "^4.3.1",
-    "@shikijs/langs": "^4.3.1",
-    "@shikijs/themes": "^4.3.1",
     "css-tree": "^3.2.1",
     "esbuild": "^0.28.1",
     "h3": "^1.15.11",
@@ -110,13 +122,17 @@
     "@changesets/cli": "3.0.3",
     "@nuxt/eslint-config": "^1.15.2",
     "@nuxt/module-builder": "^1.0.2",
-    "@nuxt/schema": "4.5.2",
+    "@nuxt/schema": "4.6.4",
     "@nuxt/test-utils": "^4.0.3",
+    "@shikijs/core": "4.4.3",
+    "@shikijs/engine-javascript": "4.4.3",
+    "@shikijs/langs": "4.4.3",
+    "@shikijs/themes": "4.4.3",
     "@types/css-tree": "2.3.11",
     "@types/html-to-text": "9.0.4",
     "@types/node": "26.6.3",
     "eslint": "^10.4.1",
-    "nuxt": "4.5.2",
+    "nuxt": "4.6.4",
     "pkg-pr-new": "0.0.94",
     "tsx": "4.23.1",
     "typescript": "~5.9.3",

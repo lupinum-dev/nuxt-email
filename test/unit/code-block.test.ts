@@ -10,6 +10,7 @@ import {
   generateCodeBlockComponent,
 } from '../../src/code-block/generate-component'
 import { normalizeCodeBlockOptions } from '../../src/code-block/options'
+import { assertShikiInstalled } from '../../src/code-block/shiki-packages'
 import { createCodeBlockComponent } from '../../src/runtime/code-block/create-component'
 import { renderPlainText } from '../../src/runtime/render/plain-text'
 
@@ -135,5 +136,22 @@ describe('configured code blocks', () => {
     expect(generated).toContain('const highlighter = await getHighlighter()')
     expect(generated).not.toContain('@shikijs/langs')
     expect(generated).not.toContain('bundle/web')
+  })
+})
+
+// Shiki is an optional peer dependency. With `codeBlock` set and one package missing, the
+// user needs the install instruction before the build, also when only one package is missing.
+describe('the Shiki package check', () => {
+  it('passes when the four packages resolve', () => {
+    expect(() => assertShikiInstalled()).not.toThrow()
+  })
+
+  it('names the missing packages and the four to install', () => {
+    const resolve = (name: string) => {
+      if (name === '@shikijs/core' || name === '@shikijs/engine-javascript') throw new Error(`Cannot find module '${name}'`)
+    }
+    expect(() => assertShikiInstalled(resolve)).toThrow(
+      'nuxt-email codeBlock needs the Shiki packages, which this package does not install. Missing: @shikijs/core, @shikijs/engine-javascript. Add all four to your project: @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes',
+    )
   })
 })

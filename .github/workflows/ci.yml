@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: 24.11.0
+          node-version: 24.15.0
           package-manager-cache: false
       - run: corepack enable pnpm
       - run: pnpm install --frozen-lockfile
@@ -45,8 +45,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, node: 22.18.0 }
-          - { os: windows-latest, node: 24.11.0 }
+          - { os: ubuntu-24.04, node: 22.22.3 }
+          - { os: windows-latest, node: 24.15.0 }
           - { os: macos-latest, node: 26.0.0 }
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6

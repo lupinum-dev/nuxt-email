@@ -75,3 +75,20 @@ when a decision changes; git keeps the history.
   in `node_modules` as email source, and attributes on `<html>`.** — Each needs a new mechanism (a second set of
   declarations chosen by `dir`, an option that names packages to read and compile, pass-through props on
   `EEmail`). The Tailwind guide lists the first two as limits.
+- **D19 (2026-11-22): The Node floor is the floor of the Nuxt version that CI tests as "current"
+  (`^22.22.3 || ^24.15.0 || ^26.0.0` for Nuxt 4.6).** — The pinned development Nuxt is also the current Nuxt
+  of the packed-consumer test, so it must follow Nuxt, or the package is never tested on the Nuxt that users
+  install. Nuxt 4.6 no longer supports Node 22.18 and 24.11, and CI must not prove a floor on a Nuxt that does
+  not support it. The peer range `>=4.5.1 <5` stays; the minimum consumer still installs Nuxt 4.5.1.
+- **D20 (2026-11-22): The four Shiki packages are optional peer dependencies.** — Only `ECodeBlock` needs
+  them, and it is opt-in, so every other user installed about 40 packages for nothing. An application that
+  sets `codeBlock` installs them; setup and `createTestRenderer()` fail with the install instruction when they
+  are missing, also when only one of the four is (`src/code-block/shiki-packages.ts`). Nothing outside `src/code-block/options.ts` and the
+  generated component may import a Shiki package at run time; the packed default consumer proves it by
+  installing without Shiki.
+- **D21 (2026-11-22): `ELink` and `ECodeInline` remove the whitespace at the edges of their content.** —
+  The Nuxt ESLint style rules put the content of a component with attributes on its own lines, and Vue keeps
+  each line break as a space. In the first Apple Mail check of `1.0.0-beta.6` the underline ran past the
+  link text, and a space came before the full stop. JSX drops this whitespace, so React Email does not have
+  the defect. Only these two inline components trim (`src/runtime/components/slot-text.ts`); block
+  components do not need it, and a non-breaking space stays.

@@ -35,6 +35,10 @@ const cases: ComponentCase[] = [
       + '<EContainer class="px-4 md:px-10 md:bg-slate-100">Container</EContainer>'
       + '<ERow class="sm:px-6"><EColumn>Row</EColumn></ERow>',
   },
+  {
+    name: 'inline-content-on-own-lines',
+    body: '<EText>Read the <ELink href="https://example.com/docs" class="underline">\n  Docs\n</ELink>. Run <ECodeInline>\n  pnpm i\n</ECodeInline>.</EText>',
+  },
   { name: 'email-body', bodyClass: 'bg-slate-100 p-4 font-sans sm:p-8 sm:bg-white', body: '<EText>Body class</EText>' },
 ]
 
@@ -69,6 +73,15 @@ describe('components on the build-time Tailwind path', () => {
   it.each(cases.map(entry => entry.name))('%s matches its golden document', async (name) => {
     await expect(rendered.get(name)).toMatchFileSnapshot(`golden/${name}.html`)
   })
+})
+
+// A formatter puts the content of an inline component on its own lines, and Vue keeps each line
+// break as a space. Inside a link that space is underlined and comes before the next character.
+it('drops the whitespace at the edges of ELink and ECodeInline content', () => {
+  const html = rendered.get('inline-content-on-own-lines')
+  expect(html).toContain('>Docs</a>.')
+  expect(html).toContain('>pnpm i</code>')
+  expect(html).toContain('>pnpm i</span>.')
 })
 
 // A responsive padding class must reach the inner cell, where the layout component puts its

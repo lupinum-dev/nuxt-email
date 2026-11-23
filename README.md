@@ -41,7 +41,7 @@ Do not use it for marketing campaigns or a workflow shared by non-Nuxt applicati
 
 ## Requirements
 
-- Node.js `^22.18.0 || ^24.11.0 || ^26.0.0`.
+- Node.js `^22.22.3 || ^24.15.0 || ^26.0.0`.
 - Nuxt `>=4.5.1 <5`.
 - Vue `^3.5.40`.
 
@@ -145,7 +145,7 @@ documentation. Read the package README and its TypeScript types instead.
 
 ## Email components
 
-Nuxt Email registers 14 server components for the email root, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, and fonts. Configure `ECodeBlock` only when you need syntax highlighting:
+Nuxt Email has 14 components for the email root, table layout, text, images, links, Outlook-safe buttons, Markdown, inline code, and fonts. `ECodeBlock` adds syntax highlighting. It is opt-in: install the Shiki packages (`pnpm add @shikijs/core @shikijs/engine-javascript @shikijs/langs @shikijs/themes`) and configure it:
 
 ```ts
 export default defineNuxtConfig({
