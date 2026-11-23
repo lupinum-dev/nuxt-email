@@ -21,7 +21,7 @@ overrides:
   # Remove when every parent resolves browserslist 4.28.7 or newer.
   browserslist: 4.28.7
   # Remove when every parent resolves esbuild 0.28.1 or newer.
-  esbuild: 0.28.1
+  esbuild: 0.28.2
   # Remove when satori requires fflate 0.7.5 or newer.
   'fflate@<0.7.5': 0.7.5
   # Remove when every parent resolves js-yaml 4.3.2 or newer.
