@@ -60,7 +60,7 @@ async function replaceOutputDirectory(
   }
 }
 
-const PEER_HINT = '@lupinum/nuxt-email/build needs typescript and vue-tsc; install them as dev dependencies, for example `pnpm add -D typescript vue-tsc`.'
+const PEER_HINT = '@lupinum/nuxt-email/build needs typescript and vue-tsc; install them as dev dependencies, for example `pnpm add -D typescript@~5.9.3 vue-tsc`.'
 
 type TypeScript = typeof ts
 
