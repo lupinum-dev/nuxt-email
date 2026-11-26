@@ -17,7 +17,7 @@ overrides:
   '@simple-git/argv-parser': 2.0.1
   # Remove when every parent resolves brace-expansion 2.1.8 / 5.0.12 or newer (GHSA-q2hr-2g5m-vwhr).
   'brace-expansion@>=2.0.0 <3.0.0': 2.1.8
-  'brace-expansion@>=4.0.0 <6.0.0': 5.0.12
+  'brace-expansion@>=4.0.0 <6.0.0': 5.1.0
   # Remove when every parent resolves browserslist 4.28.7 or newer.
   browserslist: 4.28.7
   # Remove when every parent resolves esbuild 0.28.1 or newer.
